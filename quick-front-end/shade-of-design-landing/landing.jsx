@@ -28,9 +28,9 @@ const PROJECTS = [
   {
     n: "03",
     kicker: "Artist · Listen",
-    title: "Lofi Sanctuary",
+    title: "Lofi Sanctuary (WIP)",
     blurb: "A place to land. Hosting soon.",
-    href: null,
+    href: "https://lfsjbeats.netlify.app/",
     status: "soon",
     accent: "ember",
   },

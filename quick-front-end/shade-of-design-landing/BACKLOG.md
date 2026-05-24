@@ -24,6 +24,12 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 ### Landing page
 - [ ] **Wire Lofi Sanctuary tile when hosted**
   Flip `status: "soon"` → `"live"`, set `href`, remove the dot pulse.
+- [ ] **Swap tile 03 → ALL_HEALTH**
+  Replace Lofi Sanctuary tile with ALL_HEALTH (health tracking app). Set `status: "live"`, point `href` to GitHub repo once pushed.
+  _Blocked by:_ ALL_HEALTH pushed to GitHub as `all-health`.
+- [ ] **Add nav links: ALL_HEALTH + Sharpen Reason**
+  Two tabs in the top nav pointing outbound to their GitHub repos. Sharpen Reason is a placeholder until app is hosted.
+  _Blocked by:_ both repos pushed to GitHub.
 - [ ] **Add a fourth section: short "what I do" line**
   One paragraph max. Triggered by the mission-angle decision above.
 - [ ] **Add a contact path**
