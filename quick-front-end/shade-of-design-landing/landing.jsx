@@ -28,10 +28,10 @@ const PROJECTS = [
   {
     n: "03",
     kicker: "Artist · Listen",
-    title: "Lofi Sanctuary (WIP)",
-    blurb: "A place to land. Hosting soon.",
+    title: "Lofi Sanctuary",
+    blurb: "A place to land. Calm, intentional listening.",
     href: "https://lfsjbeats.netlify.app/",
-    status: "soon",
+    status: "live",
     accent: "ember",
   },
 ];
@@ -165,13 +165,13 @@ function App() {
             Connecting people with the <em>services</em> they need.
           </h1>
           <p className="lp-sub">
-            A studio in formation. Three creators we support, below.
+            A studio in formation. {PROJECTS.length} creators we support, below.
           </p>
         </section>
 
         <section className="lp-work" id="work">
           <div className="work-head">
-            <span className="work-label">Creators we support · 03</span>
+            <span className="work-label">Creators we support · {String(PROJECTS.length).padStart(2, "0")}</span>
             <span className="work-rule" />
           </div>
           <div className="tiles">
