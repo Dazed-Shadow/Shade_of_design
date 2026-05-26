@@ -105,3 +105,20 @@ ADR-lite. One entry per non-obvious choice, so we know *why* later.
 - Updated `AGENTS.md` C-Phile section to reflect the prep/consume split.
 
 **Open follow-up:** The Option A scheduled consumer is not yet built. Defer until JR has reviewed a few bundles by hand (Option B) and confirmed the bundle format works. Then wire up via the `schedule` skill or a `/loop` recipe.
+
+---
+
+## D-007 · 2026-05-26 · C-Transit source: Federal Register SBA documents, not the SBA blog
+
+**Decision:** C-Transit pulls from `https://www.federalregister.gov/api/v1/documents.rss?conditions[agencies][]=small-business-administration` instead of the originally-specced `https://www.sba.gov/blog/feed`.
+
+**Context:** The SBA blog RSS endpoint returns 404. Discovered during the first C-Transit smoke run.
+
+**Why Federal Register instead:**
+- Returns 200, valid RSS, reliable upstream (federalregister.gov is government-operated).
+- Documents-by-agency is *more* on-theme for HZ than blog posts — these are the actual regulatory/policy documents small businesses need to track. Better source material for C-Phile's synthesis than blog posts would have been.
+- Single feed, no auth, easy to swap if needed.
+
+**Trade-off accepted:** Voice of source material shifts from "informal SBA blog" to "Federal Register notices." C-Phile's voice doc is already the editorial anchor, so the source-material voice doesn't propagate to output. Acceptable.
+
+**If we want SBA blog content back:** SBA's main site offers no RSS, but `https://www.sba.gov/about-sba/sba-newsroom/press-releases` could be scraped (HTML, not RSS). Not worth it in v1.
