@@ -59,3 +59,23 @@ ADR-lite. One entry per non-obvious choice, so we know *why* later.
 - Matches the canonical "Notion via scripts" pattern already used by HZ and LOFI.
 
 **Trade-off accepted:** JR is the throughput bottleneck. Acceptable in v1 because the bottleneck is also the quality gate. Revisit only after two clean cycles ship without packet rework (see PLATFORMS.md "What unlocks an upgrade past v1").
+
+---
+
+## D-005 · 2026-05-25 · Prototype first — instrument both tracks, defer C-Comms
+
+**Decision:** Before building C-Comms assembly, run a prototype that exercises both tracks end-to-end (Transit → Phile on the creative side; SPOTTER + MainLiner on the prospect side) with timing instrumentation. Review limitations, refactor, *then* wire up C-Comms.
+
+**Context:** Skipping prototype and building all five agents straight through would commit us to interfaces that haven't been pressure-tested. The unknowns are extraction latency and synthesis cost — both observable only by running, not by design.
+
+**Why:**
+- Two tracks have different bottleneck shapes. Creative track is bounded by source-article quality and synthesis cost. Prospect track is bounded by NAICS-match yield and enrichment-API rate limits. Need real numbers per track before deciding what C-Comms aggregates and how often.
+- C-Comms's contract depends on what the upstream agents *actually* produce — building it now risks rework once the prototype reveals real outputs.
+- Cheap to gate: each agent writes a `_logs/<agent>_<date>.jsonl` entry per run (already in AGENTS.md universal rules); just need `started_at` / `finished_at` / `record_count` fields populated.
+
+**Trade-off accepted:** No human review packet during the prototype phase. JR reads the raw logs and sampled outputs directly until C-Comms is built. Acceptable because the prototype is explicitly a measurement run, not a publishing run.
+
+**Exit criteria (move to C-Comms build):**
+1. Both tracks have completed ≥3 end-to-end runs without script-level errors.
+2. Per-track p50 and p95 timings are recorded for: extraction, synthesis/enrichment, total.
+3. JR has reviewed sampled output from each agent and signed off on the data shape C-Comms will consume.
