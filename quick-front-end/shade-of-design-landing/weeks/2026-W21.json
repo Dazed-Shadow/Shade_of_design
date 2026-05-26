@@ -3,7 +3,7 @@
   "label": "Week 21",
   "dateRange": "May 18 – 24, 2026",
   "publishedAt": "2026-05-25",
-  "headline": "Reading awards data is a skill. I'm in week one.",
+  "headline": "Sample week. Real SAM.gov pulls begin once the pipeline is live.",
   "naicsRotation": {
     "rotation": "Set 01",
     "rotatesEvery": "4 weeks",
@@ -16,7 +16,7 @@
     ]
   },
   "awards": {
-    "summary": "Sample data — replace with real SAM.gov pulls. The shape is what matters; the numbers are placeholders.",
+    "summary": "Placeholder figures — not real SAM.gov data. Shown only to demonstrate the page layout while the data pipeline is being built.",
     "byAgency": [
       { "agency": "Dept. of Veterans Affairs",   "count": 14, "totalValue": 4250000 },
       { "agency": "General Services Admin.",     "count":  9, "totalValue": 2180000 },
@@ -33,7 +33,7 @@
     ]
   },
   "blog": {
-    "title": "Week one: looking at the data instead of feeling around it",
+    "title": "Week one: a soft launch while the pipeline gets wired",
     "body": [
       "I spent this week trying to read government award data without forming opinions. That's harder than it sounds. Every line item has a number, an agency, and an NAICS code, and your brain wants to make a story out of it before you've even finished scrolling.",
       "What helped was picking five NAICS codes and refusing to look at anything else. 561110, 561990, 561320, 541611, 493110. Admin services, support, temp help, management consulting, warehousing. Those are the doors I'm walking through. Everything else will still be there in a month when I rotate.",
@@ -43,54 +43,49 @@
   },
   "contracts": [
     {
-      "title": "Administrative Support Services — Regional Office",
+      "title": "[Sample] Administrative Support Services — Regional Office",
       "agency": "Dept. of Veterans Affairs",
       "naics": "561110",
       "naicsName": "Office Administrative Services",
-      "value": "$250,000 – $500,000",
+      "value": "Sample listing — not a real solicitation",
       "closeDate": "2026-06-15",
-      "description": "Provide administrative support services including records management, scheduling coordination, and front-desk operations for a regional VA office. Base year plus four option years.",
-      "url": "https://sam.gov/"
+      "description": "Placeholder entry shown to demonstrate the closing-contracts layout. Real listings will populate once the SAM.gov pipeline is wired."
     },
     {
-      "title": "Temporary Staffing — Surge Support",
+      "title": "[Sample] Temporary Staffing — Surge Support",
       "agency": "General Services Administration",
       "naics": "561320",
       "naicsName": "Temporary Help Services",
-      "value": "$100,000 – $250,000",
+      "value": "Sample listing — not a real solicitation",
       "closeDate": "2026-06-08",
-      "description": "On-call temporary staffing for clerical and light technical roles across multiple GSA facilities. Surge capacity contract; tasks issued as needed.",
-      "url": "https://sam.gov/"
+      "description": "Placeholder entry shown to demonstrate the closing-contracts layout. Real listings will populate once the SAM.gov pipeline is wired."
     },
     {
-      "title": "Management Consulting — Process Redesign",
+      "title": "[Sample] Management Consulting — Process Redesign",
       "agency": "Dept. of Homeland Security",
       "naics": "541611",
       "naicsName": "Admin & General Management Consulting",
-      "value": "$500,000 – $1,000,000",
+      "value": "Sample listing — not a real solicitation",
       "closeDate": "2026-06-22",
-      "description": "Consulting support to redesign internal intake and triage processes. Deliverables include a current-state assessment, target-state design, and a 12-week implementation roadmap.",
-      "url": "https://sam.gov/"
+      "description": "Placeholder entry shown to demonstrate the closing-contracts layout. Real listings will populate once the SAM.gov pipeline is wired."
     },
     {
-      "title": "Warehousing & Distribution — Regional Hub",
+      "title": "[Sample] Warehousing & Distribution — Regional Hub",
       "agency": "Dept. of Defense (Army)",
       "naics": "493110",
       "naicsName": "General Warehousing & Storage",
-      "value": "$1M – $5M",
+      "value": "Sample listing — not a real solicitation",
       "closeDate": "2026-07-01",
-      "description": "Operate a regional warehousing and distribution hub. Includes receiving, storage, inventory management, and outbound shipping for non-hazardous materiel.",
-      "url": "https://sam.gov/"
+      "description": "Placeholder entry shown to demonstrate the closing-contracts layout. Real listings will populate once the SAM.gov pipeline is wired."
     },
     {
-      "title": "Customer Support — Multi-Channel Helpdesk",
+      "title": "[Sample] Customer Support — Multi-Channel Helpdesk",
       "agency": "Dept. of Health & Human Services",
       "naics": "561990",
       "naicsName": "All Other Support Services",
-      "value": "$250,000 – $500,000",
+      "value": "Sample listing — not a real solicitation",
       "closeDate": "2026-06-30",
-      "description": "Multi-channel (phone, email, chat) helpdesk for a public-facing program. English and Spanish required; metrics include first-response time and case-closure rate.",
-      "url": "https://sam.gov/"
+      "description": "Placeholder entry shown to demonstrate the closing-contracts layout. Real listings will populate once the SAM.gov pipeline is wired."
     }
   ]
 }
