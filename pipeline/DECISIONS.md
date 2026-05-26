@@ -79,3 +79,29 @@ ADR-lite. One entry per non-obvious choice, so we know *why* later.
 1. Both tracks have completed ≥3 end-to-end runs without script-level errors.
 2. Per-track p50 and p95 timings are recorded for: extraction, synthesis/enrichment, total.
 3. JR has reviewed sampled output from each agent and signed off on the data shape C-Comms will consume.
+
+---
+
+## D-006 · 2026-05-26 · C-Phile synthesis runs on Claude Code, not the metered API
+
+**Decision:** C-Phile is split into a **prep** script (Python, writes a self-contained synthesis bundle to `_pending/`) and a **consume** stage (a Claude Code session, scheduled or interactive). No `ANTHROPIC_API_KEY` is required. Synthesis runs on JR's existing Claude Code subscription.
+
+**Context:** Original implementation called `claude-sonnet-4-6` via the `anthropic` Python SDK from inside the script. That path is metered (pay-per-token credits), separate from the Claude Code plan JR already pays for. JR explicitly does not want to take the metered-credit route.
+
+**Why:**
+- JR already pays for Claude Code with Opus + Sonnet on tap. Routing synthesis through that subscription is zero marginal cost.
+- The split (prep produces a portable bundle; consumer is any Claude Code session) is more flexible than tying synthesis to a single SDK call — Option B (ad-hoc, JR opens the bundle interactively) becomes trivially available.
+- Matches the same Opus/Sonnet pattern already in use everywhere else — Sonnet does the synthesis from inside Claude Code instead of from inside a `.py` script.
+- Bundle format is self-documenting: any Claude session that opens a `_pending/*.md` file sees the voice, the article, the task, and the output protocol. No external docs required.
+
+**Trade-off accepted:**
+- Synthesis is no longer headless. A human (or scheduled agent) has to consume the bundle. Acceptable because the consumer is cheap to set up and JR is the quality gate anyway in v1.
+- Timing measurement for the synthesis stage now happens at the consumer, not in the prep script. Prep timing is fast (file I/O only) and uninteresting; real timing is "how long does Claude Code take to consume a bundle." Captured separately in the consumer logs.
+
+**Cleanup performed:**
+- Reverted `ANTHROPIC_API_KEY` placeholder from `backend/.env.example`.
+- Removed `anthropic==0.104.1` from `backend/requirements.txt`.
+- Rewrote `scripts/phile_synthesize.py` as prep-only (writes bundles to `research/data/drafts/_pending/`).
+- Updated `AGENTS.md` C-Phile section to reflect the prep/consume split.
+
+**Open follow-up:** The Option A scheduled consumer is not yet built. Defer until JR has reviewed a few bundles by hand (Option B) and confirmed the bundle format works. Then wire up via the `schedule` skill or a `/loop` recipe.

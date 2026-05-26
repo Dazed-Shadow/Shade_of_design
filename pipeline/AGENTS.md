@@ -17,10 +17,16 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 **Role:** Owns the voice. Turns raw articles into blog HTML and social drafts. Templating lives here so voice and structure don't drift apart.
 
-- **Inputs:** Normalized articles from C-Transit; voice reference doc (`Weaving I am Content.docx`); templates per channel.
-- **Outputs:** Draft blog HTML + per-channel social drafts, written to a Notion "Drafts" queue.
-- **Owned scripts:** `scripts/phile_synthesize.py`, `scripts/phile_render_template.py`
-- **Escalates when:** Source article is opinion-loaded, politically charged, or makes a claim Phile can't verify against ≥2 sources. Drops to JR queue with reason.
+**Split into prep + consume** (see D-006). The Python script prepares a self-contained synthesis bundle; a Claude Code session (scheduled or ad-hoc) is the consumer that produces the actual drafts. No metered Anthropic API key required.
+
+- **Inputs:** Normalized articles from C-Transit; voice reference doc (`Weaving I am Content.docx`).
+- **Outputs (prep stage):** One markdown bundle per article at `research/data/drafts/_pending/phile_<ts>.md`. Bundle contains voice excerpt + article + task + output protocol.
+- **Outputs (consume stage):** `research/data/drafts/_done/phile_<ts>_social.txt` + `_blog.html`; bundle moved to `research/data/drafts/_consumed/`.
+- **Owned scripts:** `scripts/phile_synthesize.py` (prep). Future: `scripts/phile_render_template.py` for per-channel variants.
+- **Consumers:**
+  - **Option A (default automation):** scheduled Claude Code agent watches `_pending/` and processes bundles.
+  - **Option B (ad-hoc):** JR opens a bundle in an interactive Claude Code session.
+- **Escalates when:** Source article is opinion-loaded, politically charged, or makes a claim the consumer can't verify against ≥2 sources. Bundle stays in `_pending/`, JR is notified.
 
 ## C-SPOTTER — target enrichment (merged)
 
