@@ -5,6 +5,59 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light"
 }/*EDITMODE-END*/;
 
+/* Socials — add a row to this array to add a platform.
+   Optional fields: `handle` (display string), `accent` ("ocean"|"slate"|"ember") */
+const SOCIALS = [
+  { id: "itch",     name: "Itch.io",  handle: "shadeofdesign",  href: "https://shadeofdesign.itch.io/" },
+  { id: "twitter",  name: "Twitter",  handle: "@jrivera_SOD",   href: "https://x.com/jrivera_SOD" },
+  { id: "reddit",   name: "Reddit",   handle: "u/jr_SOD",       href: "https://www.reddit.com/user/jr_SOD/" },
+  { id: "tumblr",   name: "Tumblr",   handle: "@jrivera-sod",   href: "https://www.tumblr.com/blog/jrivera-sod" },
+  { id: "facebook", name: "Facebook", handle: "Shade of Design",href: "https://www.facebook.com/profile.php?id=61590179799757" },
+];
+
+/* Icon set — single-color monoline, matches Space Grotesk weight.
+   Each receives `size` and `className`. */
+const ICONS = {
+  itch: (p) => (
+    <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 6.5 5 3.5h14L21 6.5v3a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1-2 2 2 2 0 0 1-2-2v-3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <path d="M5 11.2V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-7.8" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M9.5 14h5l-.6 2.5a1 1 0 0 1-1 .8h-1.8a1 1 0 0 1-1-.8L9.5 14Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  ),
+  twitter: (p) => (
+    <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 4 10.6 13 4.4 20h2.1l5.2-5.9L16 20h4l-7-9.4L19.6 4H17.5l-4.8 5.4L9 4H4Z" fill="currentColor"/>
+    </svg>
+  ),
+  reddit: (p) => (
+    <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="20" cy="6" r="1.6" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M14.5 7.5 16 4.6l2.6 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <circle cx="9.3" cy="13" r="1" fill="currentColor"/>
+      <circle cx="14.7" cy="13" r="1" fill="currentColor"/>
+      <path d="M9 16.4c1 .9 2 1.2 3 1.2s2-.3 3-1.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <circle cx="4.5" cy="12" r="1.4" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="19.5" cy="12" r="1.4" stroke="currentColor" strokeWidth="1.4"/>
+    </svg>
+  ),
+  tumblr: (p) => (
+    <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 3v4h4v3.5h-4v6c0 1.2.7 1.8 2 1.8h2V22h-3.5c-3 0-4.5-1.5-4.5-4.5v-7H7.5V7.5c2.4-.4 3.4-2 3.7-4.5H14Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  ),
+  facebook: (p) => (
+    <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M13.5 21v-7.5H16l.5-3h-3v-2c0-.9.3-1.5 1.5-1.5H17V4.2C16.6 4.1 15.6 4 14.5 4 12 4 10.5 5.5 10.5 8v2.5H8v3h2.5V21h3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  ),
+};
+function SocialIcon({ id, size = 20 }) {
+  const I = ICONS[id];
+  return I ? <I size={size} /> : <span style={{width:size, height:size, display:"inline-block", border:"1px solid currentColor", borderRadius:4}} />;
+}
+
 /* Project tiles ------------------------------------------------ */
 const PROJECTS = [
   {
@@ -144,7 +197,7 @@ function App() {
   return (
     <div className="lp">
       <header className="lp-header">
-        <a href="Shade of Design — Brand System.html" className="brand" aria-label="Shade of Design brand system">
+        <a href="brand-system.html" className="brand" aria-label="Shade of Design brand system">
           <img src="assets/logo-mark.png" alt="" className="brand-mark" />
           <div className="brand-meta">
             <div className="brand-name">Shade of Design</div>
@@ -152,9 +205,13 @@ function App() {
           </div>
         </a>
         <nav className="lp-nav">
-          <a href="Shade of Design — Brand System.html" className="navlink">Brand system</a>
+          <a href="brand-system.html" className="navlink">Brand system</a>
+          <span className="navlink-sep">·</span>
+          <a href="weekly.html" className="navlink">Weekly</a>
           <span className="navlink-sep">·</span>
           <a href="#work" className="navlink">Who we support</a>
+          <span className="navlink-sep">·</span>
+          <a href="#find" className="navlink">Find us</a>
         </nav>
       </header>
 
@@ -178,11 +235,46 @@ function App() {
             {PROJECTS.map((p) => (<ProjectTile p={p} key={p.n} />))}
           </div>
         </section>
+
+        <section className="lp-find" id="find">
+          <div className="work-head">
+            <span className="work-label">Where to find us · {String(SOCIALS.length).padStart(2,"0")}</span>
+            <span className="work-rule" />
+          </div>
+          <p className="find-note">
+            We all have to start somewhere. I am at zero. But the urge to act can
+            be for creation or support &mdash; and I hope I can be supported as I learn
+            to support others through my beginning.
+          </p>
+          <ul className="socials">
+            {SOCIALS.map((s) => (
+              <li key={s.id}>
+                <a className="social-card" href={s.href} target="_blank" rel="noopener noreferrer">
+                  <span className="social-icon"><SocialIcon id={s.id} size={22} /></span>
+                  <span className="social-text">
+                    <span className="social-name">{s.name}</span>
+                    <span className="social-handle">{s.handle}</span>
+                  </span>
+                  <span className="social-arrow"><Arrow /></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
 
       <footer className="lp-foot">
         <span>© 2026 Shade of Design</span>
-        <span className="foot-meta">v0.1 · Landing</span>
+        <ul className="foot-socials" aria-label="Social links">
+          {SOCIALS.map((s) => (
+            <li key={s.id}>
+              <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} title={s.name + " · " + s.handle}>
+                <SocialIcon id={s.id} size={16} />
+              </a>
+            </li>
+          ))}
+        </ul>
+        <span className="foot-meta">v0.2 · Landing</span>
       </footer>
 
       <TweaksPanel title="Tweaks">

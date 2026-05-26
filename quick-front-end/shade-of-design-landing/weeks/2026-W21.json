@@ -1,0 +1,96 @@
+{
+  "week": "2026-W21",
+  "label": "Week 21",
+  "dateRange": "May 18 – 24, 2026",
+  "publishedAt": "2026-05-25",
+  "headline": "Reading awards data is a skill. I'm in week one.",
+  "naicsRotation": {
+    "rotation": "Set 01",
+    "rotatesEvery": "4 weeks",
+    "tracked": [
+      { "code": "561110", "name": "Office Administrative Services" },
+      { "code": "561990", "name": "All Other Support Services" },
+      { "code": "561320", "name": "Temporary Help Services" },
+      { "code": "541611", "name": "Admin & General Management Consulting" },
+      { "code": "493110", "name": "General Warehousing & Storage" }
+    ]
+  },
+  "awards": {
+    "summary": "Sample data — replace with real SAM.gov pulls. The shape is what matters; the numbers are placeholders.",
+    "byAgency": [
+      { "agency": "Dept. of Veterans Affairs",   "count": 14, "totalValue": 4250000 },
+      { "agency": "General Services Admin.",     "count":  9, "totalValue": 2180000 },
+      { "agency": "Dept. of Defense (Army)",     "count":  7, "totalValue": 5910000 },
+      { "agency": "Dept. of Homeland Security",  "count":  5, "totalValue":  890000 },
+      { "agency": "Dept. of Health & Human Svc.","count":  4, "totalValue": 1340000 }
+    ],
+    "byNAICS": [
+      { "code": "561110", "count":  8, "totalValue": 2400000 },
+      { "code": "561990", "count":  6, "totalValue": 1850000 },
+      { "code": "561320", "count": 11, "totalValue": 3120000 },
+      { "code": "541611", "count": 10, "totalValue": 6200000 },
+      { "code": "493110", "count":  4, "totalValue": 1000000 }
+    ]
+  },
+  "blog": {
+    "title": "Week one: looking at the data instead of feeling around it",
+    "body": [
+      "I spent this week trying to read government award data without forming opinions. That's harder than it sounds. Every line item has a number, an agency, and an NAICS code, and your brain wants to make a story out of it before you've even finished scrolling.",
+      "What helped was picking five NAICS codes and refusing to look at anything else. 561110, 561990, 561320, 541611, 493110. Admin services, support, temp help, management consulting, warehousing. Those are the doors I'm walking through. Everything else will still be there in a month when I rotate.",
+      "The thing nobody told me: most contracts that show up in award feeds are already closed. The data is backward-looking by design. Which means \"watching awards\" is really \"watching patterns over time.\" I have one week of pattern. Ask me again in eight.",
+      "Closing contracts are the actionable part — what's coming due, who's about to need a new vendor. That's the section I'll be working hardest on in the weeks ahead. Right now I'm just learning the vocabulary."
+    ]
+  },
+  "contracts": [
+    {
+      "title": "Administrative Support Services — Regional Office",
+      "agency": "Dept. of Veterans Affairs",
+      "naics": "561110",
+      "naicsName": "Office Administrative Services",
+      "value": "$250,000 – $500,000",
+      "closeDate": "2026-06-15",
+      "description": "Provide administrative support services including records management, scheduling coordination, and front-desk operations for a regional VA office. Base year plus four option years.",
+      "url": "https://sam.gov/"
+    },
+    {
+      "title": "Temporary Staffing — Surge Support",
+      "agency": "General Services Administration",
+      "naics": "561320",
+      "naicsName": "Temporary Help Services",
+      "value": "$100,000 – $250,000",
+      "closeDate": "2026-06-08",
+      "description": "On-call temporary staffing for clerical and light technical roles across multiple GSA facilities. Surge capacity contract; tasks issued as needed.",
+      "url": "https://sam.gov/"
+    },
+    {
+      "title": "Management Consulting — Process Redesign",
+      "agency": "Dept. of Homeland Security",
+      "naics": "541611",
+      "naicsName": "Admin & General Management Consulting",
+      "value": "$500,000 – $1,000,000",
+      "closeDate": "2026-06-22",
+      "description": "Consulting support to redesign internal intake and triage processes. Deliverables include a current-state assessment, target-state design, and a 12-week implementation roadmap.",
+      "url": "https://sam.gov/"
+    },
+    {
+      "title": "Warehousing & Distribution — Regional Hub",
+      "agency": "Dept. of Defense (Army)",
+      "naics": "493110",
+      "naicsName": "General Warehousing & Storage",
+      "value": "$1M – $5M",
+      "closeDate": "2026-07-01",
+      "description": "Operate a regional warehousing and distribution hub. Includes receiving, storage, inventory management, and outbound shipping for non-hazardous materiel.",
+      "url": "https://sam.gov/"
+    },
+    {
+      "title": "Customer Support — Multi-Channel Helpdesk",
+      "agency": "Dept. of Health & Human Services",
+      "naics": "561990",
+      "naicsName": "All Other Support Services",
+      "value": "$250,000 – $500,000",
+      "closeDate": "2026-06-30",
+      "description": "Multi-channel (phone, email, chat) helpdesk for a public-facing program. English and Spanish required; metrics include first-response time and case-closure rate.",
+      "url": "https://sam.gov/"
+    }
+  ]
+}

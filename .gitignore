@@ -1,1 +1,8 @@
 internal assets/
+
+# Claude Code workspace state
+.claude/
+
+# Design-bundle staging (raw drop from Claude Design + normalizer output)
+shade-of-design-site/
+shade-of-design-site-normalized/

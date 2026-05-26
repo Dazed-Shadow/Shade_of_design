@@ -7,6 +7,15 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 
 ## Repo: `shade-of-design-landing`
 
+### Weekly page (new)
+- [ ] **Decide on URL renames** before sharing publicly
+  See `PORTING-WEEKLY.md` §6. `weekly.html` → `weekly.html` etc.
+- [ ] **`naics-rotations.md`** as source of truth for the 4-week NAICS cycles
+- [ ] **SAM.gov pull script** (Python, runs locally) — writes `weeks/<id>.json`
+- [ ] **Promote to GitHub Actions cron** once the script is stable
+- [ ] **Split `<id>-data.json` and `<id>-post.json`** once pipeline is automated
+- [ ] **RSS feed** generated from `weeks/index.json` (after 4–5 weeks)
+
 ### Brand system
 - [ ] **Add tonal scales (50–900) for Ocean, Slate, Ember**
   Currently only base values. Useful for Code work with token systems.
@@ -24,12 +33,6 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 ### Landing page
 - [ ] **Wire Lofi Sanctuary tile when hosted**
   Flip `status: "soon"` → `"live"`, set `href`, remove the dot pulse.
-- [ ] **Swap tile 03 → ALL_HEALTH**
-  Replace Lofi Sanctuary tile with ALL_HEALTH (health tracking app). Set `status: "live"`, point `href` to GitHub repo once pushed.
-  _Blocked by:_ ALL_HEALTH pushed to GitHub as `all-health`.
-- [ ] **Add nav links: ALL_HEALTH + Sharpen Reason**
-  Two tabs in the top nav pointing outbound to their GitHub repos. Sharpen Reason is a placeholder until app is hosted.
-  _Blocked by:_ both repos pushed to GitHub.
 - [ ] **Add a fourth section: short "what I do" line**
   One paragraph max. Triggered by the mission-angle decision above.
 - [ ] **Add a contact path**
@@ -38,13 +41,13 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 - [ ] **Open Graph + Twitter card images**
   Use the hero mark on a Deep Ocean field. 1200×630.
 - [ ] **Custom domain**
-  Decide: `shadeofdesign.com`, `.studio`, `.design`. Cloudflare Registrar is at-cost (~$9–12/yr).
+  Decide: `shadeofdesign.com`, `.studio`, `.design`. Buy through Netlify or a registrar; point DNS at Netlify.
 
 ### Engineering / infra
 - [ ] **Move React+Babel CDN to a build step (later)**
   Fine for now — but Vite + esbuild would shave ~200ms of first paint.
 - [ ] **Analytics**
-  Cloudflare Web Analytics (free, no cookies) recommended.
+  Netlify Analytics (paid) or Plausible/Umami (free tiers, no cookies) recommended.
 - [ ] **Backup brand assets to repo `/assets/raw/`**
   Logo source files, fonts license notes.
 
@@ -62,11 +65,11 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 
 ### Hosting
 - [ ] **Push to GitHub** as `lofi-sanctuary`
-- [ ] **Deploy on Cloudflare Pages** (no build, output `/`)
+- [ ] **Deploy on Netlify** (no build, publish dir `.`)
 - [ ] **Update Shade of Design landing** with the live URL once up
 
 ### Polish (after live)
-- [ ] **Contact form backend** (Formspree or Cloudflare Workers form handler — both have free tiers)
+- [ ] **Contact form backend** (Formspree free tier, or Netlify Forms — both work fine)
 - [ ] **Spotify embed lazy-load**
   Currently loads three iframes on page open.
 - [ ] **Mobile pass**
