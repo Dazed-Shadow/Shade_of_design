@@ -122,3 +122,44 @@ ADR-lite. One entry per non-obvious choice, so we know *why* later.
 **Trade-off accepted:** Voice of source material shifts from "informal SBA blog" to "Federal Register notices." C-Phile's voice doc is already the editorial anchor, so the source-material voice doesn't propagate to output. Acceptable.
 
 **If we want SBA blog content back:** SBA's main site offers no RSS, but `https://www.sba.gov/about-sba/sba-newsroom/press-releases` could be scraped (HTML, not RSS). Not worth it in v1.
+
+---
+
+## D-008 · 2026-05-26 · C-Transit body extraction: FR JSON API + generic HTML fallback
+
+**Decision:** C-Transit now fetches full article bodies using a two-path dispatch:
+1. **Federal Register documents** (`federalregister.gov` URLs): call the FR JSON API (`/api/v1/documents/{doc_number}.json`) to get `raw_text_url`, fetch the pre-formatted text, strip boilerplate lines via regex, return cleaned plain text.
+2. **All other URLs** (future non-FR feeds): generic HTML extraction via BeautifulSoup — tries `<article>`, `<main>`, `.entry-content`, `.post-content`, `.article-body` in order, falls back to `<body>`.
+
+Bodies are capped at **8,000 characters** and a **1.0-second polite delay** is inserted between per-article fetches.
+
+**Context:** C-Transit was writing `body: ""` for all Federal Register records — the RSS feed carries only a one-sentence summary for these documents, and most of the actual content is at the linked URL. C-Phile's synthesis pass was therefore extrapolating from titles alone, making prototype output reviews meaningless.
+
+**Why this approach:**
+- FR's JSON API is clean, documented, and returns a `raw_text_url` pointing to the pre-formatted ASCII text of the full document. One API call per article gets a URL to the real content — no scraping ambiguity.
+- The raw-text endpoint returns `<html><pre>...</pre></html>` with a consistent boilerplate header/footer. BeautifulSoup + a simple regex strip produces clean plain text in one pass.
+- Generic HTML fallback is there for when non-FR sources are added; it costs nothing to ship now and avoids a second `transit_fetch_feeds.py` rewrite later.
+- All three deps (httpx, feedparser, beautifulsoup4) were already installed. Zero new dependencies.
+
+**Truncation policy:** 8,000 characters (~1,400 words). FR documents in the SBA feed average 500–3,000 chars after stripping. 8k gives plenty of headroom for longer notices without writing multi-page legal documents into the JSONL. Configurable via `--max-body-chars N` if JR wants to tune per-run.
+
+**CLI flags added:**
+- `--no-body` — skip body fetching entirely (metadata-only fast mode, for testing the RSS layer)
+- `--body-delay SECONDS` — polite delay between article fetches (default 1.0s)
+- `--max-body-chars N` — body truncation cap (default 8000)
+- `--limit N` — pre-existed; kept
+
+**Ruled out:**
+- Fetching `body_html_url` instead of `raw_text_url`: the HTML version is richer but requires more aggressive scraping and injects layout markup into the body text. Plain text is cleaner for synthesis input.
+- Per-source registry keyed on domain: overkill for two paths. Simple `if "federalregister.gov" in url` dispatch is readable and adequate for v1.
+- Async fetching (httpx AsyncClient): would complicate the script without meaningful benefit at 5–20 articles per run with intentional delay.
+
+**Fail-soft behavior:** If a body fetch fails (any status != 200, JSON parse error, missing `raw_text_url`), the record is written with `body=""` and a `body_error` field set to the error string. The run continues. Errors are accumulated and forwarded to `log_run`.
+
+**Observed timing (smoke run, limit=5, 1.0s delay, FR source):**
+- Per-article body fetch: 61–94 ms
+- Total run duration: ~5.4 s (dominated by polite delays between fetches, not network time)
+- Previous metadata-only runs: ~1.5 s
+- Body sizes: 1,570–3,023 chars (all well under the 8k cap for these FR notices)
+
+**Trade-off accepted:** Each run now takes ~N seconds longer (N = article count × delay). At the default limit of 20 articles with 1.0s delay, that's ~20s overhead. Acceptable for a pipeline that runs on a schedule, not interactively. Use `--no-body` for fast feed-validation runs.
