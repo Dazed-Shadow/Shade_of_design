@@ -213,3 +213,63 @@ Bodies are capped at **8,000 characters** and a **1.0-second polite delay** is i
 **When each is used:**
 - Pipeline mode (no flag): scheduled C-SPOTTER runs, prototype cycles, any run that populates `candidates/`.
 - Ad-hoc mode (`--ad-hoc`): one-off research, JR exploring a new NAICS, pre-pipeline feasibility checks.
+
+---
+
+## D-011 · 2026-05-27 · C-Transit multi-source mode + C-Phile round-robin batch
+
+**Decision:** C-Transit now pulls from a TOML feed registry (`research/feeds.toml`) covering six categories; one `<slug>_<YYYY-MM-DD>.jsonl` is written per feed. C-Phile's `pick_articles` reads all today's inbox files and round-robins across categories when filling a batch.
+
+### Why TOML over YAML / JSON
+
+stdlib `tomllib` (Python 3.11+) requires zero new dependencies. TOML's array-of-tables syntax (`[[feeds]]`) makes a human-edited feed list easier to scan and comment than JSON. YAML would need `pyyaml`, which is not in the existing venv. TOML matches the "no new pip deps" rule established for this script family.
+
+### Category taxonomy (v1)
+
+Six categories chosen to span the source-material diversity C-Phile needs without overlapping editorially:
+
+| category | feed | note |
+|---|---|---|
+| `smallbiz` | Federal Register SBA | existing FR feed, now tagged |
+| `policy` | Federal Register All Agencies | all-agency FR, broader regulatory |
+| `tech` | Ars Technica | general tech news |
+| `ai` | MIT Technology Review | AI/emerging-tech focus |
+| `health` | KFF Health News | US health policy / journalism |
+| `world` | BBC World News | international current events |
+
+### URL validation results (2026-05-27)
+
+All primary URLs tested with real GET requests before inclusion:
+
+| category | outcome | detail |
+|---|---|---|
+| smallbiz | **primary used** | FR SBA RSS — 200, valid RSS |
+| policy | **primary used** | FR all-agencies RSS — 200, valid RSS (200 entries) |
+| tech | **primary used** | Ars Technica RSS — 200, valid RSS |
+| ai | **fallback fired** | `anthropic.com/news/rss` returned 404; MIT Technology Review (`technologyreview.com/feed/`) used instead |
+| health | **primary used** | KFF Health News — 200, valid RSS |
+| world | **primary used** | BBC World News RSS — 200, valid RSS |
+
+The Verge and STAT News fallbacks were not needed and are not in `feeds.toml`; they can be added if primary sources degrade.
+
+### Round-robin algorithm
+
+`pick_articles(count)` in `phile_synthesize.py`:
+1. Globs `inbox/*_<YYYY-MM-DD>.jsonl` for today; falls back to files modified in the last 24h; last resort is the single most-recent file.
+2. Builds `{category: [articles...]}` dict, deduping by URL across all files.
+3. Categories sorted alphabetically for stability (`ai`, `health`, `policy`, `smallbiz`, `tech`, `world`).
+4. Round-robins: one article per category per round, cycling until `count` is reached or all categories are exhausted.
+5. If a category runs dry mid-round it is skipped silently. If all categories exhaust before `count`, returns what it has with the existing "inbox thin" warning.
+
+### What gets logged
+
+- **stdout (per-feed):** feed name, entry count in feed, entry count fetched, per-article body-fetch status + elapsed ms.
+- **`log_run` (aggregate):** one entry per C-Transit invocation with `record_count = sum of records across all feeds`. Per-feed breakdowns are stdout-only.
+
+### What is deferred
+
+- **Weighted sampling** — categories with more entries don't get proportionally more slots; each gets at most one per round.
+- **Per-category CLI filter** — e.g. `--categories ai,health` on C-Phile's `/synth-batch`. Needed once JR has enough articles to want targeted batches.
+- **Source-quality scoring** — no per-feed reliability or editorial-quality signal yet. JR is the filter.
+- **Feed health monitoring** — no alerting if a feed goes quiet. Log review is the current signal.
+- **`--ad-hoc` mode for Transit** — spot-checking a single feed without writing to inbox. Low priority; `--feeds-config` pointing to a temp file accomplishes the same thing.
