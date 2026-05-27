@@ -17,15 +17,16 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 **Role:** Owns the voice. Turns raw articles into blog HTML and social drafts. Templating lives here so voice and structure don't drift apart.
 
-**Split into prep + consume** (see D-006). The Python script prepares a self-contained synthesis bundle; a Claude Code session (scheduled or ad-hoc) is the consumer that produces the actual drafts. No metered Anthropic API key required.
+**Split into prep + consume** (see D-006). The Python script prepares self-contained synthesis bundles; a Claude Code session (scheduled or ad-hoc) is the consumer that produces the actual drafts. No metered Anthropic API key required.
 
 - **Inputs:** Normalized articles from C-Transit; voice reference doc (`Weaving I am Content.docx`).
-- **Outputs (prep stage):** One markdown bundle per article at `research/data/drafts/_pending/phile_<ts>.md`. Bundle contains voice excerpt + article + task + output protocol.
-- **Outputs (consume stage):** `research/data/drafts/_done/phile_<ts>_social.txt` + `_blog.html`; bundle moved to `research/data/drafts/_consumed/`.
+- **Outputs (prep stage):** One markdown bundle per article at `research/data/drafts/_pending/phile_<ts>_<NN>.md`. Bundle contains voice excerpt + article + task + output protocol. `<NN>` is a zero-padded 2-digit sequence within the batch (see D-009).
+- **Outputs (consume stage):** `research/data/drafts/_done/phile_<ts>_<NN>_social.txt` + `_blog.html`; bundle moved to `research/data/drafts/_consumed/`.
 - **Owned scripts:** `scripts/phile_synthesize.py` (prep). Future: `scripts/phile_render_template.py` for per-channel variants.
+- **Batch mode:** `--count N` flag produces N bundles in one invocation, one per article from the most recent inbox JSONL. Default is 1. Single-run filenames use `_01` suffix (uniform scheme — see D-009).
 - **Consumers:**
   - **Option A (default automation):** scheduled Claude Code agent watches `_pending/` and processes bundles.
-  - **Option B (ad-hoc):** JR opens a bundle in an interactive Claude Code session.
+  - **Option B (standard on-call):** `/synth-batch [N]` slash command. Runs prep + synthesis end-to-end in one Claude Code session. Defaults to N=5 if no argument given. Writes `_social.txt` + `_blog.html` to `_done/`, moves bundles to `_consumed/`, prints a summary packet.
 - **Escalates when:** Source article is opinion-loaded, politically charged, or makes a claim the consumer can't verify against ≥2 sources. Bundle stays in `_pending/`, JR is notified.
 
 ## C-SPOTTER — target enrichment (merged)
@@ -35,6 +36,20 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 - **Inputs:** NAICS code list from HZ config; SBA cert search; public business registries.
 - **Outputs:** Enriched candidate record per business: `{name, naics, location, social_handles{}, public_financials{}, gov_award_history_flag}`. Written to `hz/*/research/data/candidates/`.
 - **Owned scripts:** `scripts/spotter_find.py`, `scripts/spotter_enrich.py`
+- **Two operating modes** (see D-010):
+  - **Pipeline mode** (no `--ad-hoc` flag): writes to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl` and logs timing via `log_run`. Used for all scheduled/prototype runs.
+    ```
+    # All 5 pipeline NAICS codes:
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py
+
+    # Specific pipeline codes:
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py 561110 561990
+    ```
+  - **Ad-hoc mode** (`--ad-hoc` flag): prints a formatted results table to stdout only. No file writes, no log entry. Used for one-off research and exploring codes outside the pipeline set.
+    ```
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc 561110
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc --limit-per-naics 5 541611 493110
+    ```
 - **Escalates when:** Business has no public footprint (no website, no social, no filings) — skip silently with a "thin-signal" log entry, do not waste a JR review slot.
 
 ## C-MainLiner — contract & award data

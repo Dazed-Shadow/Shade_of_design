@@ -163,3 +163,53 @@ Bodies are capped at **8,000 characters** and a **1.0-second polite delay** is i
 - Body sizes: 1,570–3,023 chars (all well under the 8k cap for these FR notices)
 
 **Trade-off accepted:** Each run now takes ~N seconds longer (N = article count × delay). At the default limit of 20 articles with 1.0s delay, that's ~20s overhead. Acceptable for a pipeline that runs on a schedule, not interactively. Use `--no-body` for fast feed-validation runs.
+
+---
+
+## D-009 · 2026-05-27 · C-Phile batch synthesis + uniform `_NN` suffix
+
+**Decision:** `phile_synthesize.py` gains a `--count N` flag (default 1). Every invocation — including single-bundle runs — writes files named `phile_<timestamp>_<NN>.md` where `NN` is a zero-padded 2-digit sequence (`_01`..).
+
+**Context:** The pipeline needs to consume multiple articles per session without running the prep script N times. The naming scheme had to handle N=1 and N>1 without a special-case branch anywhere downstream.
+
+**Why uniform `_NN` even for N=1:**
+- Downstream consumers (scheduled Option A agent, `/synth-batch`, any future assembler) pattern-match on filenames. A scheme that sometimes produces `phile_<ts>.md` and sometimes `phile_<ts>_01.md` forces every consumer to handle two shapes.
+- Uniform suffix means glob pattern `phile_*_??.md` always matches everything in `_pending/`. No conditional logic anywhere.
+- One-file batches are the common case during prototype; paying a two-digit suffix for that case is zero cost.
+
+**Filename scheme:** `phile_<YYYYMMDD_HHMMSS>_<NN>.md`. Timestamp is shared across the batch (set once at invocation start). NN is 1-indexed within the batch.
+
+**What's deferred (v0.1):**
+- No dedupe against previously-consumed articles. Two consecutive runs on the same inbox will produce duplicate bundles. Defer until the inbox grows large enough that duplication is noticeable (milestone: 3 clean prototype cycles).
+- Article selection is first-N from the most recent JSONL. No scoring, no staleness filter.
+
+**`log_run` behavior:** One entry per invocation with `record_count=N_actual_bundles_written`. Thin-inbox warning is appended to errors if N_requested > N_available.
+
+---
+
+## D-010 · 2026-05-27 · C-SPOTTER pipeline-vs-ad-hoc split via `--ad-hoc` flag
+
+**Decision:** `spotter_find.py` gains an `--ad-hoc` flag. When set, results go to stdout only (formatted table); no candidate file is written; no `log_run` entry is made. Without the flag, current pipeline behavior is unchanged.
+
+**Context:** JR needs to spot-check arbitrary NAICS codes during research sessions — codes outside the 5-code pipeline set. Running pipeline mode for those codes pollutes `candidates/` with non-pipeline data and adds false timing entries to `_logs/`.
+
+**Why a flag instead of a separate script:**
+- The scraping engine is identical. Two scripts would be two maintenance surfaces for the same Playwright logic.
+- Flag-based dispatch is the same pattern used by `transit_fetch_feeds.py --no-body` (fast mode vs. full mode). Consistent.
+- The divergence is purely I/O: ad-hoc skips `write_candidates()` and `log_run()`. No scraping logic changes.
+
+**What ad-hoc mode skips:**
+- Writing to `research/data/candidates/`
+- Calling `log_run` (no timing entry in `research/data/_logs/`)
+
+**What ad-hoc mode keeps:**
+- Full Playwright scraping engine
+- Anti-bot detection and graceful degradation
+- Per-NAICS limit (`--limit-per-naics`)
+- Headless/headed toggle
+
+**Positional NAICS args:** Both modes accept positional NAICS codes (same idiom as `fetch_expiring.py`). If none provided, pipeline mode uses the 5 hardcoded codes; ad-hoc mode with no codes also falls back to all 5 (though the typical ad-hoc invocation names specific codes).
+
+**When each is used:**
+- Pipeline mode (no flag): scheduled C-SPOTTER runs, prototype cycles, any run that populates `candidates/`.
+- Ad-hoc mode (`--ad-hoc`): one-off research, JR exploring a new NAICS, pre-pipeline feasibility checks.
