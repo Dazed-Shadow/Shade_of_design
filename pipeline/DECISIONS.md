@@ -329,3 +329,28 @@ The synthesis consumer (Claude Code) is the "hottest hand" in the pipeline — i
 **Implementation note — no jinja2:** jinja2 is not installed in the HZ backend venv. All HTML and markdown assembly uses Python f-strings. Output is equivalent and the script has zero new pip dependencies (stdlib only).
 
 **Known issue flagged — KFF Health body extractor broken:** The KFF Health News feed is returning wrong article content (body text does not match the article title/URL). This is a separate issue in `transit_fetch_feeds.py` body extraction, not part of this change set. Flag as next C-Transit priority.
+
+---
+
+## D-014 · 2026-05-28 · Deferred bug punch list (paired fix)
+
+**Decision:** Two production bugs surfaced during the D-012/D-013 demo run are explicitly deferred to the next session as a paired fix. Captured here so they don't go missing. Both are low-risk to ship a workaround for in the meantime.
+
+### Bug 1 — `phile_package.py` drops the Suggested Image Prompt section
+
+**Where:** `scripts/phile_package.py` section parser
+**Observed in:** `phile_batch_20260528_001916.{html,md}` — the per-article `_visual.md` files include the `### 🖼️ Suggested Image Prompt` block with a fenced code block, but the assembled package outputs end the visual direction render at `📐 Brand Integration` and silently drop the fourth section.
+**Impact:** The image prompt — the most actionable downstream artifact (paste into Gemini Image / Midjourney / DALL-E) — is invisible in the packaged review. JR has to open the individual `_visual.md` to get it.
+**Sibling cosmetic issue:** packager also renders `🎨 Visual Direction` as `🎨 Visual` (truncated header). Worth a sanity check at the same time.
+**Workaround until fixed:** Per-article `_visual.md` files in `_done/` contain the full prompt. Open one directly.
+**Fix scope estimate:** ~15 LOC tweak to section parser; pass-through the fenced code block contents.
+
+### Bug 2 — KFF Health News body extractor returns wrong content
+
+**Where:** `scripts/transit_fetch_feeds.py` generic BS4 body extractor
+**Observed in:** Every `kff_health_news_*.jsonl` record produced so far. Bodies come back as `"Rx For Clarity: Calif. Considers Bilingual Drug Labels / By April Dembosky, KQED / July 30, 2014"` regardless of which 2026 article was requested. KFF's article pages use a wrapper template that the generic extractor latches onto for the wrong DOM element.
+**Impact:** Any health-category article from KFF synthesizes from title only. Bundle 02 in the demo batch is the visible case.
+**Workaround until fixed:** Either add a KFF-specific extractor (mirror of the Federal Register specific path Sonnet built for D-008), or swap KFF for STAT News (already in the fallback list in `feeds.toml`).
+**Fix scope estimate:** ~30 LOC for a KFF-specific selector, OR a one-line feed swap to STAT News.
+
+**Pairing rationale:** Both bugs surface during the same workflow (read the package → notice missing prompts → notice thin synthesis). Fixing them together gives the next `/synth-batch` demo a clean visible upgrade rather than two separate small wins.
