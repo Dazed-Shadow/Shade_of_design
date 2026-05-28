@@ -273,3 +273,59 @@ The Verge and STAT News fallbacks were not needed and are not in `feeds.toml`; t
 - **Source-quality scoring** — no per-feed reliability or editorial-quality signal yet. JR is the filter.
 - **Feed health monitoring** — no alerting if a feed goes quiet. Log review is the current signal.
 - **`--ad-hoc` mode for Transit** — spot-checking a single feed without writing to inbox. Low priority; `--feeds-config` pointing to a temp file accomplishes the same thing.
+
+---
+
+## D-012 · 2026-05-27 · Visual direction artifact added to C-Phile bundle
+
+**Decision:** Each C-Phile bundle now tasks the consumer with producing a third output file per article: `phile_<ts>_<NN>_visual.md` — a visual direction document using JR's GEM template (writing / visual direction / brand integration / suggested image prompt).
+
+**Why the consumer produces the first pass:**
+The synthesis consumer (Claude Code) is the "hottest hand" in the pipeline — it has just written the blog draft and social post, so it holds the article's meaning and imagery most vividly. Having it fill the GEM template immediately after synthesis produces a more coherent first-pass visual direction than any downstream script could generate from the finished HTML alone. JR then reviews and adjusts before handing off to an image generation tool.
+
+**Template structure (locked — field names are used downstream by `phile_package.py`):**
+
+```
+### 🖋️ Writing
+- Title / Core Theme/Hook / Key Excerpt
+
+### 🎨 Visual Direction
+- Concept Idea / Mood/Vibe / Color Temperature
+
+### 📐 Brand Integration
+- Logo Placement / Logo Style / Text Overlays
+
+### 🖼️ Suggested Image Prompt
+(code block — single ready-to-paste prompt for Gemini Image / Midjourney / DALL-E)
+```
+
+**The Suggested Image Prompt** is written by the consumer to be pasted directly into an image generation tool. It includes subject, style, mood, color palette, and composition in 1–3 sentences. JR can use it verbatim or trim it.
+
+**Trade-off accepted:** Every bundle now produces three files instead of two. The per-article overhead at consume time is low (the consumer already has full context). Legacy batches (pre-D-012) have no `_visual.md` files; `phile_package.py` handles this gracefully with a fallback notice.
+
+---
+
+## D-013 · 2026-05-27 · Batch package generation added to C-Phile workflow
+
+**Decision:** After a batch is consumed, `scripts/phile_package.py --batch <ts>` assembles all N articles into two standalone review documents in `research/data/drafts/_packages/`:
+
+- `phile_batch_<ts>.html` — brand-themed visual review (sticky TOC, card layout, social char-count badge, blog rendered inline, visual direction styled, image prompt in copy-ready block)
+- `phile_batch_<ts>.md` — portable review (renders in Notion / Obsidian / GitHub / Tumblr; social in code block, blog as readable text, visual direction raw markdown)
+
+**Why two formats:**
+- **HTML** is the primary review surface. It renders brand colors, layout hierarchy, and the image prompt as a copy-ready block — JR sees the batch the way a reader will see the eventual posts. Best for review and approval.
+- **MD** is for portability. Paste-into-Notion, commit-to-repo, open-in-Obsidian, or publish directly on Tumblr — all work without modification. Not dependent on a browser.
+
+**`_packages/` directory rationale:** Keeping packages separate from `_done/` avoids polluting the per-article artifact directory with batch-level aggregates. `_done/` remains the canonical location for individual article files.
+
+**Naming convention:** `phile_batch_<ts>.{html,md}`. Timestamp matches the batch, making the connection to the per-article files unambiguous.
+
+**Why per-article files are kept:** Two reasons — (1) audit: JR can trace any individual piece back to its source bundle in `_consumed/`; (2) grab-one workflow: if only one article from a batch is approved, JR can grab just that article's files without unwrapping a package.
+
+**Graceful fallback on missing `_visual.md`:** The packager checks for the visual file and renders `"Visual direction not yet produced for this article."` (HTML) or `"_Visual direction not yet produced for this article._"` (MD) when the file is absent. This means packaging works on all legacy batches produced before D-012 without modification.
+
+**Brand hex codes used:** Deep Ocean Blue `#0B2C4D` (headers, card backgrounds, TOC) · Slate Grey-Blue `#5A7795` (labels, accents) · Accent link `#2E6DA4`. No external CSS assets — all styles are embedded in a single `<style>` block.
+
+**Implementation note — no jinja2:** jinja2 is not installed in the HZ backend venv. All HTML and markdown assembly uses Python f-strings. Output is equivalent and the script has zero new pip dependencies (stdlib only).
+
+**Known issue flagged — KFF Health body extractor broken:** The KFF Health News feed is returning wrong article content (body text does not match the article title/URL). This is a separate issue in `transit_fetch_feeds.py` body extraction, not part of this change set. Flag as next C-Transit priority.
