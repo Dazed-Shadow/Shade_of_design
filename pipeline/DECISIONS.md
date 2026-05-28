@@ -344,18 +344,24 @@ The synthesis consumer (Claude Code) is the "hottest hand" in the pipeline — i
 **Fix shipped:** Changed to `r"### 🖼️ Suggested Image Prompt\s*\n```"` — `\s*` absorbs the optional blank line. Also fixed the sibling cosmetic truncation: `🎨 Visual` → `🎨 Visual Direction` in the HTML section heading.
 **Verified:** Re-ran `phile_package.py --batch 20260528_001916`; image prompt now renders in both `.html` and `.md`.
 
-### Bug 2 — KFF Health News body extractor returns wrong content
+### Bug 2 — KFF Health News body extractor returns wrong content — **RESOLVED (D-014.2)**
 
-**Where:** `scripts/transit_fetch_feeds.py` generic BS4 body extractor
-**Observed in:** Every `kff_health_news_*.jsonl` record produced so far. Bodies come back as `"Rx For Clarity: Calif. Considers Bilingual Drug Labels / By April Dembosky, KQED / July 30, 2014"` regardless of which 2026 article was requested. KFF's article pages use a wrapper template that the generic extractor latches onto for the wrong DOM element.
-**Impact:** Any health-category article from KFF synthesizes from title only. Bundle 02 in the demo batch is the visible case.
-**Workaround until fixed:** Either add a KFF-specific extractor (mirror of the Federal Register specific path Sonnet built for D-008), or swap KFF for STAT News (already in the fallback list in `feeds.toml`).
-**Fix scope estimate:** ~30 LOC for a KFF-specific selector, OR a one-line feed swap to STAT News.
+**Where:** `scripts/transit_fetch_feeds.py` generic BS4 body extractor (`_extract_body_generic`)
+**Observed in:** Every `kff_health_news_*.jsonl` record produced so far. Bodies came back as `"Rx For Clarity: Calif. Considers Bilingual Drug Labels / By April Dembosky, KQED / July 30, 2014"` regardless of which 2026 article was requested. KFF's article pages use a wrapper template that the generic extractor latched onto for the wrong DOM element.
+**Impact:** Any health-category article from KFF synthesized from title only. Bundle 02 in the demo batch was the visible case.
+
+**Root cause:** KFF wraps its "related articles" footer cards in `<article>` tags (class `article-pre-footer__post`) and puts the real article body in `<main>` (specifically `div.wp-block-kff-news-modern-news-content-container`). The generic extractor's preference order — `article → main → entry-content → …` — caused `soup.find("article")` to return the **first** related-post card on the page rather than the real article. The body of that card (a recommendation tile pointing to a 2014 KQED piece) is what landed in every KFF JSONL record.
+
+**Fix shipped:** Two complementary changes to `_extract_body_generic`, keeping the FR-vs-generic two-path design from D-008 intact:
+1. Added a class-name strip pass: any element whose class matches `(related|recommended|pre-footer|sidebar|share|comments?|newsletter|promo|subscribe)` is `decompose()`'d before container selection. Also added `aside` and `form` to the structural-noise tag list. This removes the related-posts wrapper entirely on KFF pages.
+2. Changed `<article>` selection from "first match" to "largest by text length" via `max(soup.find_all("article"), key=len_of_text)`. Defensive against any other site that nests boilerplate `<article>` tags around the real one.
+
+**Verified:** Ran `_extract_body_generic` against three KFF URLs (Nurse / Montana Medicaid / Letters to Editor) and three regression sources (Ars Technica, BBC World, MIT Tech Review). KFF bodies now match their titles; the other three sources are unchanged.
 
 **Pairing rationale:** Both bugs surface during the same workflow (read the package → notice missing prompts → notice thin synthesis). Fixing them together gives the next `/synth-batch` demo a clean visible upgrade rather than two separate small wins.
 
 **D-014.1 status:** RESOLVED (shipped in same session).
-**D-014.2 status:** Open — explicitly deprioritized below SPOTTER Phase 2 narrative work (see D-015). KFF body extractor is a known issue; workaround is to swap the KFF feed for STAT News in `feeds.toml`.
+**D-014.2 status:** RESOLVED (2026-05-28, branch `claude/military-contract-search-tool-9hm2D`, not yet pushed).
 
 ---
 
@@ -394,4 +400,46 @@ The following are known desired capabilities not shipped in this session:
 | PDF download of the review package | Low urgency; HTML prints to PDF natively. Revisit when JR requests offline-first distribution. |
 | Website fetch + classification (what does the business actually do) | Additional Playwright load per business; content classification needs its own quality gate. Phase 2 enrichment pass. |
 | Award history cross-reference (SAM.gov FPDS lookup) | SAM.gov award data requires the HZ API key and a separate query path. C-MainLiner owns this data; wire up in the C-Comms assembly stage. |
-| SAM.gov entity profile outbound link | Investigated 2026-05-28: SBA cert profile pages do not include an outbound link to sam.gov entity pages. `sam_profile_url` will always be null until SBA adds this link or a separate SAM.gov lookup is added (Phase 2). |
+| SAM.gov entity profile outbound link | Investigated 2026-05-28: SBA cert profile pages do not include an outbound link to sam.gov entity pages. `sam_profile_url` will always be null until SBA adds this link or a separate SAM.gov lookup is added (Phase 2). **RESOLVED in D-015 Phase 2 below.** |
+
+---
+
+## D-015 Phase 2 · 2026-05-28 · `sam_profile_url` via UEI extraction, not Entity API
+
+### Decision
+
+`_enrich_profile()` in `scripts/spotter_find.py` now populates `sam_profile_url` by:
+
+1. First scanning the SBA cert profile DOM for any outbound `sam.gov` entity link (defensive — currently SBA emits none, but if they ever add one we want the real link).
+2. Falling back to a regex (`UEI[:\s]+([A-Z0-9]{12})`) over the profile page body text to extract the UEI, then constructing the canonical URL: `https://sam.gov/entity/{UEI}/coreData?status=Active`.
+
+No SAM.gov Entity API (`api.sam.gov/entity-information/v3/entities`) call is made.
+
+### Why not the Entity API
+
+HZ already holds a `SAM_GOV_API_KEY` for the Opportunities v2 endpoint, so the Entity API call would have been technically straightforward. We rejected it on principle:
+
+> **"Let the site be the eater of our API limits, not the data pipeline."** — JR, 2026-05-28
+
+The HZ frontend and any user-driven action is the legitimate consumer of the SAM.gov daily quota — that's where each call has direct human value. Pipeline enrichment over N candidates per day would silently consume the quota for records no human may ever look at. Worse, exhausting the quota in the pipeline would degrade the live site.
+
+The Entity API would only add value if we needed to *verify* the entity exists before linking. For a click-out URL on a review surface, "construct and let the user 404" is acceptable — and far cheaper.
+
+### Why UEI extraction is safe to construct from
+
+- The UEI is part of the rendered profile page (`UEI: H26KNRBSEX89`), placed there by SBA itself. If it's on the page, it's a registered SAM identifier.
+- `https://sam.gov/entity/{UEI}/coreData?status=Active` is the URL SAM.gov's own frontend produces for entity profile views — it's not a guess, it's the canonical pattern.
+- Failure mode (entity recently delisted): the link 404s. The review package handles null + invalid gracefully; this is a known acceptable degradation.
+
+### Generalized rule for the pipeline (applies to all agents)
+
+When a pipeline agent considers calling a metered third-party API to enrich a record, prefer in this order:
+
+1. Extract from a page already in flight (free).
+2. Construct a deterministic canonical URL from a known ID (free).
+3. Only call the metered API if neither path yields the answer.
+
+This rule is binding on C-MainLiner's planned FPDS award-history work — investigate scraping or canonical-URL approaches before consuming the HZ SAM.gov key inside the pipeline. C-Comms inherits the same constraint when assembling outreach context.
+
+### Files touched
+- `HZ/scripts/spotter_find.py` — added `re` import, `UEI_RE`, `SAM_ENTITY_URL_TEMPLATE`, and updated `_enrich_profile()` sam_profile_url block with link-first / UEI-fallback strategy.
