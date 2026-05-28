@@ -45,11 +45,27 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 ## C-SPOTTER — target enrichment (merged)
 
-**Role:** Single pass over NAICS-matched small businesses. Finds them, captures social presence AND public financial signals in one record. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
+**Role:** Single pass over NAICS-matched small businesses. Finds them and enriches each record with contact and identity data in one run. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
 
-- **Inputs:** NAICS code list from HZ config; SBA cert search; public business registries.
-- **Outputs:** Enriched candidate record per business: `{name, naics, location, social_handles{}, public_financials{}, gov_award_history_flag}`. Written to `hz/*/research/data/candidates/`.
-- **Owned scripts:** `scripts/spotter_find.py`, `scripts/spotter_enrich.py`
+**Pipeline mode v2** (D-015): candidates JSONL now includes CAGE code, business website, email, contact name, and SAM profile URL where available. Enrichment runs inline in `spotter_find.py` — no separate script required.
+
+- **Inputs:** NAICS code list from HZ config; SBA cert search (Playwright-driven React SPA).
+- **Outputs:** Enriched candidate record per business (one JSON per line):
+  ```
+  {
+    name, naics, url,                    ← v1 fields (stable)
+    cage_code,                           ← CAGE code from SBA profile (null if not on page)
+    business_website,                    ← company website (null if not on page)
+    email,                               ← POC email (null if not on page)
+    contact_name,                        ← POC name (null if not on page)
+    sam_profile_url                      ← SAM.gov entity link (always null for now — SBA doesn't link out; Phase 2)
+  }
+  ```
+  Written to `hz/*/research/data/candidates/spotter_<YYYY-MM-DD>.jsonl`.
+- **Owned scripts:** `scripts/spotter_find.py` (find + enrich in one run), `scripts/spotter_package.py` (review package assembly)
+- **Review packages** (D-015): after the enrichment run, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
+  - `spotter_review_<date>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), accordion grouped by NAICS code, one business card per record, null fields shown as dimmed "not on profile" placeholders, all links open `target="_blank"`.
+  - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. Columns: `name, naics_matched, cage_code, business_website, email, contact_name, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`. Last three columns blank — JR annotation space.
 - **Two operating modes** (see D-010):
   - **Pipeline mode** (no `--ad-hoc` flag): writes to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl` and logs timing via `log_run`. Used for all scheduled/prototype runs.
     ```
@@ -58,12 +74,21 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
     # Specific pipeline codes:
     backend/.venv/Scripts/python.exe scripts/spotter_find.py 561110 561990
+
+    # With custom profile delay:
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py --profile-delay-seconds 2.0
     ```
   - **Ad-hoc mode** (`--ad-hoc` flag): prints a formatted results table to stdout only. No file writes, no log entry. Used for one-off research and exploring codes outside the pipeline set.
     ```
     backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc 561110
     backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc --limit-per-naics 5 541611 493110
     ```
+  - **Package generation** (after a pipeline run):
+    ```
+    backend/.venv/Scripts/python.exe scripts/spotter_package.py --date 2026-05-28
+    ```
+- **Politeness:** `--delay-seconds` (default 1.5s) between NAICS code searches; `--profile-delay-seconds` (default 1.5s) between individual profile page dives. Enrichment adds N additional page loads (one per business) on top of the NAICS search.
+- **Fail-soft enrichment:** any field missing on a profile is set to null and a gap warning is logged. One missing field never aborts the record or the run.
 - **Escalates when:** Business has no public footprint (no website, no social, no filings) — skip silently with a "thin-signal" log entry, do not waste a JR review slot.
 
 ## C-MainLiner — contract & award data

@@ -336,14 +336,13 @@ The synthesis consumer (Claude Code) is the "hottest hand" in the pipeline — i
 
 **Decision:** Two production bugs surfaced during the D-012/D-013 demo run are explicitly deferred to the next session as a paired fix. Captured here so they don't go missing. Both are low-risk to ship a workaround for in the meantime.
 
-### Bug 1 — `phile_package.py` drops the Suggested Image Prompt section
+### Bug 1 — `phile_package.py` drops the Suggested Image Prompt section — **RESOLVED (D-014.1)**
 
 **Where:** `scripts/phile_package.py` section parser
 **Observed in:** `phile_batch_20260528_001916.{html,md}` — the per-article `_visual.md` files include the `### 🖼️ Suggested Image Prompt` block with a fenced code block, but the assembled package outputs end the visual direction render at `📐 Brand Integration` and silently drop the fourth section.
-**Impact:** The image prompt — the most actionable downstream artifact (paste into Gemini Image / Midjourney / DALL-E) — is invisible in the packaged review. JR has to open the individual `_visual.md` to get it.
-**Sibling cosmetic issue:** packager also renders `🎨 Visual Direction` as `🎨 Visual` (truncated header). Worth a sanity check at the same time.
-**Workaround until fixed:** Per-article `_visual.md` files in `_done/` contain the full prompt. Open one directly.
-**Fix scope estimate:** ~15 LOC tweak to section parser; pass-through the fenced code block contents.
+**Root cause:** Regex `r"### 🖼️ Suggested Image Prompt\n```"` required the fence to immediately follow the header. The actual `_visual.md` files have a blank line between the header and the fence, causing the regex to never match.
+**Fix shipped:** Changed to `r"### 🖼️ Suggested Image Prompt\s*\n```"` — `\s*` absorbs the optional blank line. Also fixed the sibling cosmetic truncation: `🎨 Visual` → `🎨 Visual Direction` in the HTML section heading.
+**Verified:** Re-ran `phile_package.py --batch 20260528_001916`; image prompt now renders in both `.html` and `.md`.
 
 ### Bug 2 — KFF Health News body extractor returns wrong content
 
@@ -354,3 +353,45 @@ The synthesis consumer (Claude Code) is the "hottest hand" in the pipeline — i
 **Fix scope estimate:** ~30 LOC for a KFF-specific selector, OR a one-line feed swap to STAT News.
 
 **Pairing rationale:** Both bugs surface during the same workflow (read the package → notice missing prompts → notice thin synthesis). Fixing them together gives the next `/synth-batch` demo a clean visible upgrade rather than two separate small wins.
+
+**D-014.1 status:** RESOLVED (shipped in same session).
+**D-014.2 status:** Open — explicitly deprioritized below SPOTTER Phase 2 narrative work (see D-015). KFF body extractor is a known issue; workaround is to swap the KFF feed for STAT News in `feeds.toml`.
+
+---
+
+## D-015 · 2026-05-28 · SPOTTER Phase 1 enrichment + two-format review package
+
+### Enrichment inline in `spotter_find.py` (not a separate script)
+
+**Decision:** CAGE code, business website, email, contact name, and SAM profile URL are scraped in a second pass inside the same `spotter_find.py` run (after collecting all business URLs from the NAICS search). No separate `spotter_enrich.py` script.
+
+**Why inline:**
+- The SBA cert profile page is already the navigation target of the existing scraper — `url` in each record IS the profile URL. A separate enrichment script would re-navigate every URL that `spotter_find.py` already visited.
+- Keeping enrichment in one run means one Playwright browser session, one log entry, one output file, and one place to diagnose failures. Splitting would double the state surface for no architectural gain.
+- The enriched fields are stable attributes of the record (not computed or aggregated). They belong in the base record, not in a second-pass file.
+
+**Why not a dedicated `spotter_enrich.py`:**
+- Would create a two-step workflow (find → enrich) where the enrichment step is required before the review package is usable. A single run that produces a complete record is simpler for JR.
+- Backwards compatibility: old consumers reading `{name, naics, url}` are unaffected — new fields are additive. There's no schema migration to manage.
+
+### Two-format review package (`spotter_package.py`)
+
+**Decision:** `scripts/spotter_package.py` produces an HTML visual review and a CSV annotation sheet per date.
+
+**Rationale for two formats (parallel to D-013 for C-Phile):**
+- **HTML** (`spotter_review_<date>.html`): fast visual scan grouped by NAICS, click-out links to SBA profile and business website, null fields visually dimmed ("not on profile"). Purpose: JR rapidly assesses which businesses are worth pursuing without opening individual profiles.
+- **CSV** (`spotter_review_<date>.csv`): clean tabular data with three blank annotation columns (`jr_status`, `jr_notes`, `jr_priority`). UTF-8-BOM + QUOTE_ALL so Excel and Google Sheets open it without configuration. Purpose: JR's working annotation surface — mark status, add notes, rank by priority.
+
+The two formats are complementary, not redundant. HTML is read-only and optimized for scanning; CSV is writable and optimized for annotation.
+
+### Phase 2 deferred items (explicit out-of-scope for Phase 1)
+
+The following are known desired capabilities not shipped in this session:
+
+| Item | Reason deferred |
+|---|---|
+| Per-business C-Comms narrative ("why this business now") | Requires C-Comms agent and JR-approved outreach voice. Blocked on D-005 exit criteria. |
+| PDF download of the review package | Low urgency; HTML prints to PDF natively. Revisit when JR requests offline-first distribution. |
+| Website fetch + classification (what does the business actually do) | Additional Playwright load per business; content classification needs its own quality gate. Phase 2 enrichment pass. |
+| Award history cross-reference (SAM.gov FPDS lookup) | SAM.gov award data requires the HZ API key and a separate query path. C-MainLiner owns this data; wire up in the C-Comms assembly stage. |
+| SAM.gov entity profile outbound link | Investigated 2026-05-28: SBA cert profile pages do not include an outbound link to sam.gov entity pages. `sam_profile_url` will always be null until SBA adds this link or a separate SAM.gov lookup is added (Phase 2). |
