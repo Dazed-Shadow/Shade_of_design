@@ -443,3 +443,61 @@ This rule is binding on C-MainLiner's planned FPDS award-history work — invest
 
 ### Files touched
 - `HZ/scripts/spotter_find.py` — added `re` import, `UEI_RE`, `SAM_ENTITY_URL_TEMPLATE`, and updated `_enrich_profile()` sam_profile_url block with link-first / UEI-fallback strategy.
+
+---
+
+## D-017 · 2026-05-28 · C-Phile cross-batch dedupe + article catalog
+
+### Problem
+
+`pick_articles` deduped only within a single batch. The same article (e.g. the Brightwood Capital SBIC Section 312 notice) appeared in three consecutive `/synth-batch` runs because nothing checked "have we already synthesized this URL." JR was re-reviewing the same content.
+
+### Cross-batch dedupe (URL-only, v1)
+
+**Decision:** Before picking new articles, `pick_articles` scans `research/data/drafts/_consumed/*.md` for all previously-synthesized URLs (parsed from the `## Source article` section of each bundle). Any matching URL is excluded from the candidate pool.
+
+**Why URL-only, not title normalization or content hashing:**
+- URL is the natural primary key for the article — it's what the feed emits, what the bundle stores, and what JR would compare manually.
+- Title normalization is fragile: the same story can have slightly different titles across syndication sources. Content hashing requires full body presence, which is absent in early thin bundles.
+- URL-only is correct 95% of the time. Edge cases are acceptable for v1:
+  - Same story republished at a new URL → re-synthesized. Acceptable: new URL = new editorial cut.
+  - Same story from two different sources (e.g. KFF + STAT) → both synthesized. Acceptable: different voice/framing, cross-source synthesis is a feature, not a bug.
+
+**Why `_consumed/` is the source of truth (not a separate state file):**
+- `_consumed/` is append-only by nature — bundles land there when consumed and are never deleted in normal operation.
+- A separate state file (e.g. a `seen_urls.txt`) would be a second place that needs to stay in sync with `_consumed/`. When they drift (crash, manual file move), the dedupe silently breaks. The bundle itself is the canonical record.
+- Scanning `_consumed/*.md` at pick time is cheap: regex over ~N small files, dominated by file I/O. At 100 consumed bundles, scanning takes < 100ms.
+
+**`--allow-duplicates` escape hatch:**
+- Skips the `_consumed/` scan entirely.
+- When to use: re-synthesizing an article whose first bundle was thin (e.g. the KFF nurse story before the KFF body extractor was fixed — D-014.2). The escape hatch lets JR produce a better synthesis without deleting the original consumed bundle.
+- Invocation: `python scripts/phile_synthesize.py --count 1 --allow-duplicates`
+
+**Log line emitted:** `[INFO] Excluded N already-consumed URL(s) from picker pool.`
+
+### Article catalog (`scripts/phile_catalog.py`)
+
+**Three output files in `research/data/drafts/_catalog/`:**
+
+| File | Purpose |
+|------|---------|
+| `articles.jsonl` | Machine-readable. One JSON object per line: `{url, title, source, source_name, category, batch_ts, bundle_slug, consumed_at}`. Sorted by `consumed_at` descending. Deduplicated (first occurrence wins on duplicate URL). |
+| `index.html` | Brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795) sortable table. Vanilla JS sort helper (~30 LOC) on `<table>` headers — no external assets. Columns: Consumed · Source · Category · Title (linked) · Batch. |
+| `summary.md` | Human summary: (1) counts by source, (2) counts by category, (3) recent activity timeline — bullet list of last 14 days grouped by date. |
+
+**Category derivation:**
+Category is not stored in the bundle directly. `phile_catalog.py` loads `research/feeds.toml` and matches the bundle's `source` slug against feed names and URL domain fragments. Unmatched sources → `"uncategorized"`.
+
+**Idempotent:** Re-running always rebuilds all three files from current `_consumed/` state. No append-only flavor; no state to manage.
+
+**No new dependencies:** `tomllib` is stdlib (Python 3.11+). Everything else in the script is stdlib + nothing.
+
+### `/synth-batch` update
+
+Step 6 (new): after `phile_package.py`, run `phile_catalog.py` to refresh the catalog. Catalog path included in the summary packet.
+
+### Documented edge cases
+
+- **Same story, new URL:** Re-synthesized. Intentional — new URL = new editorial context.
+- **Same story, two sources (e.g. KFF + STAT):** Both synthesized. Intentional — cross-source synthesis is a feature.
+- **Bundle without a URL in `## Source article`:** Excluded from catalog (no dedupe key). Rare: only pre-D-009 single-article bundles without a `--NN` suffix have this shape.

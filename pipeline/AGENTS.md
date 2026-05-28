@@ -36,11 +36,17 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
   - `phile_batch_<ts>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), sticky TOC, card layout with social char-count badge, blog rendered inline, visual direction styled, image prompt in copy-ready code block.
   - `phile_batch_<ts>.md` — portable; renders cleanly in Notion / Obsidian / GitHub / Tumblr. Social in code block, blog as readable text, visual direction raw markdown, image prompt in code block.
   Per-article files are kept for audit and grab-one workflows (see D-013).
-- **Owned scripts:** `scripts/phile_synthesize.py` (prep), `scripts/phile_package.py` (batch package assembly). Future: `scripts/phile_render_template.py` for per-channel variants.
-- **Batch mode:** `--count N` flag produces N bundles in one invocation. Default is 1. Single-run filenames use `_01` suffix (uniform scheme — see D-009). Batch selection now round-robins across categories — reads all today's inbox JSONLs (one per feed), dedupes by URL, then picks one article per category per round until `count` is reached. If a category runs dry it is skipped. See D-011 for algorithm details.
+- **Owned scripts:** `scripts/phile_synthesize.py` (prep), `scripts/phile_package.py` (batch package assembly), `scripts/phile_catalog.py` (article catalog). Future: `scripts/phile_render_template.py` for per-channel variants.
+- **Batch mode:** `--count N` flag produces N bundles in one invocation. Default is 1. Single-run filenames use `_01` suffix (uniform scheme — see D-009). Batch selection round-robins across categories — reads all today's inbox JSONLs (one per feed), dedupes by URL, then picks one article per category per round until `count` is reached. If a category runs dry it is skipped. See D-011 for algorithm details.
+- **Cross-batch dedupe** (D-017): before selecting articles, `pick_articles` scans `research/data/drafts/_consumed/*.md` and builds a set of previously-synthesized URLs. Any inbox article whose URL is already in that set is excluded from the picker pool. Log line: `[INFO] Excluded N already-consumed URL(s) from picker pool.` Use `--allow-duplicates` to skip dedupe (e.g. re-synthesizing a thin-body article after the body extractor was fixed).
 - **Consumers:**
   - **Option A (default automation):** scheduled Claude Code agent watches `_pending/` and processes bundles.
-  - **Option B (standard on-call):** `/synth-batch [N]` slash command. Runs prep + synthesis end-to-end in one Claude Code session. Defaults to N=5 if no argument given. Writes `_social.txt`, `_blog.html`, and `_visual.md` to `_done/`, moves bundles to `_consumed/`, runs `phile_package.py` to assemble the two batch review packages, and prints a summary packet with package paths.
+  - **Option B (standard on-call):** `/synth-batch [N]` slash command. Runs prep + synthesis end-to-end in one Claude Code session. Defaults to N=5 if no argument given. Writes `_social.txt`, `_blog.html`, and `_visual.md` to `_done/`, moves bundles to `_consumed/`, runs `phile_package.py` to assemble the two batch review packages, runs `phile_catalog.py` to refresh the article catalog, and prints a summary packet with package and catalog paths.
+- **Article catalog** (D-017): `scripts/phile_catalog.py` rebuilds three files in `research/data/drafts/_catalog/` from the current `_consumed/` state:
+  - `articles.jsonl` — machine-readable, one JSON object per consumed article, sorted newest first.
+  - `index.html` — brand-themed sortable table; click column headers to re-sort by Consumed / Source / Category / Title / Batch.
+  - `summary.md` — counts by source, counts by category, 14-day activity timeline.
+  Fully idempotent; no state to manage.
 - **Escalates when:** Source article is opinion-loaded, politically charged, or makes a claim the consumer can't verify against ≥2 sources. Bundle stays in `_pending/`, JR is notified.
 
 ## C-SPOTTER — target enrichment (merged)
