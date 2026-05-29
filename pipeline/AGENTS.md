@@ -53,7 +53,7 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 **Role:** Single pass over NAICS-matched small businesses. Finds them and enriches each record with contact and identity data in one run. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
 
-**Pipeline mode v2** (D-015): candidates JSONL now includes CAGE code, business website, email, contact name, and SAM profile URL where available. Enrichment runs inline in `spotter_find.py` — no separate script required.
+**Pipeline mode v3** (D-015 + D-020): candidates JSONL now includes CAGE code, business website, email, contact name, SAM profile URL, and a PDF snapshot of each profile where available. Enrichment and PDF capture run inline in `spotter_find.py` — no separate script required.
 
 - **Inputs:** NAICS code list from HZ config; SBA cert search (Playwright-driven React SPA).
 - **Outputs:** Enriched candidate record per business (one JSON per line):
@@ -64,14 +64,18 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
     business_website,                    ← company website (null if not on page)
     email,                               ← POC email (null if not on page)
     contact_name,                        ← POC name (null if not on page)
-    sam_profile_url                      ← SAM.gov entity link (always null for now — SBA doesn't link out; Phase 2)
+    sam_profile_url,                     ← SAM.gov entity link via UEI extraction (D-015 Phase 2)
+    profile_pdf                          ← relative path to PDF snapshot, e.g.
+                                           "research/data/candidates/_pdfs/9AZM9.pdf"
+                                           null if --no-pdf or capture failed (D-020)
   }
   ```
   Written to `hz/*/research/data/candidates/spotter_<YYYY-MM-DD>.jsonl`.
-- **Owned scripts:** `scripts/spotter_find.py` (find + enrich in one run), `scripts/spotter_package.py` (review package assembly)
-- **Review packages** (D-015): after the enrichment run, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
-  - `spotter_review_<date>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), accordion grouped by NAICS code, one business card per record, null fields shown as dimmed "not on profile" placeholders, all links open `target="_blank"`.
-  - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. Columns: `name, naics_matched, cage_code, business_website, email, contact_name, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`. Last three columns blank — JR annotation space.
+  PDF snapshots written to `hz/*/research/data/candidates/_pdfs/<cage_code>.pdf`.
+- **Owned scripts:** `scripts/spotter_find.py` (find + enrich + PDF in one run), `scripts/spotter_package.py` (review package assembly)
+- **Review packages** (D-015 + D-020): after the enrichment run, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
+  - `spotter_review_<date>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), accordion grouped by NAICS code, one business card per record, null fields shown as dimmed "not on profile" placeholders. Each card header includes `📎 Profile PDF` (`file://` link, opens in default PDF viewer) if a PDF exists, or a dimmed "no PDF" placeholder otherwise.
+  - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. Columns: `name, naics_matched, cage_code, business_website, email, contact_name, pdf_path, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`. Last three columns blank — JR annotation space. `pdf_path` is the relative path or blank.
 - **Two operating modes** (see D-010):
   - **Pipeline mode** (no `--ad-hoc` flag): writes to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl` and logs timing via `log_run`. Used for all scheduled/prototype runs.
     ```
@@ -83,6 +87,9 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
     # With custom profile delay:
     backend/.venv/Scripts/python.exe scripts/spotter_find.py --profile-delay-seconds 2.0
+
+    # Skip PDF capture (faster, no _pdfs/ writes):
+    backend/.venv/Scripts/python.exe scripts/spotter_find.py --no-pdf
     ```
   - **Ad-hoc mode** (`--ad-hoc` flag): prints a formatted results table to stdout only. No file writes, no log entry. Used for one-off research and exploring codes outside the pipeline set.
     ```
@@ -93,8 +100,9 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
     ```
     backend/.venv/Scripts/python.exe scripts/spotter_package.py --date 2026-05-28
     ```
-- **Politeness:** `--delay-seconds` (default 1.5s) between NAICS code searches; `--profile-delay-seconds` (default 1.5s) between individual profile page dives. Enrichment adds N additional page loads (one per business) on top of the NAICS search.
-- **Fail-soft enrichment:** any field missing on a profile is set to null and a gap warning is logged. One missing field never aborts the record or the run.
+- **CLI flags:** `--limit-per-naics N` · `--headed` · `--delay-seconds` · `--profile-delay-seconds` · `--ad-hoc` · `--no-pdf`
+- **Politeness:** `--delay-seconds` (default 1.5s) between NAICS code searches; `--profile-delay-seconds` (default 1.5s) between individual profile page dives. Enrichment adds N additional page loads (one per business) on top of the NAICS search. PDF capture fires on the already-loaded profile page — no extra navigation.
+- **Fail-soft enrichment:** any field missing on a profile is set to null and a gap warning is logged. One missing field never aborts the record or the run. PDF capture failures follow the same pattern: logged to stdout and `log_run` errors, `profile_pdf` set to null, run continues.
 - **Escalates when:** Business has no public footprint (no website, no social, no filings) — skip silently with a "thin-signal" log entry, do not waste a JR review slot.
 
 ## C-MainLiner — contract & award data

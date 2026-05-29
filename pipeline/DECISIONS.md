@@ -501,3 +501,39 @@ Step 6 (new): after `phile_package.py`, run `phile_catalog.py` to refresh the ca
 - **Same story, new URL:** Re-synthesized. Intentional — new URL = new editorial context.
 - **Same story, two sources (e.g. KFF + STAT):** Both synthesized. Intentional — cross-source synthesis is a feature.
 - **Bundle without a URL in `## Source article`:** Excluded from catalog (no dedupe key). Rare: only pre-D-009 single-article bundles without a `--NN` suffix have this shape.
+
+---
+
+## D-020 · 2026-05-29 · Per-business PDF capture in C-SPOTTER
+
+### Decision
+
+After `_enrich_profile()` completes each SBA cert profile, `spotter_find.py` captures the rendered page as a PDF using Playwright's `page.pdf()`. PDFs land in `research/data/candidates/_pdfs/<cage_code>.pdf`. A new `profile_pdf` field (relative path or null) is written into each JSONL record. `spotter_package.py` surfaces the PDF as a `📎 Profile PDF` `file://` link on the HTML card and as a `pdf_path` column in the CSV.
+
+### Why `page.pdf()` over a click-the-SBA-download-button approach
+
+The SBA certifications portal exposes no download affordance — there is no "export" or "print as PDF" button on profile pages. The page is a React SPA; the only reliable way to capture the rendered profile is via Playwright's `page.pdf()`, which renders Chromium's print output directly. No third-party tool, no additional network call, no user interaction required.
+
+### Why CAGE code as filename
+
+CAGE is a five-character government-issued identifier: deterministic, unique per entity, never changes across profile updates, and is the same identifier JR uses everywhere else for cross-reference (CSV, JSONL, SAM.gov lookup). A business-name slug would be fragile (name changes, non-ASCII, duplicates in long runs). CAGE wins on all four criteria.
+
+Fallback: `_unknown_<slug>.pdf` for the rare case where CAGE is null (shouldn't happen but is defensive per D-015's fail-soft pattern).
+
+### Why default-ON capture
+
+Storage is cheap (~10–25 MB per 50-business run at ~200–500 KB/PDF). The asset is genuine research value — a timestamped snapshot of the profile as it existed at scrape time, useful for JR's offline review and as an audit artifact. JR has `--no-pdf` if he needs to skip (faster runs, no disk writes).
+
+### Storage estimate
+
+Observed PDF sizes: 200–500 KB per profile on the SBA cert React SPA. At 50 businesses per pipeline run: ~10–25 MB per run. `research/data/candidates/_pdfs/` is inside `research/data/` which is already gitignored via untracked directory convention — no repo bloat.
+
+### Failure mode
+
+PDF errors are wrapped in try/except inside `_capture_pdf()`. A failure logs a per-record warning to stdout and appends to `all_errors` (which flows into `log_run`), but does not abort the record or the run. `profile_pdf` is set to null for that record. The enrichment run continues normally.
+
+### Files touched
+
+- `HZ/scripts/spotter_find.py` — added `PDFS_DIR`, `_slugify()`, `_capture_pdf()`, `--no-pdf` argparse flag, PDF call in enrichment loop, `profile_pdf` field on each record.
+- `HZ/scripts/spotter_package.py` — added `pdf_path` CSV column (between `contact_name` and `sba_profile_url`), `📎 Profile PDF` `file://` link / dimmed "no PDF" placeholder in HTML card header.
+- `Central Hub/pipeline/AGENTS.md` — updated C-SPOTTER outputs schema, `_pdfs/` directory note, `--no-pdf` CLI flag.
