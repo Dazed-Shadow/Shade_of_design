@@ -537,3 +537,87 @@ PDF errors are wrapped in try/except inside `_capture_pdf()`. A failure logs a p
 - `HZ/scripts/spotter_find.py` — added `PDFS_DIR`, `_slugify()`, `_capture_pdf()`, `--no-pdf` argparse flag, PDF call in enrichment loop, `profile_pdf` field on each record.
 - `HZ/scripts/spotter_package.py` — added `pdf_path` CSV column (between `contact_name` and `sba_profile_url`), `📎 Profile PDF` `file://` link / dimmed "no PDF" placeholder in HTML card header.
 - `Central Hub/pipeline/AGENTS.md` — updated C-SPOTTER outputs schema, `_pdfs/` directory note, `--no-pdf` CLI flag.
+
+---
+
+## D-021 · 2026-05-30 · C-SPOTTER award history enrichment via USAspending.gov
+
+### Decision
+
+Add a post-scrape award enrichment pass (`scripts/spotter_awards.py`) that queries
+USAspending.gov for each candidate's federal contract history and writes a sidecar
+JSONL. `spotter_package.py` prefers the sidecar when it exists and renders the award
+data in the HTML card and the CSV.
+
+### Why USAspending, not SAM.gov Opportunities/FPDS
+
+JR's standing API-budget rule (D-015 Phase 2): reserve the HZ `SAM_GOV_API_KEY` for
+user-facing flows. Every pipeline call to the SAM.gov metered endpoint consumes quota
+that belongs to the live site. USAspending is a separate government API
+(`api.usaspending.gov`) with no authentication requirement, generous rate limits, and
+full FPDS coverage indexed by recipient UEI — the same identifier we already carry in
+`sam_profile_url`.
+
+Rule generalized: pipeline enrichment that could be satisfied by a free API must prefer
+the free API. SAM.gov key is the last resort, not the first reach.
+
+### Sidecar file pattern (`spotter_<date>_awards.jsonl`)
+
+The enrichment output is written to a **sidecar** alongside the raw scrape rather than
+overwriting it. Rationale:
+
+- **Preserves the canonical raw scrape.** `spotter_find.py` and `spotter_awards.py` are
+  independently re-runnable. Re-enriching after a USAspending outage or a API change
+  requires only re-running the awards script, not re-running Playwright.
+- **Allows partial enrichment.** `--limit N` on `spotter_awards.py` writes partial
+  sidecar files. The packager uses whatever sidecar exists; running the packager before
+  enrichment finishes (or before it runs at all) still works — it falls back to the raw
+  scrape and renders no award data.
+- **Packager preference order:** `spotter_<date>_awards.jsonl` if present →
+  `spotter_<date>.jsonl` otherwise. Transparent to downstream consumers.
+
+### Three `award_status` values and downstream meaning
+
+| Value | Meaning | HTML rendering | CSV cells |
+|---|---|---|---|
+| `"has_awards"` | At least one prime contract found | First + latest award grid with count badge | Date/amount/agency fields populated |
+| `"no_federal_awards_found"` | Query succeeded, zero contract results | "No federal awards found yet — ground-floor candidate." | All award cells blank, status recorded |
+| `"lookup_failed"` | Network/parse error on USAspending call | "Lookup unavailable." | Status recorded, all others blank |
+
+`"no_federal_awards_found"` is the most strategically interesting signal: a certified
+small business with zero federal award history is a **ground-floor candidate** —
+they've completed the bureaucratic certification work but haven't yet landed a contract.
+As JR put it: "Started from zero, help those who want to help." These businesses are
+easier to displace competitors against and more receptive to outreach that offers
+practical contract-winning guidance.
+
+### Annotation preservation in `spotter_package.py` (CRITICAL)
+
+Before writing a new CSV, `spotter_package.py` checks if a CSV already exists at the
+output path. If one exists, it reads `jr_status`, `jr_notes`, and `jr_priority` and
+builds a `{cage_code → annotations}` map. When writing the new CSV, it looks up each
+row's CAGE code against that map and carries forward any non-blank annotation values.
+
+**Why CAGE-keyed (not name-keyed):** CAGE is a government-issued five-character
+identifier, unique and stable. Business names can contain special characters, change
+over time, or differ slightly across sources. CAGE is the correct primary key for
+cross-run carry-forward.
+
+**Idempotency guarantee:** Running `spotter_package.py` N times on the same date
+preserves all annotations JR has entered via Excel. Re-running after a new
+`spotter_awards.py` pass will add award data to the CSV without disturbing any
+existing `jr_status`/`jr_notes`/`jr_priority` values.
+
+**Rows with null cage_code** cannot be matched and receive blank annotations on
+re-run — safe degradation, consistent with the fail-soft pattern established in D-015.
+
+### Files touched
+
+- `HZ/scripts/spotter_awards.py` — new script. USAspending enrichment pass. Reads
+  `spotter_<date>.jsonl`, queries `POST /api/v2/search/spending_by_award/` per UEI,
+  writes `spotter_<date>_awards.jsonl`. No new pip deps (httpx already installed).
+- `HZ/scripts/spotter_package.py` — extended with: B1 awards sidecar preference,
+  B2 Award History HTML panel, B3 new CSV columns (award_status, first/latest award
+  date/amount/agency, total_awards_count), B4 annotation preservation logic.
+- `Central Hub/pipeline/AGENTS.md` — C-SPOTTER section updated with awards enrichment
+  step, sidecar convention, and annotation preservation note.

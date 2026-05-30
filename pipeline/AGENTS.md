@@ -51,12 +51,12 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 ## C-SPOTTER — target enrichment (merged)
 
-**Role:** Single pass over NAICS-matched small businesses. Finds them and enriches each record with contact and identity data in one run. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
+**Role:** Single pass over NAICS-matched small businesses. Finds them and enriches each record with contact and identity data in one run. A separate post-scrape awards enrichment pass cross-references USAspending.gov for federal contract history. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
 
-**Pipeline mode v3** (D-015 + D-020): candidates JSONL now includes CAGE code, business website, email, contact name, SAM profile URL, and a PDF snapshot of each profile where available. Enrichment and PDF capture run inline in `spotter_find.py` — no separate script required.
+**Pipeline mode v4** (D-015 + D-020 + D-021): candidates JSONL now includes CAGE code, business website, email, contact name, SAM profile URL, a PDF snapshot, and an optional awards sidecar with USAspending.gov federal contract history.
 
 - **Inputs:** NAICS code list from HZ config; SBA cert search (Playwright-driven React SPA).
-- **Outputs:** Enriched candidate record per business (one JSON per line):
+- **Outputs (find + enrich pass):** Enriched candidate record per business (one JSON per line):
   ```
   {
     name, naics, url,                    ← v1 fields (stable)
@@ -70,39 +70,47 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
                                            null if --no-pdf or capture failed (D-020)
   }
   ```
-  Written to `hz/*/research/data/candidates/spotter_<YYYY-MM-DD>.jsonl`.
-  PDF snapshots written to `hz/*/research/data/candidates/_pdfs/<cage_code>.pdf`.
-- **Owned scripts:** `scripts/spotter_find.py` (find + enrich + PDF in one run), `scripts/spotter_package.py` (review package assembly)
-- **Review packages** (D-015 + D-020): after the enrichment run, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
-  - `spotter_review_<date>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), accordion grouped by NAICS code, one business card per record, null fields shown as dimmed "not on profile" placeholders. Each card header includes `📎 Profile PDF` (`file://` link, opens in default PDF viewer) if a PDF exists, or a dimmed "no PDF" placeholder otherwise.
-  - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. Columns: `name, naics_matched, cage_code, business_website, email, contact_name, pdf_path, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`. Last three columns blank — JR annotation space. `pdf_path` is the relative path or blank.
-- **Two operating modes** (see D-010):
-  - **Pipeline mode** (no `--ad-hoc` flag): writes to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl` and logs timing via `log_run`. Used for all scheduled/prototype runs.
-    ```
-    # All 5 pipeline NAICS codes:
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py
+  Written to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl`.
+  PDF snapshots written to `research/data/candidates/_pdfs/<cage_code>.pdf`.
+- **Outputs (awards enrichment pass — D-021):** Sidecar JSONL with all fields from the base record plus:
+  ```
+  {
+    ...base fields...,
+    award_status,       ← "has_awards" | "no_federal_awards_found" | "lookup_failed"
+    first_award,        ← {date, amount, agency, description, contract_type, award_id} or null
+    latest_award,       ← same shape, or null
+    total_awards_count  ← integer (0 when no awards)
+  }
+  ```
+  Written to `research/data/candidates/spotter_<YYYY-MM-DD>_awards.jsonl` (sidecar —
+  original JSONL is never modified). `"no_federal_awards_found"` is the ground-floor
+  signal: certified but no federal contract yet = high receptivity to outreach.
+- **Owned scripts:**
+  - `scripts/spotter_find.py` — find + enrich + PDF in one run (Playwright)
+  - `scripts/spotter_awards.py` — post-scrape awards enrichment via USAspending.gov (httpx, no key)
+  - `scripts/spotter_package.py` — review package assembly (prefers awards sidecar if present)
+- **Review packages** (D-015 + D-020 + D-021): after enrichment, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
+  - `spotter_review_<date>.html` — brand-themed (Deep Ocean Blue #0B2C4D / Slate Grey-Blue #5A7795), accordion grouped by NAICS code, one business card per record. Each card includes: null fields shown dimmed, `📎 Profile PDF` link, and an Award History panel (first + latest award grid for `has_awards`, ground-floor message for `no_federal_awards_found`, "Lookup unavailable" for `lookup_failed`, no panel when no sidecar was used).
+  - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. Columns: `name, naics_matched, cage_code, business_website, email, contact_name, pdf_path, award_status, first_award_date, first_award_amount, first_award_agency, latest_award_date, latest_award_amount, latest_award_agency, total_awards_count, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`. Award columns blank when no sidecar used.
+  - **Annotation preservation (D-021):** before writing the CSV, the packager reads any existing CSV at the output path and carries forward `jr_status`/`jr_notes`/`jr_priority` keyed on `cage_code`. Packager is idempotent: JR can re-run after editing the CSV in Excel without losing annotations.
+- **Typical run sequence:**
+  ```
+  # Step 1 — find + enrich + PDF (Playwright, ~5 min for 50 businesses)
+  backend/.venv/Scripts/python.exe scripts/spotter_find.py
 
-    # Specific pipeline codes:
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py 561110 561990
+  # Step 2 — award history enrichment (USAspending.gov, ~40s for 50 businesses at 0.75s delay)
+  backend/.venv/Scripts/python.exe scripts/spotter_awards.py
 
-    # With custom profile delay:
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py --profile-delay-seconds 2.0
-
-    # Skip PDF capture (faster, no _pdfs/ writes):
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py --no-pdf
-    ```
-  - **Ad-hoc mode** (`--ad-hoc` flag): prints a formatted results table to stdout only. No file writes, no log entry. Used for one-off research and exploring codes outside the pipeline set.
-    ```
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc 561110
-    backend/.venv/Scripts/python.exe scripts/spotter_find.py --ad-hoc --limit-per-naics 5 541611 493110
-    ```
-  - **Package generation** (after a pipeline run):
-    ```
-    backend/.venv/Scripts/python.exe scripts/spotter_package.py --date 2026-05-28
-    ```
-- **CLI flags:** `--limit-per-naics N` · `--headed` · `--delay-seconds` · `--profile-delay-seconds` · `--ad-hoc` · `--no-pdf`
-- **Politeness:** `--delay-seconds` (default 1.5s) between NAICS code searches; `--profile-delay-seconds` (default 1.5s) between individual profile page dives. Enrichment adds N additional page loads (one per business) on top of the NAICS search. PDF capture fires on the already-loaded profile page — no extra navigation.
-- **Fail-soft enrichment:** any field missing on a profile is set to null and a gap warning is logged. One missing field never aborts the record or the run. PDF capture failures follow the same pattern: logged to stdout and `log_run` errors, `profile_pdf` set to null, run continues.
+  # Step 3 — package for review (uses awards sidecar automatically)
+  backend/.venv/Scripts/python.exe scripts/spotter_package.py --date <YYYY-MM-DD>
+  ```
+- **Two operating modes for find** (see D-010):
+  - **Pipeline mode** (no `--ad-hoc` flag): writes to `research/data/candidates/spotter_<YYYY-MM-DD>.jsonl` and logs timing via `log_run`.
+  - **Ad-hoc mode** (`--ad-hoc` flag): prints formatted results to stdout only. No file writes, no log entry. Used for one-off research.
+- **CLI flags (spotter_find.py):** `--limit-per-naics N` · `--headed` · `--delay-seconds` · `--profile-delay-seconds` · `--ad-hoc` · `--no-pdf`
+- **CLI flags (spotter_awards.py):** `--date YYYY-MM-DD` (default today) · `--delay-seconds F` (default 0.75) · `--limit N` (default all)
+- **Politeness:** Find: 1.5s between NAICS code searches, 1.5s between profile dives. Awards: 0.75s between USAspending queries (configurable).
+- **Fail-soft enrichment:** any field missing on a profile is set to null and a gap warning is logged. Per-business USAspending failures set `award_status: "lookup_failed"` and continue the run. Neither failure type aborts a record or the full run.
 - **Escalates when:** Business has no public footprint (no website, no social, no filings) — skip silently with a "thin-signal" log entry, do not waste a JR review slot.
 
 ## C-MainLiner — contract & award data
