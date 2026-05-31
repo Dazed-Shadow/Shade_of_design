@@ -5,7 +5,64 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 
 ---
 
-## Repo: `shade-of-design-landing`
+## Repo: `shade-of-design-landing` → `unite-passion/`
+
+### Off-day / off-race substance (priority order)
+
+- [ ] **Countdown timer to next race & next NY game**
+  Both panels are nearly empty between events. A live countdown (days · hrs · mins)
+  to the next scheduled event gives the page a reason to exist every day.
+  Derives from ESPN schedule data already being fetched — no new API call.
+  _Done when:_ each panel shows a ticking countdown when no event is live or in-progress.
+
+- [ ] **NASCAR season standings (top 10 points)**
+  Use ESPN's standings endpoint (`/apis/v2/sports/racing/nascar/standings`) to render a
+  compact driver points table in the off-race NASCAR panel, similar to the NBA standings
+  already in the hoops panel.
+  _Done when:_ top 10 Cup Series drivers with position, name, car #, and points shown
+  when no race is active.
+
+- [ ] **Upcoming schedule strip — next 3 races + next 3 NY games**
+  A horizontal or stacked list of the next few events (track/opponent, date, TV) replaces
+  the single "next race" card that only shows one entry.
+  Sourced from ESPN scoreboard `events` array (pre-game entries).
+  _Done when:_ both panels show 3 upcoming events with date and network info.
+
+- [ ] **Last race / last game result card**
+  The page currently shows nothing after an event ends. Pull the most recent `post`-state
+  event from ESPN and show a condensed result (winner + gap for NASCAR; final score for
+  NBA) until the next event starts.
+  _Done when:_ a "Last race" or "Last game" card appears when state is `post` and no
+  current event is `in`.
+
+- [ ] **Knicks & Nets team record + streak widget**
+  Small stat block — W / L record, home/away split, current streak (W3 / L1 etc.) —
+  pulled from the standings data already fetched. Lives at the top of the hoops panel.
+  _Done when:_ Knicks and Nets each have a compact record row visible any time the
+  basketball panel loads.
+
+- [ ] **Driver season stats for featured drivers**
+  For Dale Jr., Denny Hamlin, and the legend row — show career wins or current-season
+  stats (starts, wins, top 5s, top 10s) pulled from ESPN athlete endpoint or stored as
+  static JSON in the repo for legends.
+  _Done when:_ each driver card has a small stats line below the name.
+
+- [ ] **"On this day" lore cards (static rotating)**
+  Static JSON file of notable NASCAR and NBA facts tied to calendar dates (Earnhardt
+  Sr.'s 7th championship, Petty's 200th win, Knicks' '73 title, etc.).
+  Rotates daily. No API dependency — pure content.
+  _Done when:_ a "On this day" card appears in each panel when no live event is running,
+  surfacing a relevant historical fact.
+
+- [ ] **Playoff picture / NASCAR playoff grid**
+  During playoff windows show a seeded bracket or bubble table. ESPN provides playoff
+  status flags in standings data.
+  _Done when:_ a playoff grid or bubble indicator replaces the regular standings during
+  playoff weeks.
+
+---
+
+
 
 ### Weekly page (new)
 - [ ] **Decide on URL renames** before sharing publicly
