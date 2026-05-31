@@ -1,0 +1,758 @@
+/* ============================================================
+   The Pit Stop & The Paint — NASCAR x Basketball Dashboard
+   Extends tokens from styles.css
+   ============================================================ */
+
+/* Page shell */
+.nb-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.nb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-4) var(--s-8);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nb-back {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 160ms ease;
+  min-width: 100px;
+}
+.nb-back:hover { color: var(--ocean); }
+[data-theme="dark"] .nb-back:hover { color: var(--slate-300); }
+
+.nb-header-center { text-align: center; }
+
+.nb-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.nb-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.nb-header-right { min-width: 100px; }
+
+/* Racing-stripe + hardwood banner */
+.nb-banner {
+  display: flex;
+  align-items: stretch;
+  height: 5px;
+}
+
+.banner-nascar {
+  flex: 1;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ocean-900) 0px,
+    var(--ocean-900) 10px,
+    var(--slate-300) 10px,
+    var(--slate-300) 20px
+  );
+  font-size: 0;
+}
+
+.banner-divider {
+  width: 1px;
+  background: var(--border);
+}
+
+.banner-nba {
+  flex: 1;
+  background: linear-gradient(90deg, var(--ember), var(--ember-soft), var(--ember));
+  font-size: 0;
+}
+
+/* Main content area */
+.nb-main {
+  flex: 1;
+  padding: var(--s-8);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-6);
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .nb-grid { grid-template-columns: 1fr; }
+  .nb-main { padding: var(--s-5); }
+  .nb-header { padding: var(--s-3) var(--s-5); }
+}
+
+/* Shared panel shell */
+.nb-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* NASCAR panel — checkered top bar + speed lines bg */
+.nascar-panel {
+  border-top: 1px solid var(--border);
+}
+
+.nascar-panel::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ocean-900) 0px,
+    var(--ocean-900) 8px,
+    #e8ecf1 8px,
+    #e8ecf1 16px
+  );
+  border-radius: var(--r-3) var(--r-3) 0 0;
+  z-index: 2;
+}
+[data-theme="dark"] .nascar-panel::after {
+  background: repeating-linear-gradient(
+    90deg,
+    #0B1F33 0px,
+    #0B1F33 8px,
+    #93AABF 8px,
+    #93AABF 16px
+  );
+}
+
+.nascar-panel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 160px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 18px,
+    rgba(26,62,98,0.035) 18px,
+    rgba(26,62,98,0.035) 19px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="dark"] .nascar-panel::before {
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 18px,
+    rgba(255,255,255,0.025) 18px,
+    rgba(255,255,255,0.025) 19px
+  );
+}
+
+/* Basketball panel — warm hardwood gradient top */
+.hoops-panel {
+  border-top: 1px solid var(--border);
+}
+
+.hoops-panel::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--ember), var(--ember-soft));
+  border-radius: var(--r-3) var(--r-3) 0 0;
+  z-index: 2;
+}
+
+.hoops-panel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 160px;
+  background: linear-gradient(
+    180deg,
+    rgba(201,123,74,0.055) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* All panel children above pseudo-elements */
+.nb-panel > * { position: relative; z-index: 1; }
+
+/* Panel eyebrow + title */
+.panel-eye {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+  margin-top: var(--s-2);
+}
+
+.panel-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 var(--s-5);
+  line-height: 1;
+}
+
+.panel-loading {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: var(--s-12) 0;
+  text-align: center;
+}
+
+/* Section eyebrow */
+.nb-eye {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: var(--s-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.nb-eye::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  background: var(--ember);
+  flex-shrink: 0;
+}
+
+/* Flag badge */
+.flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  margin-bottom: var(--s-3);
+  border: 1px solid transparent;
+}
+
+.flag-green {
+  background: rgba(47,125,91,0.10);
+  color: var(--positive);
+  border-color: rgba(47,125,91,0.22);
+}
+.flag-yellow {
+  background: rgba(201,145,60,0.10);
+  color: var(--warn);
+  border-color: rgba(201,145,60,0.22);
+}
+.flag-red {
+  background: rgba(176,70,58,0.10);
+  color: var(--danger);
+  border-color: rgba(176,70,58,0.22);
+}
+.flag-checkered {
+  background: repeating-linear-gradient(
+    45deg,
+    #222 0px, #222 5px,
+    #eeeeee 5px, #eeeeee 10px
+  );
+  color: #fff;
+  border-color: transparent;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+}
+
+/* Race info */
+.race-live { display: flex; flex-direction: column; }
+
+.race-name {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin-bottom: var(--s-2);
+  line-height: 1.2;
+}
+
+.race-lap {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: var(--s-5);
+}
+
+/* Leaderboard */
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lb-header {
+  display: grid;
+  grid-template-columns: 28px 44px 1fr auto;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 var(--s-2) var(--s-2);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 2px;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 28px 44px 1fr auto;
+  gap: var(--s-2);
+  align-items: center;
+  padding: 5px var(--s-2);
+  border-radius: var(--r-1);
+  transition: background 120ms ease;
+}
+.lb-row:hover { background: var(--paper); }
+
+.lb-leader {
+  background: rgba(26,62,98,0.05);
+  border-left: 2px solid var(--ocean);
+  padding-left: calc(var(--s-2) - 2px);
+}
+[data-theme="dark"] .lb-leader { background: rgba(74,123,170,0.10); }
+
+.lb-pos {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+.lb-leader .lb-pos { color: var(--ocean); }
+[data-theme="dark"] .lb-leader .lb-pos { color: var(--slate-300); }
+
+.lb-car {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-1);
+  padding: 2px 5px;
+  text-align: center;
+}
+
+.lb-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-gap {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Off-race view */
+.off-race { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.next-race-card {
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-2);
+  padding: var(--s-4) var(--s-5);
+}
+
+.next-race-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: var(--s-2) 0 var(--s-1);
+}
+
+.next-race-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.next-race-venue {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.card-eye {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Driver cards */
+.drivers-section { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.driver-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.driver-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 8px var(--s-4);
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-soft);
+  background: var(--paper);
+}
+
+.driver-modern { border-left: 3px solid var(--ocean); }
+.driver-legend { border-left: 3px solid var(--ember); }
+
+.driver-car {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ocean);
+  min-width: 34px;
+}
+.driver-legend .driver-car { color: var(--ember); }
+
+.driver-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.driver-team {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.driver-era-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ember);
+  background: rgba(201,123,74,0.08);
+  border: 1px solid rgba(201,123,74,0.20);
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
+}
+
+/* NY game score card */
+.ny-games { display: flex; flex-direction: column; gap: var(--s-3); margin-bottom: var(--s-5); }
+
+.score-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: var(--s-4) var(--s-5);
+}
+.score-live { border-color: rgba(47,125,91,0.4); }
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--positive);
+  background: rgba(47,125,91,0.10);
+  border: 1px solid rgba(47,125,91,0.20);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  margin-bottom: var(--s-3);
+}
+
+.final-pill {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--s-3);
+}
+
+.score-matchup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.score-team {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.score-team.score-team-right {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.team-abbr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.team-full {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.team-score {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.score-ny .team-abbr { color: var(--ocean); }
+.score-ny .team-score { color: var(--ocean); }
+[data-theme="dark"] .score-ny .team-abbr { color: var(--slate-300); }
+[data-theme="dark"] .score-ny .team-score { color: var(--slate-300); }
+
+.score-divider {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Compact game rows for non-NY scoreboard */
+.all-games {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: var(--s-5);
+}
+
+.score-card-sm {
+  display: grid;
+  grid-template-columns: 12px 36px 28px 8px 36px 28px 1fr;
+  align-items: center;
+  gap: 4px;
+  padding: 5px var(--s-3);
+  border-radius: var(--r-1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+}
+.score-ny-game {
+  border-color: rgba(26,62,98,0.18);
+  background: rgba(26,62,98,0.025);
+}
+[data-theme="dark"] .score-ny-game {
+  border-color: rgba(93,128,157,0.2);
+  background: rgba(93,128,157,0.05);
+}
+
+.live-dot { color: var(--positive); font-size: 7px; }
+.team-sm { text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; }
+.team-sm-ny { color: var(--ocean); font-weight: 600; }
+[data-theme="dark"] .team-sm-ny { color: var(--slate-300); }
+.score-sm { text-align: right; color: var(--ink); font-weight: 600; }
+.sep-sm { text-align: center; color: var(--border); }
+.clock-sm {
+  text-align: right;
+  font-size: 10px;
+  color: var(--muted);
+  grid-column: -1;
+}
+
+/* Standings */
+.standings-section { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.standings-table {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.st-header {
+  display: grid;
+  grid-template-columns: 20px 1fr 30px 30px 44px;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 var(--s-2) var(--s-2);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 2px;
+}
+
+.st-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 30px 30px 44px;
+  gap: var(--s-2);
+  align-items: center;
+  padding: 5px var(--s-2);
+  border-radius: var(--r-1);
+  transition: background 120ms ease;
+}
+.st-row:hover { background: var(--paper); }
+
+.st-row-ny {
+  background: rgba(201,123,74,0.05);
+  border-left: 2px solid var(--ember);
+  padding-left: calc(var(--s-2) - 2px);
+}
+.st-row-ny:hover { background: rgba(201,123,74,0.09); }
+
+.st-pos {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.st-team {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-team-ny { color: var(--ink); font-weight: 600; }
+
+.st-stat {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* No-games / no-data placeholders */
+.no-data {
+  padding: var(--s-10) 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.no-data-text { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+.no-data-sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* Page footer */
+.nb-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-4) var(--s-8);
+  border-top: 1px solid var(--border-soft);
+  margin-top: var(--s-2);
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+@media (max-width: 480px) {
+  .nb-foot { padding: var(--s-4) var(--s-5); }
+}
+
+.foot-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 160ms ease;
+}
+.foot-link:hover { color: var(--ocean); }
+[data-theme="dark"] .foot-link:hover { color: var(--slate-300); }
+
+.nb-updated {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nb-credit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  font-style: italic;
+  text-align: right;
+}
+
+/* Error banner */
+.nb-error {
+  background: rgba(176,70,58,0.06);
+  border: 1px solid rgba(176,70,58,0.18);
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-2);
+  margin-bottom: var(--s-5);
+  text-align: center;
+}

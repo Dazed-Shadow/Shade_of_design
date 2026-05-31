@@ -87,6 +87,15 @@ const PROJECTS = [
     status: "live",
     accent: "ember",
   },
+  {
+    n: "04",
+    kicker: "NASCAR · NBA · Passion Project",
+    title: "Pit Stop & The Paint",
+    blurb: "Dad's drivers. New York's teams. Live, side by side.",
+    href: "nascar-basketball.html",
+    status: "live",
+    accent: "sport",
+  },
 ];
 
 function ProjectTile({ p }) {
@@ -164,6 +173,45 @@ function TileArt({ accent }) {
         <circle cx="180" cy="100" r="42" fill="none" stroke="#FAFAF7" strokeWidth="2.5" />
         <line x1="212" y1="132" x2="244" y2="164" stroke="#FAFAF7" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="180" cy="100" r="42" fill="rgba(201,123,74,0.18)" />
+      </svg>
+    );
+  }
+  if (accent === "sport") {
+    // Checkered flag left + basketball right
+    return (
+      <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" style={{width:"100%", height:"100%"}}>
+        <defs>
+          <linearGradient id="sp-l" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#0B1F33"/>
+            <stop offset="100%" stopColor="#1A3E62"/>
+          </linearGradient>
+          <linearGradient id="sp-r" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#C97B4A"/>
+            <stop offset="100%" stopColor="#E4A57E"/>
+          </linearGradient>
+        </defs>
+        <rect width="200" height="200" fill="url(#sp-l)"/>
+        {Array.from({length:4}).map((_,row) =>
+          Array.from({length:3}).map((_,col) =>
+            (row + col) % 2 === 0
+              ? <rect key={`c${row}-${col}`} x={col*66} y={row*50} width="66" height="50" fill="rgba(255,255,255,0.055)"/>
+              : null
+          )
+        )}
+        {[0.26,0.46,0.66,0.83].map((y,i) => (
+          <line key={i} x1="0" y1={y*200} x2="188" y2={y*200} stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+        ))}
+        <rect x="58" y="74" width="84" height="52" rx="4" fill="rgba(0,0,0,0.28)"/>
+        <text x="100" y="110" textAnchor="middle" fill="rgba(255,255,255,0.92)" fontSize="22" fontFamily="monospace" fontWeight="bold">#88</text>
+
+        <rect x="200" width="200" height="200" fill="url(#sp-r)"/>
+        <circle cx="300" cy="100" r="56" fill="rgba(0,0,0,0.10)"/>
+        <circle cx="300" cy="100" r="56" fill="none" stroke="rgba(0,0,0,0.20)" strokeWidth="2.5"/>
+        <line x1="300" y1="44" x2="300" y2="156" stroke="rgba(0,0,0,0.20)" strokeWidth="2.5"/>
+        <path d="M262 100 Q300 134 338 100" fill="none" stroke="rgba(0,0,0,0.20)" strokeWidth="2.5"/>
+        <path d="M262 100 Q300 66 338 100" fill="none" stroke="rgba(0,0,0,0.20)" strokeWidth="2.5"/>
+
+        <line x1="200" y1="0" x2="200" y2="200" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5"/>
       </svg>
     );
   }
