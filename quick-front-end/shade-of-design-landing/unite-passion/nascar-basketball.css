@@ -153,26 +153,38 @@
 .nascar-panel::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 160px;
-  background: repeating-linear-gradient(
-    180deg,
-    transparent 0px,
-    transparent 18px,
-    rgba(26,62,98,0.035) 18px,
-    rgba(26,62,98,0.035) 19px
-  );
+  top: 0; left: -20%; right: -20%;
+  height: 180px;
+  background:
+    repeating-linear-gradient(
+      -15deg,
+      transparent 0px,
+      transparent 20px,
+      rgba(26,62,98,0.04) 20px,
+      rgba(26,62,98,0.04) 21px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(26,62,98,0.06) 0%,
+      transparent 100%
+    );
   pointer-events: none;
   z-index: 0;
 }
 [data-theme="dark"] .nascar-panel::before {
-  background: repeating-linear-gradient(
-    180deg,
-    transparent 0px,
-    transparent 18px,
-    rgba(255,255,255,0.025) 18px,
-    rgba(255,255,255,0.025) 19px
-  );
+  background:
+    repeating-linear-gradient(
+      -15deg,
+      transparent 0px,
+      transparent 20px,
+      rgba(255,255,255,0.03) 20px,
+      rgba(255,255,255,0.03) 21px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(74,123,170,0.10) 0%,
+      transparent 100%
+    );
 }
 
 /* Basketball panel — warm hardwood gradient top */
@@ -194,14 +206,37 @@
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 160px;
-  background: linear-gradient(
-    180deg,
-    rgba(201,123,74,0.055) 0%,
-    transparent 100%
-  );
+  height: 200px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 22px,
+      rgba(201,123,74,0.055) 22px,
+      rgba(201,123,74,0.055) 23px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(201,123,74,0.09) 0%,
+      transparent 100%
+    );
   pointer-events: none;
   z-index: 0;
+}
+[data-theme="dark"] .hoops-panel::before {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 22px,
+      rgba(201,123,74,0.04) 22px,
+      rgba(201,123,74,0.04) 23px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(201,123,74,0.12) 0%,
+      transparent 100%
+    );
 }
 
 /* All panel children above pseudo-elements */
@@ -840,6 +875,12 @@
   position: relative;
   overflow: hidden;
 }
+.otd-nascar { background: rgba(26,62,98,0.03); }
+.otd-nba    { background: rgba(201,123,74,0.04); }
+.otd-world  { background: rgba(93,128,157,0.03); }
+[data-theme="dark"] .otd-nascar { background: rgba(26,62,98,0.10); }
+[data-theme="dark"] .otd-nba    { background: rgba(201,123,74,0.08); }
+[data-theme="dark"] .otd-world  { background: rgba(93,128,157,0.07); }
 .otd-card::after {
   content: "";
   position: absolute;
@@ -862,9 +903,9 @@
 
 .otd-year {
   font-family: var(--font-mono);
-  font-size: 32px;
+  font-size: 44px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   color: var(--ink);
   line-height: 1;
 }
@@ -1144,6 +1185,121 @@
   font-style: italic;
   text-align: right;
 }
+
+/* ── Driver card link states ───────────────────────────────── */
+.driver-link {
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.driver-link:hover {
+  transform: translateX(3px);
+  box-shadow: var(--shadow-2);
+}
+.driver-modern.driver-link:hover { border-left-color: var(--ocean); }
+.driver-legend.driver-link:hover { border-left-color: var(--ember); }
+
+.driver-link-arrow {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: color 160ms ease, transform 160ms ease;
+}
+.driver-link:hover .driver-link-arrow {
+  color: var(--ocean);
+  transform: translateX(2px) translateY(-2px);
+}
+[data-theme="dark"] .driver-link:hover .driver-link-arrow { color: var(--slate-300); }
+
+/* ── Team record card link states ──────────────────────────── */
+.rec-link {
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.rec-link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+.rec-nyk.rec-link:hover { border-left-color: #006BB6; }
+[data-theme="dark"] .rec-nyk.rec-link:hover { border-left-color: #4A9FD4; }
+.rec-bkn.rec-link:hover { border-left-color: var(--slate); }
+
+.rec-link-arrow {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+  transition: color 160ms ease, transform 160ms ease;
+}
+.rec-link:hover .rec-link-arrow {
+  color: var(--ocean);
+  transform: translateX(2px) translateY(-2px);
+}
+[data-theme="dark"] .rec-link:hover .rec-link-arrow { color: var(--slate-300); }
+
+/* ── News strip ────────────────────────────────────────────── */
+.news-strip {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border-soft);
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--s-3);
+}
+
+.news-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-2);
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.news-item:hover {
+  transform: translateX(3px);
+  box-shadow: var(--shadow-1);
+}
+.news-strip-nascar .news-item:hover { border-left: 2px solid var(--ocean); padding-left: calc(var(--s-4) - 2px); }
+.news-strip-nba    .news-item:hover { border-left: 2px solid var(--ember); padding-left: calc(var(--s-4) - 2px); }
+
+.news-headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.news-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.news-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.news-arrow {
+  font-size: 12px;
+  color: var(--muted);
+  transition: color 160ms ease, transform 160ms ease;
+}
+.news-item:hover .news-arrow {
+  color: var(--ocean);
+  transform: translateX(2px) translateY(-2px);
+}
+[data-theme="dark"] .news-item:hover .news-arrow { color: var(--slate-300); }
 
 /* Error banner */
 .nb-error {

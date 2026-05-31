@@ -621,3 +621,29 @@ re-run — safe degradation, consistent with the fail-soft pattern established i
   date/amount/agency, total_awards_count), B4 annotation preservation logic.
 - `Central Hub/pipeline/AGENTS.md` — C-SPOTTER section updated with awards enrichment
   step, sidecar convention, and annotation preservation note.
+
+---
+
+## D-022 · 2026-05-31 · Unite Passion — sport-immersive visual identity within brand
+
+**Decision:** Enhance the Unite Passion dashboard with sport-specific visual treatments that remain within the Shade of Design token system. Add ESPN-sourced news headlines and direct links to official driver/team stat pages.
+
+**Context:** Initial build used minimal backgrounds (horizontal speed lines, soft ember fade). Panels lacked visual energy to honor each sport's identity, and had no outbound links or live editorial content — making off-day visits feel thin even after the backlog items were built.
+
+**Why — Visual:**
+- Ocean/Slate maps naturally to NASCAR (track depth, speed); Ember/amber maps to basketball hardwood warmth. Using the existing tokens at higher contrast expresses the brand system rather than breaking it.
+- Diagonal speed lines (−15°) in the NASCAR panel convey velocity without imagery. Horizontal hardwood lines in the basketball panel echo court grain without a photo. Both are CSS `repeating-linear-gradient` — zero new assets.
+- On This Day cards get sport-tinted backgrounds (low opacity) and larger year typography for editorial weight.
+
+**Why — Links and News:**
+- Driver and team cards without links are dead ends. Official sources (NASCAR.com for drivers, NBA.com for teams) are the correct destination.
+- ESPN's public news API (same CDN already in use, no key) provides top 3 current headlines per sport, turning the off-day panel from a static snapshot into a living editorial feed. News renders below live event data so race/game content always reads first.
+
+**Trade-off accepted:**
+- CSS background layering in pseudo-elements adds minor rendering cost on low-end devices. Acceptable for a personal passion project.
+- ESPN news links out to ESPN, not the official league sites. Sufficient for v1; a future pass could cross-reference league RSS feeds.
+- NASCAR.com driver URL slugs assumed from name. Retired driver pages may resolve differently; the link is additive so any 404 only affects the anchor, not the card render.
+
+**Files touched:**
+- `unite-passion/nascar-basketball.jsx` — FEATURED_DRIVERS gains `url`/`statsUrl`; NY_TEAM_INFO constant; NewsStrip component; news state + fetches; driver and team record cards become anchor links.
+- `unite-passion/nascar-basketball.css` — Diagonal speed lines (NASCAR), hardwood lines (hoops), On This Day tinted cards + larger year type, news strip styles, link hover states.

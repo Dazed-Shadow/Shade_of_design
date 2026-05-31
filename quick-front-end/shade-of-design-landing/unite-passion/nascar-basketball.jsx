@@ -6,8 +6,10 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "light" }/*EDITMODE-END*/;
 // ─── API endpoints ────────────────────────────────────────────────────────────
 const NASCAR_SCOREBOARD  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
 const NASCAR_STANDINGS   = "https://site.api.espn.com/apis/v2/sports/racing/nascar/standings";
+const NASCAR_NEWS        = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/news?limit=3";
 const NBA_SCOREBOARD     = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const NBA_STANDINGS      = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
+const NBA_NEWS           = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=3";
 
 function wikipediaOTD() {
   const now = new Date();
@@ -19,13 +21,19 @@ function wikipediaOTD() {
 const REFRESH_MS = 60_000;
 const NY_TEAMS   = ["NYK", "BKN"];
 
+// ─── NY team external links ───────────────────────────────────────────────────
+const NY_TEAM_INFO = {
+  NYK: { url: "https://www.nba.com/knicks",  statsUrl: "https://www.nba.com/stats/team/1610612752" },
+  BKN: { url: "https://www.nba.com/nets",    statsUrl: "https://www.nba.com/stats/team/1610612751" },
+};
+
 // ─── Static driver data ───────────────────────────────────────────────────────
 const FEATURED_DRIVERS = [
-  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver" },
-  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner" },
-  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator" },
-  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King" },
-  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior" },
+  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver", url: "https://www.nascar.com/dale-earnhardt-jr/",  statsUrl: "https://www.espn.com/racing/driver/_/id/1027/dale-earnhardt-jr" },
+  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner",   url: "https://www.nascar.com/denny-hamlin/",       statsUrl: "https://www.espn.com/racing/driver/_/id/1025/denny-hamlin" },
+  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator",           url: "https://www.nascar.com/dale-earnhardt/",    statsUrl: "https://www.espn.com/racing/driver/_/id/1004/dale-earnhardt" },
+  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King",                  url: "https://www.nascar.com/richard-petty/",    statsUrl: "https://www.espn.com/racing/driver/_/id/1002/richard-petty" },
+  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior",           url: "https://www.nascar.com/jeff-gordon/",      statsUrl: "https://www.espn.com/racing/driver/_/id/1007/jeff-gordon" },
 ];
 
 // ─── "On This Day" curated lore ───────────────────────────────────────────────
@@ -311,11 +319,13 @@ function TeamRecordStrip({ entries }) {
           const streak  = getStat(entry.stats, "streak", "strk", "currentStreak");
           const home    = getStat(entry.stats, "homeRecord", "Home");
           const road    = getStat(entry.stats, "roadRecord", "Away");
+          const teamUrl = NY_TEAM_INFO[abbr]?.url;
           return (
-            <div key={i} className={`rec-card rec-${abbr.toLowerCase()}`}>
+            <a key={i} className={`rec-card rec-link rec-${abbr.toLowerCase()}`} href={teamUrl} target="_blank" rel="noopener noreferrer">
               <div className="rec-header">
                 <span className="rec-abbr">{abbr}</span>
                 <span className="rec-name">{name}</span>
+                <span className="rec-link-arrow">↗</span>
               </div>
               <div className="rec-stats">
                 <div className="rec-stat"><span className="rec-val">{wins}–{losses}</span><span className="rec-lbl">Record</span></div>
@@ -323,7 +333,7 @@ function TeamRecordStrip({ entries }) {
                 {home !== "—" && <div className="rec-stat"><span className="rec-val">{home}</span><span className="rec-lbl">Home</span></div>}
                 {road !== "—" && <div className="rec-stat"><span className="rec-val">{road}</span><span className="rec-lbl">Away</span></div>}
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
@@ -421,9 +431,36 @@ function OnThisDay({ worldEvents }) {
   );
 }
 
+// ─── NewsStrip ────────────────────────────────────────────────────────────────
+
+function NewsStrip({ articles, sport }) {
+  if (!articles?.length) return null;
+
+  return (
+    <div className={`news-strip news-strip-${sport}`}>
+      <p className="nb-eye">Latest Headlines</p>
+      <div className="news-list">
+        {articles.map((a, i) => {
+          const pubDate = a.published ? fmtShortDate(a.published) : null;
+          const href    = a.links?.web?.href || a.links?.mobile?.href || "#";
+          return (
+            <a key={i} className="news-item" href={href} target="_blank" rel="noopener noreferrer">
+              <span className="news-headline">{a.headline || a.title}</span>
+              <span className="news-foot">
+                {pubDate && <span className="news-date">{pubDate}</span>}
+                <span className="news-arrow">↗</span>
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── NascarPanel ─────────────────────────────────────────────────────────────
 
-function NascarPanel({ scoreboard, standings, loading }) {
+function NascarPanel({ scoreboard, standings, news, loading }) {
   const events     = scoreboard?.events ?? [];
   const liveEvent  = events.find(ev =>
     (ev.status?.type?.state ?? ev.competitions?.[0]?.status?.type?.state) === "in"
@@ -508,7 +545,7 @@ function NascarPanel({ scoreboard, standings, loading }) {
             <p className="nb-eye">Dad's Drivers</p>
             <div className="driver-cards">
               {FEATURED_DRIVERS.map((d) => (
-                <div key={d.car} className={`driver-card driver-${d.era}`}>
+                <a key={d.car} className={`driver-card driver-link driver-${d.era}`} href={d.url} target="_blank" rel="noopener noreferrer">
                   <span className="driver-car">#{d.car}</span>
                   <div className="driver-info">
                     <span className="driver-name">{d.name}</span>
@@ -518,11 +555,14 @@ function NascarPanel({ scoreboard, standings, loading }) {
                       {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
                     </span>
                   </div>
-                  {d.era === "legend" && <span className="driver-era-badge">Legend</span>}
-                </div>
+                  {d.era === "legend" ? <span className="driver-era-badge">Legend</span> : <span className="driver-link-arrow">↗</span>}
+                </a>
               ))}
             </div>
           </div>
+
+          {/* NASCAR news */}
+          <NewsStrip articles={news} sport="nascar" />
 
         </div>
       )}
@@ -532,7 +572,7 @@ function NascarPanel({ scoreboard, standings, loading }) {
 
 // ─── BasketballPanel ──────────────────────────────────────────────────────────
 
-function BasketballPanel({ scores, standings, loading }) {
+function BasketballPanel({ scores, standings, news, loading }) {
   const allEvents = scores?.events ?? [];
 
   const nyGames   = allEvents.filter(ev =>
@@ -694,6 +734,9 @@ function BasketballPanel({ scores, standings, loading }) {
               <span className="no-data-sub">Check back on game day.</span>
             </div>
           )}
+
+          {/* NBA news */}
+          <NewsStrip articles={news} sport="nba" />
         </>
       )}
     </div>
@@ -706,8 +749,10 @@ function App() {
   const [t, setTweak]           = useTweaks(TWEAK_DEFAULTS);
   const [nascarBoard, setNascarBoard]   = useState(null);
   const [nascarPts, setNascarPts]       = useState(null);
+  const [nascarNews, setNascarNews]     = useState([]);
   const [nbaScores, setNbaScores]       = useState(null);
   const [nbaStandings, setNbaStandings] = useState(null);
+  const [nbaNews, setNbaNews]           = useState([]);
   const [worldEvents, setWorldEvents]   = useState([]);
   const [loading, setLoading]           = useState(true);
   const [lastUpdated, setLastUpdated]   = useState(null);
@@ -718,19 +763,23 @@ function App() {
   }, [t.theme]);
 
   async function fetchAll() {
-    const [nascar, nascarStand, nba, nbaStand, wiki] = await Promise.allSettled([
+    const [nascar, nascarStand, nascarNewsRes, nba, nbaStand, nbaNewsRes, wiki] = await Promise.allSettled([
       fetch(NASCAR_SCOREBOARD).then(r => r.ok ? r.json() : Promise.reject()),
       fetch(NASCAR_STANDINGS).then(r  => r.ok ? r.json() : Promise.reject()),
+      fetch(NASCAR_NEWS).then(r       => r.ok ? r.json() : Promise.reject()),
       fetch(NBA_SCOREBOARD).then(r    => r.ok ? r.json() : Promise.reject()),
       fetch(NBA_STANDINGS).then(r     => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_NEWS).then(r          => r.ok ? r.json() : Promise.reject()),
       fetch(wikipediaOTD()).then(r     => r.ok ? r.json() : Promise.reject()),
     ]);
 
-    if (nascar.status    === "fulfilled") setNascarBoard(nascar.value);
+    if (nascar.status      === "fulfilled") setNascarBoard(nascar.value);
     if (nascarStand.status === "fulfilled") setNascarPts(nascarStand.value);
-    if (nba.status       === "fulfilled") setNbaScores(nba.value);
-    if (nbaStand.status  === "fulfilled") setNbaStandings(nbaStand.value);
-    if (wiki.status      === "fulfilled") {
+    if (nascarNewsRes.status === "fulfilled") setNascarNews(nascarNewsRes.value?.articles ?? []);
+    if (nba.status         === "fulfilled") setNbaScores(nba.value);
+    if (nbaStand.status    === "fulfilled") setNbaStandings(nbaStand.value);
+    if (nbaNewsRes.status  === "fulfilled") setNbaNews(nbaNewsRes.value?.articles ?? []);
+    if (wiki.status        === "fulfilled") {
       const evs = wiki.value?.events ?? [];
       setWorldEvents(evs.map(e => ({ year: e.year, text: e.text })));
     }
@@ -770,8 +819,8 @@ function App() {
         {fetchError && <div className="nb-error">{fetchError}</div>}
 
         <div className="nb-grid">
-          <NascarPanel scoreboard={nascarBoard} standings={nascarPts} loading={loading} />
-          <BasketballPanel scores={nbaScores} standings={nbaStandings} loading={loading} />
+          <NascarPanel scoreboard={nascarBoard} standings={nascarPts} news={nascarNews} loading={loading} />
+          <BasketballPanel scores={nbaScores} standings={nbaStandings} news={nbaNews} loading={loading} />
         </div>
 
         <OnThisDay worldEvents={worldEvents} />
