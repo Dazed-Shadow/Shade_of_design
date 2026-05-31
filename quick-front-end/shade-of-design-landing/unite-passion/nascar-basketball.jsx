@@ -1,4 +1,4 @@
-/* global React, ReactDOM */
+/* global React, ReactDOM, supabase */
 const { useState, useEffect, useRef } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "light" }/*EDITMODE-END*/;
@@ -18,6 +18,27 @@ function wikipediaOTD() {
   const dd  = String(now.getDate()).padStart(2, "0");
   return `https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`;
 }
+
+// ─── Comment wall config ─────────────────────────────────────────────────────
+// SETUP (~5 min, one-time):
+//  1. Create free account at https://supabase.com
+//  2. New project → Settings → API → copy "Project URL" and "anon public" key
+//  3. SQL Editor → run:
+//       create table comments (
+//         id         uuid        default gen_random_uuid() primary key,
+//         title      text        not null,
+//         body       text        not null,
+//         author     text        not null default 'Anonymous',
+//         created_at timestamptz default now()
+//       );
+//       alter table comments enable row level security;
+//       create policy "read all"   on comments for select using (true);
+//       create policy "insert all" on comments for insert with check (true);
+//  4. Replace the two placeholder strings below with your values and push.
+const SUPABASE_URL  = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY  = "YOUR_SUPABASE_ANON_KEY";
+const COMMENTS_ON   = !SUPABASE_URL.startsWith("YOUR_");
+const sb            = COMMENTS_ON ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 const REFRESH_MS = 60_000;
 const NY_TEAMS   = ["NYK", "BKN"];
@@ -913,6 +934,125 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
   );
 }
 
+// ─── CommentWall ─────────────────────────────────────────────────────────────
+
+function CommentWall() {
+  const [comments,   setComments]   = useState([]);
+  const [title,      setTitle]      = useState("");
+  const [body,       setBody]       = useState("");
+  const [author,     setAuthor]     = useState("");
+  const [sending,    setSending]    = useState(false);
+  const [sent,       setSent]       = useState(false);
+  const [loadErr,    setLoadErr]    = useState(false);
+
+  async function loadComments() {
+    if (!sb) return;
+    const { data, error } = await sb
+      .from("comments")
+      .select("id, title, body, author, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!error && data) setComments(data);
+    else setLoadErr(true);
+  }
+
+  useEffect(() => { loadComments(); }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    setSending(true);
+    const { error } = await sb.from("comments").insert({
+      title:  title.trim(),
+      body:   body.trim(),
+      author: author.trim() || "Anonymous",
+    });
+    if (!error) {
+      setSent(true);
+      setTitle(""); setBody(""); setAuthor("");
+      setTimeout(() => setSent(false), 3000);
+      loadComments();
+    }
+    setSending(false);
+  }
+
+  function fmtRelative(iso) {
+    if (!iso) return "";
+    const diff = Date.now() - new Date(iso);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1)  return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs  < 24) return `${hrs}h ago`;
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
+  return (
+    <section className="comment-wall">
+      <div className="cw-header">
+        <p className="nb-eye">Family Notes</p>
+        <h3 className="cw-title">Leave a Note</h3>
+        <p className="cw-sub">Check in from any device — dad, JR, anyone with the link.</p>
+      </div>
+
+      {!COMMENTS_ON ? (
+        <div className="cw-unconfigured">
+          <p>Comment wall coming soon — see setup instructions in <code>nascar-basketball.jsx</code>.</p>
+        </div>
+      ) : (
+        <div className="cw-body">
+          <form className="cw-form" onSubmit={handleSubmit}>
+            <input
+              className="cw-input"
+              placeholder="Your name (optional)"
+              value={author}
+              onChange={e => setAuthor(e.target.value)}
+              maxLength={40}
+            />
+            <input
+              className="cw-input"
+              placeholder="Title *"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              maxLength={80}
+              required
+            />
+            <textarea
+              className="cw-textarea"
+              placeholder="What's on your mind? *"
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              maxLength={400}
+              rows={3}
+              required
+            />
+            <button className="cw-submit" type="submit" disabled={sending || !title.trim() || !body.trim()}>
+              {sent ? "Note saved ✓" : sending ? "Saving…" : "Leave Note →"}
+            </button>
+          </form>
+
+          <div className="cw-feed">
+            {loadErr && <p className="cw-error">Could not load notes — check back shortly.</p>}
+            {!loadErr && comments.length === 0 && (
+              <p className="cw-empty">No notes yet — be the first to leave one.</p>
+            )}
+            {comments.map(c => (
+              <div key={c.id} className="cw-card">
+                <div className="cwc-head">
+                  <span className="cwc-title">{c.title}</span>
+                  <span className="cwc-time">{fmtRelative(c.created_at)}</span>
+                </div>
+                <p className="cwc-body">{c.body}</p>
+                <span className="cwc-author">— {c.author || "Anonymous"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -997,6 +1137,7 @@ function App() {
         </div>
 
         <OnThisDay worldEvents={worldEvents} />
+        <CommentWall />
       </main>
 
       <footer className="nb-foot">
