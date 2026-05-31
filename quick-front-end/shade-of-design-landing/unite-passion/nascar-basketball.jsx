@@ -35,8 +35,8 @@ function wikipediaOTD() {
 //       create policy "read all"   on comments for select using (true);
 //       create policy "insert all" on comments for insert with check (true);
 //  4. Replace the two placeholder strings below with your values and push.
-const SUPABASE_URL  = "YOUR_SUPABASE_URL";
-const SUPABASE_KEY  = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL  = "https://emyierfkxcscieqggyjd.supabase.co";
+const SUPABASE_KEY  = "sb_publishable_1bAn7tEdADRhVwSJtYdpTg_ge6hxqK3";
 const COMMENTS_ON   = !SUPABASE_URL.startsWith("YOUR_");
 const sb            = COMMENTS_ON ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
