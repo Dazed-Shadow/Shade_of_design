@@ -10,6 +10,7 @@ const NASCAR_NEWS        = "https://site.api.espn.com/apis/site/v2/sports/racing
 const NBA_SCOREBOARD     = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const NBA_STANDINGS      = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
 const NBA_NEWS           = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=3";
+const NBA_LEADERS_URL    = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/leaders?limit=5";
 
 function wikipediaOTD() {
   const now = new Date();
@@ -449,6 +450,147 @@ function OnThisDay({ worldEvents }) {
   );
 }
 
+// ─── NascarLeaderBoard ────────────────────────────────────────────────────────
+
+function NascarLeaderBoard({ standings, lastEvent }) {
+  const entries = standings?.children?.[0]?.standings?.entries
+    ?? standings?.standings?.entries
+    ?? standings?.entries
+    ?? [];
+
+  const winLeaders = [...entries]
+    .map(e => ({
+      name: e.athlete?.displayName || e.athlete?.shortName || "—",
+      car:  e.vehicle?.number || e.car?.number || "—",
+      wins: Number(getStat(e.stats, "wins", "W") || 0),
+      top5: getStat(e.stats, "top5", "Top5", "T5", "top5Finishes"),
+      pts:  getStat(e.stats, "points", "pts", "PTS"),
+    }))
+    .filter(e => e.wins > 0)
+    .sort((a, b) => b.wins - a.wins)
+    .slice(0, 5);
+
+  const comp   = lastEvent?.competitions?.[0];
+  const sorted = [...(comp?.competitors ?? [])].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  const top10  = sorted.slice(0, 10);
+
+  if (!winLeaders.length && !top10.length) return null;
+
+  return (
+    <div className="league-board">
+      <p className="nb-eye">League Board</p>
+
+      {top10.length > 0 && (
+        <div className="lb-section">
+          <p className="lb-section-label">Last Race · Full Results</p>
+          <div className="standings-table" style={{marginTop:"var(--s-2)"}}>
+            <div className="lb-header"><span>POS</span><span>CAR</span><span>DRIVER</span></div>
+            {top10.map((c, i) => {
+              const name  = c.athlete?.displayName ?? c.athlete?.shortName ?? `P${i+1}`;
+              const car   = c.vehicle?.number ?? c.car?.number ?? "—";
+              const isFav = FEATURED_DRIVERS.some(d => d.car === car);
+              return (
+                <div key={i} className={`lb-row${i === 0 ? " lb-leader" : ""}${isFav ? " lb-fav" : ""}`}>
+                  <span className="lb-pos">{c.order ?? i+1}</span>
+                  <span className="lb-car">#{car}</span>
+                  <span className="lb-name">{name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {winLeaders.length > 0 && (
+        <div className="lb-section">
+          <p className="lb-section-label">Season Win Leaders</p>
+          <div className="leader-table">
+            <div className="leader-header">
+              <span></span><span>Driver</span><span>Car</span>
+              <span style={{textAlign:"right"}}>W</span>
+              <span style={{textAlign:"right"}}>T5</span>
+              <span style={{textAlign:"right"}}>Pts</span>
+            </div>
+            {winLeaders.map((e, i) => {
+              const isFav = FEATURED_DRIVERS.some(d => d.car === e.car || d.name === e.name);
+              return (
+                <div key={i} className={`leader-row${isFav ? " leader-fav" : ""}`}>
+                  <span className="leader-pos">{i+1}</span>
+                  <span className="leader-name">{e.name}</span>
+                  <span className="leader-stat">#{e.car}</span>
+                  <span className="leader-stat">{e.wins}</span>
+                  <span className="leader-stat">{e.top5}</span>
+                  <span className="leader-stat">{e.pts}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── NbaLeaderBoard ───────────────────────────────────────────────────────────
+
+function NbaLeaderBoard({ leaders, lastNY }) {
+  const statGroups = (leaders?.leaders ?? []).slice(0, 3);
+
+  const comp   = lastNY?.competitions?.[0];
+  const home   = comp?.competitors?.find(c => c.homeAway === "home");
+  const away   = comp?.competitors?.find(c => c.homeAway === "away");
+  const nyHome = NY_TEAMS.includes(home?.team?.abbreviation);
+  const nyAway = NY_TEAMS.includes(away?.team?.abbreviation);
+
+  if (!statGroups.length && !comp) return null;
+
+  return (
+    <div className="league-board">
+      <p className="nb-eye">League Board</p>
+
+      {comp && (
+        <div className="lb-section">
+          <p className="lb-section-label">Last NY Game · Final</p>
+          <div className="last-game-board">
+            <div className={`lgb-team${nyAway ? " lgb-ny" : ""}`}>
+              <span className="lgb-abbr">{away?.team?.abbreviation ?? "—"}</span>
+              <span className="lgb-score">{away?.score ?? "—"}</span>
+              <span className="lgb-full">{away?.team?.shortDisplayName ?? ""}</span>
+            </div>
+            <span className="lgb-sep">Final</span>
+            <div className={`lgb-team lgb-right${nyHome ? " lgb-ny" : ""}`}>
+              <span className="lgb-abbr">{home?.team?.abbreviation ?? "—"}</span>
+              <span className="lgb-score">{home?.score ?? "—"}</span>
+              <span className="lgb-full">{home?.team?.shortDisplayName ?? ""}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {statGroups.length > 0 && (
+        <div className="lb-section">
+          <p className="lb-section-label">Season Stat Leaders</p>
+          <div className="stat-leaders-grid">
+            {statGroups.map((group, gi) => (
+              <div key={gi} className="stat-leader-group">
+                <span className="slg-label">{group.abbreviation ?? group.name}</span>
+                <div className="slg-entries">
+                  {(group.leaders ?? []).slice(0, 3).map((leader, li) => (
+                    <div key={li} className={`slg-row${li === 0 ? " slg-top" : ""}`}>
+                      <span className="slg-name">{leader.athlete?.shortName ?? leader.athlete?.displayName ?? "—"}</span>
+                      <span className="slg-val">{leader.displayValue ?? String(leader.value ?? "—")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── NewsStrip ────────────────────────────────────────────────────────────────
 
 function NewsStrip({ articles, sport }) {
@@ -558,6 +700,9 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
           {/* Season standings */}
           <NascarStandingsTable data={standings} />
 
+          {/* League board — last race results + win leaders */}
+          <NascarLeaderBoard standings={standings} lastEvent={lastEvent} />
+
           {/* Dad's driver cards */}
           <div className="drivers-section">
             <p className="nb-eye">Dad's Drivers</p>
@@ -590,7 +735,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
 
 // ─── BasketballPanel ──────────────────────────────────────────────────────────
 
-function BasketballPanel({ scores, standings, news, loading }) {
+function BasketballPanel({ scores, standings, leaders, news, loading }) {
   const allEvents = scores?.events ?? [];
 
   const nyGames   = allEvents.filter(ev =>
@@ -757,6 +902,9 @@ function BasketballPanel({ scores, standings, news, loading }) {
             </div>
           )}
 
+          {/* League board — last NY game + stat leaders */}
+          <NbaLeaderBoard leaders={leaders} lastNY={lastNY} />
+
           {/* NBA news */}
           <NewsStrip articles={news} sport="nba" />
         </>
@@ -775,6 +923,7 @@ function App() {
   const [nbaScores, setNbaScores]       = useState(null);
   const [nbaStandings, setNbaStandings] = useState(null);
   const [nbaNews, setNbaNews]           = useState([]);
+  const [nbaLeaders, setNbaLeaders]     = useState(null);
   const [worldEvents, setWorldEvents]   = useState([]);
   const [loading, setLoading]           = useState(true);
   const [lastUpdated, setLastUpdated]   = useState(null);
@@ -785,22 +934,24 @@ function App() {
   }, [t.theme]);
 
   async function fetchAll() {
-    const [nascar, nascarStand, nascarNewsRes, nba, nbaStand, nbaNewsRes, wiki] = await Promise.allSettled([
-      fetch(NASCAR_SCOREBOARD).then(r => r.ok ? r.json() : Promise.reject()),
-      fetch(NASCAR_STANDINGS).then(r  => r.ok ? r.json() : Promise.reject()),
-      fetch(NASCAR_NEWS).then(r       => r.ok ? r.json() : Promise.reject()),
-      fetch(NBA_SCOREBOARD).then(r    => r.ok ? r.json() : Promise.reject()),
-      fetch(NBA_STANDINGS).then(r     => r.ok ? r.json() : Promise.reject()),
-      fetch(NBA_NEWS).then(r          => r.ok ? r.json() : Promise.reject()),
-      fetch(wikipediaOTD()).then(r     => r.ok ? r.json() : Promise.reject()),
+    const [nascar, nascarStand, nascarNewsRes, nba, nbaStand, nbaNewsRes, nbaLeadRes, wiki] = await Promise.allSettled([
+      fetch(NASCAR_SCOREBOARD).then(r  => r.ok ? r.json() : Promise.reject()),
+      fetch(NASCAR_STANDINGS).then(r   => r.ok ? r.json() : Promise.reject()),
+      fetch(NASCAR_NEWS).then(r        => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_SCOREBOARD).then(r     => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_STANDINGS).then(r      => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_NEWS).then(r           => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_LEADERS_URL).then(r    => r.ok ? r.json() : Promise.reject()),
+      fetch(wikipediaOTD()).then(r      => r.ok ? r.json() : Promise.reject()),
     ]);
 
-    if (nascar.status      === "fulfilled") setNascarBoard(nascar.value);
-    if (nascarStand.status === "fulfilled") setNascarPts(nascarStand.value);
+    if (nascar.status       === "fulfilled") setNascarBoard(nascar.value);
+    if (nascarStand.status  === "fulfilled") setNascarPts(nascarStand.value);
     if (nascarNewsRes.status === "fulfilled") setNascarNews(nascarNewsRes.value?.articles ?? []);
-    if (nba.status         === "fulfilled") setNbaScores(nba.value);
-    if (nbaStand.status    === "fulfilled") setNbaStandings(nbaStand.value);
-    if (nbaNewsRes.status  === "fulfilled") setNbaNews(nbaNewsRes.value?.articles ?? []);
+    if (nba.status          === "fulfilled") setNbaScores(nba.value);
+    if (nbaStand.status     === "fulfilled") setNbaStandings(nbaStand.value);
+    if (nbaNewsRes.status   === "fulfilled") setNbaNews(nbaNewsRes.value?.articles ?? []);
+    if (nbaLeadRes.status   === "fulfilled") setNbaLeaders(nbaLeadRes.value);
     if (wiki.status        === "fulfilled") {
       const evs = wiki.value?.events ?? [];
       setWorldEvents(evs.map(e => ({ year: e.year, text: e.text })));
@@ -842,7 +993,7 @@ function App() {
 
         <div className="nb-grid">
           <NascarPanel scoreboard={nascarBoard} standings={nascarPts} news={nascarNews} loading={loading} />
-          <BasketballPanel scores={nbaScores} standings={nbaStandings} news={nbaNews} loading={loading} />
+          <BasketballPanel scores={nbaScores} standings={nbaStandings} leaders={nbaLeaders} news={nbaNews} loading={loading} />
         </div>
 
         <OnThisDay worldEvents={worldEvents} />
