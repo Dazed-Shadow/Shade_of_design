@@ -364,7 +364,7 @@ function App() {
   return (
     <div className="nb-page">
       <header className="nb-header">
-        <a href="index.html" className="nb-back">← Shade of Design</a>
+        <a href="../index.html" className="nb-back">← Shade of Design</a>
         <div className="nb-header-center">
           <div className="nb-title">The Pit Stop &amp; The Paint</div>
           <div className="nb-subtitle">NASCAR · NBA</div>
@@ -391,7 +391,7 @@ function App() {
       </main>
 
       <footer className="nb-foot">
-        <a href="index.html" className="foot-link">← Back</a>
+        <a href="../index.html" className="foot-link">← Back</a>
         <span className="nb-updated">
           {loading && !lastUpdated
             ? "Loading…"

@@ -92,7 +92,7 @@ const PROJECTS = [
     kicker: "NASCAR · NBA · Passion Project",
     title: "Pit Stop & The Paint",
     blurb: "Dad's drivers. New York's teams. Live, side by side.",
-    href: "nascar-basketball.html",
+    href: "unite-passion/nascar-basketball.html",
     status: "live",
     accent: "sport",
   },
