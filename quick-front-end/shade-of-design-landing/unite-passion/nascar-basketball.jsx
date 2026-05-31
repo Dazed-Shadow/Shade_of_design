@@ -1,46 +1,89 @@
 /* global React, ReactDOM */
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "light" }/*EDITMODE-END*/;
 
-const NASCAR_URL  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
-const NBA_URL     = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
-const STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
+// ─── API endpoints ────────────────────────────────────────────────────────────
+const NASCAR_SCOREBOARD  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
+const NASCAR_STANDINGS   = "https://site.api.espn.com/apis/v2/sports/racing/nascar/standings";
+const NBA_SCOREBOARD     = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
+const NBA_STANDINGS      = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
+
+function wikipediaOTD() {
+  const now = new Date();
+  const mm  = String(now.getMonth() + 1).padStart(2, "0");
+  const dd  = String(now.getDate()).padStart(2, "0");
+  return `https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`;
+}
 
 const REFRESH_MS = 60_000;
+const NY_TEAMS   = ["NYK", "BKN"];
 
-const NY_TEAMS = ["NYK", "BKN"];
-
+// ─── Static driver data ───────────────────────────────────────────────────────
 const FEATURED_DRIVERS = [
-  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",         era: "modern" },
-  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",       era: "modern" },
-  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Rcg.", era: "legend" },
-  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",       era: "legend" },
-  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",    era: "legend" },
+  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver" },
+  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner" },
+  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator" },
+  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King" },
+  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior" },
 ];
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// ─── "On This Day" curated lore ───────────────────────────────────────────────
+const NASCAR_LORE = [
+  { year: 1959, text: "The very first Daytona 500 was held. Lee Petty — Richard's father — won in a photo finish on the brand-new 2.5-mile superspeedway.", subject: "History" },
+  { year: 1979, text: "CBS broadcast the first flag-to-flag live TV coverage of a 500-mile race. A post-race brawl between Donnie Allison and Cale Yarborough made it unforgettable.", subject: "History" },
+  { year: 1984, text: "Richard Petty won his 200th — and final — career race at the Firecracker 400 at Daytona, with President Reagan watching from the infield.", subject: "Richard Petty" },
+  { year: 1987, text: "Dale Earnhardt Sr.'s famous 'pass in the grass' at Charlotte secured a win that cemented his reputation as the sport's most fearless competitor.", subject: "Dale Earnhardt Sr." },
+  { year: 1994, text: "Dale Earnhardt Sr. claimed his 7th Cup Series title at Atlanta Motor Speedway, equaling Richard Petty's record and silencing every doubter in the garage.", subject: "Dale Earnhardt Sr." },
+  { year: 1995, text: "Jeff Gordon won his first NASCAR Cup Series championship at just 24 years old, beginning one of the most dominant runs in the sport's modern era.", subject: "Jeff Gordon" },
+  { year: 1998, text: "Dale Earnhardt Sr. won the Daytona 500 on his 20th attempt. The entire field of pit crews came out to congratulate him — one of the sport's most emotional moments.", subject: "Dale Earnhardt Sr." },
+  { year: 2001, text: "Dale Jr. returned to race at Daytona for the Pepsi 400 — the same track where his father was lost — and won. The crowd reaction remains one of NASCAR's most powerful scenes.", subject: "Dale Earnhardt Jr." },
+  { year: 2005, text: "Jeff Gordon won his 3rd Daytona 500, further establishing the Great American Race as his personal showcase.", subject: "Jeff Gordon" },
+  { year: 2014, text: "Dale Earnhardt Jr. won the Daytona 500 for the second time, 10 years after his first, driving the #88 for Hendrick Motorsports.", subject: "Dale Earnhardt Jr." },
+  { year: 2016, text: "Denny Hamlin edged Martin Truex Jr. by 0.010 seconds at the Daytona 500 — the closest finish in the race's history.", subject: "Denny Hamlin" },
+  { year: 2017, text: "Dale Earnhardt Jr. was named NASCAR's Most Popular Driver for the 15th consecutive year, a record that still stands.", subject: "Dale Earnhardt Jr." },
+  { year: 2019, text: "Denny Hamlin won his second Daytona 500, joining an elite group of multiple winners at NASCAR's most prestigious event.", subject: "Denny Hamlin" },
+  { year: 2020, text: "Denny Hamlin won his third Daytona 500 in five years, becoming only the third driver in history to win the race three or more times.", subject: "Denny Hamlin" },
+];
+
+const NBA_LORE = [
+  { year: 1946, text: "The Basketball Association of America — forerunner to the NBA — was founded with 11 teams. New York has been at the heart of professional basketball ever since.", subject: "History" },
+  { year: 1968, text: "The current Madison Square Garden opened its doors on 7th Avenue in Midtown Manhattan, becoming the permanent home of the Knicks and one of sport's most iconic arenas.", subject: "New York Knicks" },
+  { year: 1970, text: "Willis Reed limped onto the MSG court in Game 7 of the NBA Finals despite a torn thigh muscle. His presence electrified the building and the Knicks won their first championship.", subject: "New York Knicks" },
+  { year: 1973, text: "Walt 'Clyde' Frazier put up 36 points and 19 assists in the championship-clinching game, leading the Knicks to their second — and most recent — NBA title.", subject: "New York Knicks" },
+  { year: 1976, text: "The ABA-NBA merger brought four ABA teams into the league, including the New York Nets, who had won two ABA championships.", subject: "Brooklyn Nets" },
+  { year: 1985, text: "Patrick Ewing was selected 1st overall by the Knicks in the first ever NBA Draft Lottery — a pick that defined the franchise for the next 15 years.", subject: "New York Knicks" },
+  { year: 1994, text: "Patrick Ewing led the Knicks to the NBA Finals for the first time since 1973. New York fell to the Houston Rockets in 7 games in one of the decade's most dramatic series.", subject: "New York Knicks" },
+  { year: 2002, text: "The New Jersey Nets reached the NBA Finals for the first time, led by Jason Kidd's triple-double brilliance. They'd return to the Finals the following year.", subject: "Brooklyn Nets" },
+  { year: 2012, text: "The Brooklyn Nets moved from New Jersey to the newly built Barclays Center, making Brooklyn a major-league sports borough for the first time in 55 years.", subject: "Brooklyn Nets" },
+  { year: 2013, text: "The Nets acquired Paul Pierce, Kevin Garnett, and Jason Terry from Boston in one of the most blockbuster trades in NBA history, swinging for an immediate championship.", subject: "Brooklyn Nets" },
+  { year: 2021, text: "The Knicks ended a seven-year playoff drought, returning to the postseason with a young, hard-nosed roster that reignited Madison Square Garden.", subject: "New York Knicks" },
+  { year: 2023, text: "Jalen Brunson's emergence as an elite point guard gave the Knicks their most credible shot at contention in a generation, pushing deep into the playoffs.", subject: "New York Knicks" },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtTime(d) {
   if (!d) return "—";
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function fmtRaceDate(iso) {
+function fmtShortDate(iso) {
   if (!iso) return null;
   try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      weekday: "long", month: "long", day: "numeric",
-    });
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch { return null; }
+}
+
+function fmtLongDate(iso) {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   } catch { return null; }
 }
 
 function getFlagState(competition) {
-  const desc = (
-    competition?.status?.type?.description ||
-    competition?.status?.type?.name ||
-    ""
-  ).toLowerCase();
+  const desc  = (competition?.status?.type?.description || competition?.status?.type?.name || "").toLowerCase();
   const state = competition?.status?.type?.state;
   if (desc.includes("checkered") || desc.includes("final")) return "checkered";
   if (desc.includes("yellow") || desc.includes("caution"))  return "yellow";
@@ -50,7 +93,7 @@ function getFlagState(competition) {
 }
 
 function getStat(stats, ...names) {
-  if (!Array.isArray(stats)) return null;
+  if (!Array.isArray(stats)) return "—";
   for (const name of names) {
     const s = stats.find(s =>
       s.name === name || s.abbreviation === name ||
@@ -61,16 +104,65 @@ function getStat(stats, ...names) {
   return "—";
 }
 
-// ─── FlagBadge ───────────────────────────────────────────────────────────────
+function calcCountdown(iso) {
+  const diff = new Date(iso) - Date.now();
+  if (!iso || diff <= 0) return null;
+  const days  = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+  const mins  = Math.floor((diff % 3_600_000) / 60_000);
+  const secs  = Math.floor((diff % 60_000) / 1_000);
+  return { days, hours, mins, secs };
+}
+
+// Rotate through an array using day-of-year so it changes daily but is stable within a day
+function dailyPick(arr) {
+  if (!arr?.length) return null;
+  const d   = new Date();
+  const doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86_400_000);
+  return arr[doy % arr.length];
+}
+
+function pickRandom(arr, n) {
+  if (!arr?.length) return [];
+  const copy = [...arr].sort(() => Math.random() - 0.5);
+  return copy.slice(0, n);
+}
+
+// ─── CountdownTimer ───────────────────────────────────────────────────────────
+
+function CountdownTimer({ targetIso, label }) {
+  const [cd, setCd] = useState(() => calcCountdown(targetIso));
+
+  useEffect(() => {
+    const id = setInterval(() => setCd(calcCountdown(targetIso)), 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+
+  if (!cd) return null;
+
+  const pads = (n) => String(n).padStart(2, "0");
+
+  return (
+    <div className="countdown-card">
+      <p className="card-eye">{label}</p>
+      <div className="countdown-dials">
+        <div className="dial"><span className="dial-n">{cd.days}</span><span className="dial-l">Days</span></div>
+        <span className="dial-sep">:</span>
+        <div className="dial"><span className="dial-n">{pads(cd.hours)}</span><span className="dial-l">Hrs</span></div>
+        <span className="dial-sep">:</span>
+        <div className="dial"><span className="dial-n">{pads(cd.mins)}</span><span className="dial-l">Min</span></div>
+        <span className="dial-sep">:</span>
+        <div className="dial"><span className="dial-n">{pads(cd.secs)}</span><span className="dial-l">Sec</span></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FlagBadge ────────────────────────────────────────────────────────────────
 
 function FlagBadge({ state }) {
   if (!state) return null;
-  const labels = {
-    green: "Green Flag",
-    yellow: "Caution",
-    red: "Red Flag",
-    checkered: "Checkered Flag",
-  };
+  const labels = { green: "Green Flag", yellow: "Caution", red: "Red Flag", checkered: "Checkered" };
   return (
     <span className={`flag-badge flag-${state}`}>
       {state === "checkered" ? "🏁" : "⬤"} {labels[state]}
@@ -78,42 +170,303 @@ function FlagBadge({ state }) {
   );
 }
 
+// ─── ScheduleStrip ────────────────────────────────────────────────────────────
+
+function ScheduleStrip({ events, label, max = 3 }) {
+  const upcoming = (events || [])
+    .filter(ev => ev?.status?.type?.state === "pre" || ev?.competitions?.[0]?.status?.type?.state === "pre")
+    .slice(0, max);
+
+  if (!upcoming.length) return null;
+
+  return (
+    <div className="schedule-strip">
+      <p className="nb-eye">{label}</p>
+      {upcoming.map((ev, i) => {
+        const venue   = ev.competitions?.[0]?.venue?.shortName || ev.competitions?.[0]?.venue?.fullName;
+        const network = ev.competitions?.[0]?.broadcasts?.[0]?.names?.[0];
+        const date    = fmtShortDate(ev.date);
+        const name    = ev.shortName || ev.name;
+        return (
+          <div key={i} className="sched-item">
+            {date && <span className="sched-date">{date}</span>}
+            <span className="sched-name">{name}</span>
+            {venue && <span className="sched-venue">{venue}</span>}
+            {network && <span className="sched-net">{network}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── LastRaceCard ─────────────────────────────────────────────────────────────
+
+function LastRaceCard({ event }) {
+  if (!event) return null;
+  const comp      = event.competitions?.[0];
+  const winner    = [...(comp?.competitors || [])].sort((a, b) => (a.order ?? 99) - (b.order ?? 99))[0];
+  const winName   = winner?.athlete?.displayName || winner?.athlete?.shortName;
+  const winCar    = winner?.vehicle?.number || winner?.car?.number;
+  const venue     = comp?.venue?.shortName || comp?.venue?.fullName;
+
+  return (
+    <div className="last-result-card">
+      <p className="card-eye">Last Race</p>
+      <div className="last-result-name">{event.name || event.shortName}</div>
+      {venue && <div className="last-result-sub">{venue}</div>}
+      {winName && (
+        <div className="last-result-winner">
+          <span className="lrw-label">Winner</span>
+          <span className="lrw-name">{winName}{winCar ? ` · #${winCar}` : ""}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LastGameCard ─────────────────────────────────────────────────────────────
+
+function LastGameCard({ event }) {
+  if (!event) return null;
+  const comp = event.competitions?.[0];
+  const home = comp?.competitors?.find(c => c.homeAway === "home");
+  const away = comp?.competitors?.find(c => c.homeAway === "away");
+  const nyHome = NY_TEAMS.includes(home?.team?.abbreviation);
+  const nyAway = NY_TEAMS.includes(away?.team?.abbreviation);
+
+  return (
+    <div className="last-result-card">
+      <p className="card-eye">Last Game</p>
+      <div className="last-game-row">
+        <span className={nyAway ? "lrg-ny" : ""}>{away?.team?.abbreviation}</span>
+        <span className="lrg-score">{away?.score ?? "—"}</span>
+        <span className="lrg-sep">·</span>
+        <span className={nyHome ? "lrg-ny" : ""}>{home?.team?.abbreviation}</span>
+        <span className="lrg-score">{home?.score ?? "—"}</span>
+        <span className="lrg-label">Final</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── NascarStandingsTable ─────────────────────────────────────────────────────
+
+function NascarStandingsTable({ data }) {
+  const entries = data?.children?.[0]?.standings?.entries
+    ?? data?.standings?.entries
+    ?? data?.entries
+    ?? [];
+
+  if (!entries.length) return null;
+
+  const top10 = entries.slice(0, 10);
+
+  return (
+    <div className="standings-section">
+      <p className="nb-eye">Season Points Standings</p>
+      <div className="standings-table">
+        <div className="st-header">
+          <span></span><span>Driver</span>
+          <span style={{textAlign:"right"}}>Car</span>
+          <span style={{textAlign:"right"}} className="hide-xs">Wins</span>
+          <span style={{textAlign:"right"}}>Pts</span>
+        </div>
+        {top10.map((entry, i) => {
+          const name = entry.athlete?.displayName || entry.athlete?.shortName || `P${i+1}`;
+          const car  = entry.vehicle?.number || entry.car?.number || "—";
+          const pts  = getStat(entry.stats, "points", "pts", "PTS", "totalPoints");
+          const wins = getStat(entry.stats, "wins", "W");
+          const isFav = FEATURED_DRIVERS.some(d => d.name === name || d.car === car);
+          return (
+            <div key={i} className={`st-row${isFav ? " st-row-ny" : ""}`}>
+              <span className="st-pos">{i + 1}</span>
+              <span className={`st-team${isFav ? " st-team-ny" : ""}`}>{name}</span>
+              <span className="st-stat">#{car}</span>
+              <span className="st-stat hide-xs">{wins}</span>
+              <span className="st-stat">{pts}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── TeamRecordStrip ──────────────────────────────────────────────────────────
+
+function TeamRecordStrip({ entries }) {
+  const nyEntries = (entries || []).filter(e => NY_TEAMS.includes(e.team?.abbreviation));
+  if (!nyEntries.length) return null;
+
+  return (
+    <div className="team-record-strip">
+      <p className="nb-eye">New York Records</p>
+      <div className="rec-cards">
+        {nyEntries.map((entry, i) => {
+          const abbr    = entry.team?.abbreviation;
+          const name    = entry.team?.shortDisplayName || entry.team?.displayName || abbr;
+          const wins    = getStat(entry.stats, "wins", "W", "OW");
+          const losses  = getStat(entry.stats, "losses", "L", "OL");
+          const streak  = getStat(entry.stats, "streak", "strk", "currentStreak");
+          const home    = getStat(entry.stats, "homeRecord", "Home");
+          const road    = getStat(entry.stats, "roadRecord", "Away");
+          return (
+            <div key={i} className={`rec-card rec-${abbr.toLowerCase()}`}>
+              <div className="rec-header">
+                <span className="rec-abbr">{abbr}</span>
+                <span className="rec-name">{name}</span>
+              </div>
+              <div className="rec-stats">
+                <div className="rec-stat"><span className="rec-val">{wins}–{losses}</span><span className="rec-lbl">Record</span></div>
+                {streak !== "—" && <div className="rec-stat"><span className="rec-val">{streak}</span><span className="rec-lbl">Streak</span></div>}
+                {home !== "—" && <div className="rec-stat"><span className="rec-val">{home}</span><span className="rec-lbl">Home</span></div>}
+                {road !== "—" && <div className="rec-stat"><span className="rec-val">{road}</span><span className="rec-lbl">Away</span></div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── PlayoffPicture ───────────────────────────────────────────────────────────
+
+function PlayoffPicture({ entries, conference }) {
+  if (!entries?.length) return null;
+  const inPlayoffs  = entries.filter(e => {
+    const seed = getStat(e.stats, "playoffSeed", "seed");
+    return seed !== "—" && Number(seed) <= 10;
+  });
+  if (inPlayoffs.length < 4) return null;
+
+  return (
+    <div className="playoff-section">
+      <p className="nb-eye">Playoff Picture · {conference}</p>
+      <div className="playoff-grid">
+        {inPlayoffs.slice(0, 10).map((entry, i) => {
+          const abbr  = entry.team?.abbreviation;
+          const name  = entry.team?.shortDisplayName || abbr;
+          const wins  = getStat(entry.stats, "wins", "W");
+          const losses = getStat(entry.stats, "losses", "L");
+          const isNY  = NY_TEAMS.includes(abbr);
+          const isIn  = i < 6;
+          return (
+            <div key={i} className={`playoff-row${isNY ? " playoff-ny" : ""}${isIn ? "" : " playoff-bubble"}`}>
+              <span className="po-seed">{i + 1}</span>
+              <span className={`po-team${isNY ? " po-ny" : ""}`}>{name}</span>
+              <span className="po-rec">{wins}–{losses}</span>
+              {!isIn && <span className="po-bubble">Bubble</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── OnThisDay ────────────────────────────────────────────────────────────────
+
+function OnThisDay({ worldEvents }) {
+  const nascarFact = dailyPick(NASCAR_LORE);
+  const nbaFact    = dailyPick(NBA_LORE);
+
+  const today = new Date();
+  const label = today.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+  const worldPicks = pickRandom(worldEvents || [], 3);
+
+  return (
+    <section className="otd-section">
+      <div className="otd-header">
+        <p className="nb-eye">On This Day · {label}</p>
+        <h3 className="otd-title">History Worth Knowing</h3>
+      </div>
+      <div className="otd-grid">
+
+        {nascarFact && (
+          <div className="otd-card otd-nascar">
+            <span className="otd-sport-tag">NASCAR</span>
+            <span className="otd-year">{nascarFact.year}</span>
+            <p className="otd-text">{nascarFact.text}</p>
+            <span className="otd-subject">{nascarFact.subject}</span>
+          </div>
+        )}
+
+        {nbaFact && (
+          <div className="otd-card otd-nba">
+            <span className="otd-sport-tag">NBA</span>
+            <span className="otd-year">{nbaFact.year}</span>
+            <p className="otd-text">{nbaFact.text}</p>
+            <span className="otd-subject">{nbaFact.subject}</span>
+          </div>
+        )}
+
+        {worldPicks.length > 0 ? worldPicks.map((ev, i) => (
+          <div key={i} className="otd-card otd-world">
+            <span className="otd-sport-tag">World</span>
+            <span className="otd-year">{ev.year}</span>
+            <p className="otd-text">{ev.text}</p>
+          </div>
+        )) : (
+          <div className="otd-card otd-world otd-world-empty">
+            <span className="otd-sport-tag">World</span>
+            <p className="otd-text otd-muted">World history loading…</p>
+          </div>
+        )}
+
+      </div>
+    </section>
+  );
+}
+
 // ─── NascarPanel ─────────────────────────────────────────────────────────────
 
-function NascarPanel({ data, loading }) {
-  const event       = data?.events?.[0];
-  const competition = event?.competitions?.[0];
-  const status      = competition?.status ?? event?.status;
-  const state       = status?.type?.state;
-  const isActive    = state === "in" || state === "post";
-  const competitors = competition?.competitors ?? [];
-  const sorted      = [...competitors].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-  const top10       = sorted.slice(0, 10);
+function NascarPanel({ scoreboard, standings, loading }) {
+  const events     = scoreboard?.events ?? [];
+  const liveEvent  = events.find(ev =>
+    (ev.status?.type?.state ?? ev.competitions?.[0]?.status?.type?.state) === "in"
+  );
+  const lastEvent  = events.find(ev =>
+    (ev.status?.type?.state ?? ev.competitions?.[0]?.status?.type?.state) === "post"
+  );
+  const nextEvent  = events.find(ev =>
+    (ev.status?.type?.state ?? ev.competitions?.[0]?.status?.type?.state) === "pre"
+  );
 
-  const lap     = status?.period ?? competition?.status?.period;
-  const lapOf   = competition?.status?.numberOfPeriods;
+  const active      = liveEvent ?? lastEvent;
+  const competition = active?.competitions?.[0];
+  const status      = competition?.status ?? active?.status;
+  const isLive      = status?.type?.state === "in";
+
+  const lap   = status?.period;
+  const lapOf = competition?.status?.numberOfPeriods;
   const lapLine = lap ? `${status?.periodPrefix ?? "Lap"} ${lap}${lapOf ? ` of ${lapOf}` : ""}` : null;
+
+  const sorted = [...(competition?.competitors ?? [])].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  const top10  = sorted.slice(0, 10);
 
   return (
     <div className="nb-panel nascar-panel">
       <p className="panel-eye">NASCAR · Cup Series</p>
       <h2 className="panel-title">The Pit</h2>
 
-      {loading && !data ? (
+      {loading && !scoreboard ? (
         <div className="panel-loading">Loading race data…</div>
-      ) : isActive && event ? (
+      ) : isLive && active ? (
+        /* ── LIVE RACE ── */
         <div className="race-live">
-          <div className="race-name">{event.name ?? event.shortName ?? "Race in Progress"}</div>
+          <div className="race-name">{active.name ?? active.shortName ?? "Race in Progress"}</div>
           <FlagBadge state={getFlagState(competition)} />
           {lapLine && <div className="race-lap">{lapLine}</div>}
-
-          {top10.length > 0 ? (
+          {top10.length > 0 && (
             <div className="leaderboard">
               <div className="lb-header">
                 <span>POS</span><span>CAR</span><span>DRIVER</span><span>GAP</span>
               </div>
               {top10.map((c, i) => {
-                const name = c.athlete?.displayName ?? c.athlete?.shortName ?? `P${i + 1}`;
+                const name = c.athlete?.displayName ?? c.athlete?.shortName ?? `P${i+1}`;
                 const car  = c.vehicle?.number ?? c.car?.number ?? "—";
                 const gap  = i === 0 ? "Leader" : (c.gap ?? c.gapLaps ?? "—");
                 return (
@@ -126,85 +479,86 @@ function NascarPanel({ data, loading }) {
                 );
               })}
             </div>
-          ) : (
-            <div className="no-data">
-              <span className="no-data-text">Race data loading…</span>
-            </div>
           )}
         </div>
 
       ) : (
+        /* ── OFF-RACE ── */
         <div className="off-race">
-          {event && (
-            <div className="next-race-card">
-              <p className="card-eye">Next Race</p>
-              <div className="next-race-name">{event.name ?? event.shortName}</div>
-              {event.date && <div className="next-race-date">{fmtRaceDate(event.date)}</div>}
-              {event.competitions?.[0]?.venue?.fullName && (
-                <div className="next-race-venue">
-                  {event.competitions[0].venue.fullName}
-                  {event.competitions[0].venue.address?.city
-                    ? `, ${event.competitions[0].venue.address.city}` : ""}
-                </div>
-              )}
-            </div>
+
+          {/* Countdown to next race */}
+          {nextEvent?.date && (
+            <CountdownTimer
+              targetIso={nextEvent.date}
+              label={`Next Race · ${nextEvent.name ?? nextEvent.shortName ?? ""}`}
+            />
           )}
 
+          {/* Last race result */}
+          {lastEvent && <LastRaceCard event={lastEvent} />}
+
+          {/* Upcoming schedule */}
+          <ScheduleStrip events={events} label="Upcoming Races" max={3} />
+
+          {/* Season standings */}
+          <NascarStandingsTable data={standings} />
+
+          {/* Dad's driver cards */}
           <div className="drivers-section">
             <p className="nb-eye">Dad's Drivers</p>
             <div className="driver-cards">
               {FEATURED_DRIVERS.map((d) => (
                 <div key={d.car} className={`driver-card driver-${d.era}`}>
                   <span className="driver-car">#{d.car}</span>
-                  <span className="driver-name">{d.name}</span>
-                  <span className="driver-team">{d.team}</span>
-                  {d.era === "legend" && (
-                    <span className="driver-era-badge">Legend</span>
-                  )}
+                  <div className="driver-info">
+                    <span className="driver-name">{d.name}</span>
+                    <span className="driver-team">{d.team}</span>
+                    <span className="driver-note">
+                      {d.wins != null ? `${d.wins} wins` : d.note}
+                      {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
+                    </span>
+                  </div>
+                  {d.era === "legend" && <span className="driver-era-badge">Legend</span>}
                 </div>
               ))}
             </div>
           </div>
+
         </div>
       )}
     </div>
   );
 }
 
-// ─── BasketballPanel ─────────────────────────────────────────────────────────
+// ─── BasketballPanel ──────────────────────────────────────────────────────────
 
 function BasketballPanel({ scores, standings, loading }) {
   const allEvents = scores?.events ?? [];
 
-  // Games involving NY teams
-  const nyGames = allEvents.filter(ev =>
+  const nyGames   = allEvents.filter(ev =>
     ev.competitions?.[0]?.competitors?.some(c => NY_TEAMS.includes(c.team?.abbreviation))
   );
+  const liveNY    = nyGames.filter(ev => ev.competitions?.[0]?.status?.type?.state === "in");
+  const lastNY    = nyGames.find(ev  => ev.competitions?.[0]?.status?.type?.state === "post");
+  const nextNY    = nyGames.find(ev  => ev.competitions?.[0]?.status?.type?.state === "pre");
 
-  // Eastern Conference standings — try a few response shapes
-  const eastGroup =
-    standings?.children?.find(g =>
-      (g.name ?? g.header ?? "").toLowerCase().includes("east")
-    ) ??
-    standings?.groups?.find(g =>
-      (g.name ?? g.header ?? "").toLowerCase().includes("east")
-    );
-  const eastEntries = eastGroup?.standings?.entries ?? [];
+  const eastGroup  = standings?.children?.find(g => (g.name ?? "").toLowerCase().includes("east"))
+                  ?? standings?.groups?.find(g   => (g.header ?? "").toLowerCase().includes("east"));
+  const allEntries = eastGroup?.standings?.entries ?? [];
+  const nyEntries  = allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation));
 
   function GameCard({ event }) {
-    const comp   = event.competitions?.[0];
-    const status = comp?.status;
-    const isLive = status?.type?.state === "in";
+    const comp    = event.competitions?.[0];
+    const status  = comp?.status;
+    const isLive  = status?.type?.state === "in";
     const isFinal = status?.type?.state === "post";
-    const home = comp?.competitors?.find(c => c.homeAway === "home");
-    const away = comp?.competitors?.find(c => c.homeAway === "away");
-    const nyHome = NY_TEAMS.includes(home?.team?.abbreviation);
-    const nyAway = NY_TEAMS.includes(away?.team?.abbreviation);
-    const period = status?.period;
-    const clock  = status?.displayClock;
-    const periodLabel = period
-      ? (isFinal ? "Final" : `Q${period}${clock ? ` · ${clock}` : ""}`)
-      : (isFinal ? "Final" : "vs");
+    const home    = comp?.competitors?.find(c => c.homeAway === "home");
+    const away    = comp?.competitors?.find(c => c.homeAway === "away");
+    const nyHome  = NY_TEAMS.includes(home?.team?.abbreviation);
+    const nyAway  = NY_TEAMS.includes(away?.team?.abbreviation);
+    const period  = status?.period;
+    const clock   = status?.displayClock;
+    const mid     = isFinal ? "Final" : isLive ? `Q${period ?? "?"}${clock ? ` · ${clock}` : ""}` : "vs";
 
     return (
       <div className={`score-card${isLive ? " score-live" : ""}`}>
@@ -215,7 +569,7 @@ function BasketballPanel({ scores, standings, loading }) {
             <span className="team-abbr">{away?.team?.abbreviation ?? "—"}</span>
             <span className="team-score">{away?.score ?? "—"}</span>
           </div>
-          <div className="score-divider">{periodLabel}</div>
+          <div className="score-divider">{mid}</div>
           <div className={`score-team score-team-right${nyHome ? " score-ny" : ""}`}>
             <span className="team-abbr">{home?.team?.abbreviation ?? "—"}</span>
             <span className="team-score">{home?.score ?? "—"}</span>
@@ -234,65 +588,90 @@ function BasketballPanel({ scores, standings, loading }) {
         <div className="panel-loading">Loading game data…</div>
       ) : (
         <>
-          {/* NY games — featured */}
-          {nyGames.length > 0 && (
+          {/* Team records always visible at top */}
+          <TeamRecordStrip entries={nyEntries.length ? nyEntries : allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation))} />
+
+          {/* Live NY games */}
+          {liveNY.length > 0 && (
             <div className="ny-games">
-              <p className="nb-eye">New York Tonight</p>
-              {nyGames.map((ev, i) => <GameCard key={i} event={ev} />)}
+              <p className="nb-eye">Live Now · New York</p>
+              {liveNY.map((ev, i) => <GameCard key={i} event={ev} />)}
             </div>
           )}
 
-          {/* All games (condensed) if no NY games */}
+          {/* Countdown to next NY game */}
+          {!liveNY.length && nextNY?.date && (
+            <CountdownTimer
+              targetIso={nextNY.date}
+              label={`Next · ${nextNY.competitions?.[0]?.competitors?.find(c => !NY_TEAMS.includes(c.team?.abbreviation))?.team?.shortDisplayName ?? "NY game"}`}
+            />
+          )}
+
+          {/* Last NY game result */}
+          {!liveNY.length && lastNY && <LastGameCard event={lastNY} />}
+
+          {/* Completed NY games (post) */}
+          {nyGames.filter(ev => ev.competitions?.[0]?.status?.type?.state === "post" && ev !== lastNY).slice(0,2).map((ev, i) =>
+            <GameCard key={i} event={ev} />
+          )}
+
+          {/* All today's games if no NY action */}
           {nyGames.length === 0 && allEvents.length > 0 && (
             <div className="all-games">
               <p className="nb-eye">Today's Scoreboard</p>
               {allEvents.slice(0, 8).map((ev, i) => {
-                const comp  = ev.competitions?.[0];
+                const comp   = ev.competitions?.[0];
                 const status = comp?.status;
                 const isLive = status?.type?.state === "in";
-                const home  = comp?.competitors?.find(c => c.homeAway === "home");
-                const away  = comp?.competitors?.find(c => c.homeAway === "away");
-                const nyInGame = NY_TEAMS.includes(home?.team?.abbreviation) ||
-                                 NY_TEAMS.includes(away?.team?.abbreviation);
+                const home   = comp?.competitors?.find(c => c.homeAway === "home");
+                const away   = comp?.competitors?.find(c => c.homeAway === "away");
+                const nyInGame = NY_TEAMS.includes(home?.team?.abbreviation) || NY_TEAMS.includes(away?.team?.abbreviation);
                 return (
                   <div key={i} className={`score-card-sm${nyInGame ? " score-ny-game" : ""}`}>
                     <span className="live-dot">{isLive ? "●" : " "}</span>
-                    <span className={`team-sm${NY_TEAMS.includes(away?.team?.abbreviation) ? " team-sm-ny" : ""}`}>
-                      {away?.team?.abbreviation ?? "—"}
-                    </span>
+                    <span className={`team-sm${NY_TEAMS.includes(away?.team?.abbreviation) ? " team-sm-ny" : ""}`}>{away?.team?.abbreviation ?? "—"}</span>
                     <span className="score-sm">{away?.score ?? "—"}</span>
                     <span className="sep-sm">·</span>
-                    <span className={`team-sm${NY_TEAMS.includes(home?.team?.abbreviation) ? " team-sm-ny" : ""}`}>
-                      {home?.team?.abbreviation ?? "—"}
-                    </span>
+                    <span className={`team-sm${NY_TEAMS.includes(home?.team?.abbreviation) ? " team-sm-ny" : ""}`}>{home?.team?.abbreviation ?? "—"}</span>
                     <span className="score-sm">{home?.score ?? "—"}</span>
-                    {isLive && status?.period && (
-                      <span className="clock-sm">Q{status.period}</span>
-                    )}
+                    {isLive && status?.period && <span className="clock-sm">Q{status.period}</span>}
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* Eastern Conference standings */}
-          {eastEntries.length > 0 && (
+          {/* Upcoming NY schedule */}
+          {!liveNY.length && (
+            <ScheduleStrip
+              events={nyGames.length ? nyGames : allEvents.filter(ev =>
+                ev.competitions?.[0]?.competitors?.some(c => NY_TEAMS.includes(c.team?.abbreviation))
+              )}
+              label="Upcoming NY Games"
+              max={3}
+            />
+          )}
+
+          {/* Playoff picture */}
+          <PlayoffPicture entries={allEntries} conference="East" />
+
+          {/* Eastern standings */}
+          {allEntries.length > 0 && (
             <div className="standings-section">
               <p className="nb-eye">Eastern Conference</p>
               <div className="standings-table">
                 <div className="st-header">
-                  <span></span>
-                  <span>Team</span>
+                  <span></span><span>Team</span>
                   <span style={{textAlign:"right"}}>W</span>
                   <span style={{textAlign:"right"}}>L</span>
                   <span style={{textAlign:"right"}}>PCT</span>
                 </div>
-                {eastEntries.slice(0, 8).map((entry, i) => {
+                {allEntries.slice(0, 8).map((entry, i) => {
                   const abbr  = entry.team?.abbreviation;
                   const isNY  = NY_TEAMS.includes(abbr);
                   const wins  = getStat(entry.stats, "wins", "W", "OW");
                   const losses = getStat(entry.stats, "losses", "L", "OL");
-                  const pct   = getStat(entry.stats, "winPercent", "PCT", "WP", "playoffSeed");
+                  const pct   = getStat(entry.stats, "winPercent", "PCT", "WP");
                   return (
                     <div key={i} className={`st-row${isNY ? " st-row-ny" : ""}`}>
                       <span className="st-pos">{i + 1}</span>
@@ -309,7 +688,7 @@ function BasketballPanel({ scores, standings, loading }) {
             </div>
           )}
 
-          {nyGames.length === 0 && allEvents.length === 0 && eastEntries.length === 0 && (
+          {nyGames.length === 0 && allEvents.length === 0 && allEntries.length === 0 && (
             <div className="no-data">
               <span className="no-data-text">No games today.</span>
               <span className="no-data-sub">Check back on game day.</span>
@@ -321,38 +700,47 @@ function BasketballPanel({ scores, standings, loading }) {
   );
 }
 
-// ─── App ─────────────────────────────────────────────────────────────────────
+// ─── App ──────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [t, setTweak]       = useTweaks(TWEAK_DEFAULTS);
-  const [nascarData, setNascarData]     = useState(null);
+  const [t, setTweak]           = useTweaks(TWEAK_DEFAULTS);
+  const [nascarBoard, setNascarBoard]   = useState(null);
+  const [nascarPts, setNascarPts]       = useState(null);
   const [nbaScores, setNbaScores]       = useState(null);
   const [nbaStandings, setNbaStandings] = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [fetchError, setFetchError]   = useState(null);
+  const [worldEvents, setWorldEvents]   = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [lastUpdated, setLastUpdated]   = useState(null);
+  const [fetchError, setFetchError]     = useState(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", t.theme ?? "light");
   }, [t.theme]);
 
   async function fetchAll() {
-    try {
-      const [nascar, nba, standings] = await Promise.allSettled([
-        fetch(NASCAR_URL).then(r => { if (!r.ok) throw r; return r.json(); }),
-        fetch(NBA_URL).then(r => { if (!r.ok) throw r; return r.json(); }),
-        fetch(STANDINGS_URL).then(r => { if (!r.ok) throw r; return r.json(); }),
-      ]);
-      if (nascar.status   === "fulfilled") setNascarData(nascar.value);
-      if (nba.status      === "fulfilled") setNbaScores(nba.value);
-      if (standings.status === "fulfilled") setNbaStandings(standings.value);
-      setLastUpdated(new Date());
-      setFetchError(null);
-    } catch {
-      setFetchError("Unable to reach data sources. Will retry shortly.");
-    } finally {
-      setLoading(false);
+    const [nascar, nascarStand, nba, nbaStand, wiki] = await Promise.allSettled([
+      fetch(NASCAR_SCOREBOARD).then(r => r.ok ? r.json() : Promise.reject()),
+      fetch(NASCAR_STANDINGS).then(r  => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_SCOREBOARD).then(r    => r.ok ? r.json() : Promise.reject()),
+      fetch(NBA_STANDINGS).then(r     => r.ok ? r.json() : Promise.reject()),
+      fetch(wikipediaOTD()).then(r     => r.ok ? r.json() : Promise.reject()),
+    ]);
+
+    if (nascar.status    === "fulfilled") setNascarBoard(nascar.value);
+    if (nascarStand.status === "fulfilled") setNascarPts(nascarStand.value);
+    if (nba.status       === "fulfilled") setNbaScores(nba.value);
+    if (nbaStand.status  === "fulfilled") setNbaStandings(nbaStand.value);
+    if (wiki.status      === "fulfilled") {
+      const evs = wiki.value?.events ?? [];
+      setWorldEvents(evs.map(e => ({ year: e.year, text: e.text })));
     }
+
+    const anyOk = [nascar, nba].some(r => r.status === "fulfilled");
+    if (!anyOk) setFetchError("Unable to reach data sources — will retry.");
+    else setFetchError(null);
+
+    setLastUpdated(new Date());
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -367,7 +755,7 @@ function App() {
         <a href="../index.html" className="nb-back">← Shade of Design</a>
         <div className="nb-header-center">
           <div className="nb-title">The Pit Stop &amp; The Paint</div>
-          <div className="nb-subtitle">NASCAR · NBA</div>
+          <div className="nb-subtitle">NASCAR · NBA · Unite Passion</div>
         </div>
         <div className="nb-header-right" />
       </header>
@@ -380,22 +768,19 @@ function App() {
 
       <main className="nb-main">
         {fetchError && <div className="nb-error">{fetchError}</div>}
+
         <div className="nb-grid">
-          <NascarPanel data={nascarData} loading={loading} />
-          <BasketballPanel
-            scores={nbaScores}
-            standings={nbaStandings}
-            loading={loading}
-          />
+          <NascarPanel scoreboard={nascarBoard} standings={nascarPts} loading={loading} />
+          <BasketballPanel scores={nbaScores} standings={nbaStandings} loading={loading} />
         </div>
+
+        <OnThisDay worldEvents={worldEvents} />
       </main>
 
       <footer className="nb-foot">
         <a href="../index.html" className="foot-link">← Back</a>
         <span className="nb-updated">
-          {loading && !lastUpdated
-            ? "Loading…"
-            : `Updated ${fmtTime(lastUpdated)}`}
+          {loading && !lastUpdated ? "Loading…" : `Updated ${fmtTime(lastUpdated)}`}
         </span>
         <span className="nb-credit">For dad &amp; for the love of the game</span>
       </footer>
