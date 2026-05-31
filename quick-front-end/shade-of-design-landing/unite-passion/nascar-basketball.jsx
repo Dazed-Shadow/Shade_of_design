@@ -69,7 +69,25 @@ const NBA_LORE = [
   { year: 2023, text: "Jalen Brunson's emergence as an elite point guard gave the Knicks their most credible shot at contention in a generation, pushing deep into the playoffs.", subject: "New York Knicks" },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Recursively collect all team entries from any standings group shape.
+// ESPN sometimes nests entries under conference → division → entries, so
+// checking only the top level misses teams.
+function flattenEntries(node) {
+  if (!node) return [];
+  const direct = node.standings?.entries ?? [];
+  if (direct.length) return direct;
+  return (node.children ?? []).flatMap(flattenEntries);
+}
+
+// Same idea but also accumulates from all levels (needed when divisions share the conference)
+function flattenAllEntries(node) {
+  if (!node) return [];
+  const direct = node.standings?.entries ?? [];
+  const nested = (node.children ?? []).flatMap(flattenAllEntries);
+  return [...direct, ...nested];
+}
 
 function fmtTime(d) {
   if (!d) return "—";
@@ -545,7 +563,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
             <p className="nb-eye">Dad's Drivers</p>
             <div className="driver-cards">
               {FEATURED_DRIVERS.map((d) => (
-                <a key={d.car} className={`driver-card driver-link driver-${d.era}`} href={d.url} target="_blank" rel="noopener noreferrer">
+                <a key={d.car} className={`driver-card driver-link driver-${d.era}`} href={d.statsUrl} target="_blank" rel="noopener noreferrer">
                   <span className="driver-car">#{d.car}</span>
                   <div className="driver-info">
                     <span className="driver-name">{d.name}</span>
@@ -582,9 +600,13 @@ function BasketballPanel({ scores, standings, news, loading }) {
   const lastNY    = nyGames.find(ev  => ev.competitions?.[0]?.status?.type?.state === "post");
   const nextNY    = nyGames.find(ev  => ev.competitions?.[0]?.status?.type?.state === "pre");
 
-  const eastGroup  = standings?.children?.find(g => (g.name ?? "").toLowerCase().includes("east"))
-                  ?? standings?.groups?.find(g   => (g.header ?? "").toLowerCase().includes("east"));
-  const allEntries = eastGroup?.standings?.entries ?? [];
+  const eastGroup  = standings?.children?.find(g =>
+    (g.name ?? g.abbreviation ?? "").toLowerCase().includes("east")
+  ) ?? standings?.groups?.find(g =>
+    (g.header ?? g.name ?? "").toLowerCase().includes("east")
+  );
+  // ESPN nests teams inside division children; flattenAllEntries collects from all levels
+  const allEntries = flattenAllEntries(eastGroup);
   const nyEntries  = allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation));
 
   function GameCard({ event }) {

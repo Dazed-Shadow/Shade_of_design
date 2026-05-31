@@ -120,10 +120,12 @@
   overflow: hidden;
 }
 
-/* NASCAR panel — checkered top bar + speed lines bg */
+/* NASCAR panel — ocean-tinted background + checkered top bar */
 .nascar-panel {
   border-top: 1px solid var(--border);
+  background: rgba(26,62,98,0.05);
 }
+[data-theme="dark"] .nascar-panel { background: rgba(26,62,98,0.14); }
 
 .nascar-panel::after {
   content: "";
@@ -187,10 +189,12 @@
     );
 }
 
-/* Basketball panel — warm hardwood gradient top */
+/* Basketball panel — ember-tinted background + hardwood gradient top */
 .hoops-panel {
   border-top: 1px solid var(--border);
+  background: rgba(201,123,74,0.06);
 }
+[data-theme="dark"] .hoops-panel { background: rgba(201,123,74,0.12); }
 
 .hoops-panel::after {
   content: "";

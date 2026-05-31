@@ -7,6 +7,40 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 
 ## Repo: `shade-of-design-landing` → `unite-passion/`
 
+### Sprint · 2026-05-31
+
+- [ ] **[BUG] Driver card links broken for active racers**
+  `url` field points to nascar.com paths that resolve to an image or decade-old article.
+  Fix: use `statsUrl` (ESPN racing profile) as the primary `href` for all driver cards.
+  _Done when:_ clicking Dale Jr. and Denny Hamlin opens their ESPN stats page in a new tab.
+
+- [ ] **[BUG] Knicks missing from "New York Records" strip**
+  ESPN standings API nests teams inside division sub-groups (Atlantic / Central / Southeast)
+  under the conference node. `eastGroup.standings.entries` is empty at the conference level.
+  Fix: recursive `flattenEntries` helper collects entries from all nested children.
+  _Done when:_ both NYK and BKN cards render at the top of "The Paint".
+
+- [ ] **[VISUAL] Deepen panel background colors**
+  Both panels use `var(--surface)` (white) — sport identity is only in the top border.
+  Add an ocean-blue tint to "The Pit" and an ember-amber tint to "The Paint" panel body.
+  _Done when:_ the two panels are visually distinct even without the top bar.
+
+- [ ] **[FEATURE] League boards — recent results + season leaders**
+  Below existing panel content, add two new sub-sections per sport:
+  (a) Last race / last game — full top-10 results (NASCAR) or full final box (NBA).
+  (b) Season leaders — NASCAR: top 5 win leaders + wins / top-5s / pts from standings;
+      NBA: PPG / APG / RPG leaders via ESPN leaders endpoint.
+  _Done when:_ each panel has a "League Board" section visible any time the panel loads.
+
+- [ ] **[FEATURE] Family comment wall — cross-device notes**
+  A title + body form at the bottom of the page so dad or JR can leave a note from any device.
+  Backed by Supabase free-tier (persistent, cross-device). Code ships with placeholder
+  credentials and a setup block; activates once Supabase URL + anon key are filled in.
+  _Done when:_ comments persist across page refreshes and are visible on any device after
+  Supabase credentials are configured.
+
+---
+
 ### Off-day / off-race substance (priority order)
 
 - [x] **Countdown timer to next race & next NY game**
