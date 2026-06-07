@@ -53,7 +53,7 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 
 **Role:** Single pass over NAICS-matched small businesses. Finds them and enriches each record with contact and identity data in one run. Separate post-scrape enrichment passes add award history (USAspending.gov), website design-quality signals, and ownership flags from SBA profile PDFs. (Merged from original SPOTTER + Prospect — see DECISIONS.md.)
 
-**Pipeline mode v5** (D-015 + D-020 + D-021 + D-022): candidates JSONL now includes CAGE code, business website, email, contact name, SAM profile URL, a PDF snapshot, award history, design-quality classification, and ownership flags.
+**Pipeline mode v5** (D-015 + D-020 + D-021 + D-023): candidates JSONL now includes CAGE code, business website, email, contact name, SAM profile URL, a PDF snapshot, award history, design-quality classification, and ownership flags.
 
 - **Inputs:** NAICS code list from HZ config; SBA cert search (Playwright-driven React SPA).
 - **Outputs (find + enrich pass):** Enriched candidate record per business (one JSON per line):
@@ -85,7 +85,7 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
   Written to `research/data/candidates/spotter_<YYYY-MM-DD>_awards.jsonl` (sidecar —
   original JSONL is never modified). `"no_federal_awards_found"` is the ground-floor
   signal: certified but no federal contract yet = high receptivity to outreach.
-- **Outputs (classify + ownership passes — D-022):** Unified `_enriched.jsonl` sidecar,
+- **Outputs (classify + ownership passes — D-023):** Unified `_enriched.jsonl` sidecar,
   extending whichever file is the best available input. Fields added:
   ```
   {
@@ -105,10 +105,10 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 - **Owned scripts:**
   - `scripts/spotter_find.py` — find + enrich + PDF in one run (Playwright)
   - `scripts/spotter_awards.py` — post-scrape awards enrichment via USAspending.gov (httpx, no key)
-  - `scripts/spotter_classify.py` — website fetch + design-quality classification (D-022)
-  - `scripts/spotter_ownership.py` — ownership flag extraction from SBA profile PDFs (D-022)
+  - `scripts/spotter_classify.py` — website fetch + design-quality classification (D-023)
+  - `scripts/spotter_ownership.py` — ownership flag extraction from SBA profile PDFs (D-023)
   - `scripts/spotter_package.py` — review package assembly (prefers _enriched.jsonl if present)
-- **Review packages** (D-015 + D-020 + D-021 + D-022): after enrichment, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
+- **Review packages** (D-015 + D-020 + D-021 + D-023): after enrichment, `scripts/spotter_package.py --date <YYYY-MM-DD>` assembles two review files in `research/data/candidates/_packages/`:
   - `spotter_review_<date>.html` — brand-themed, accordion grouped by NAICS code. Each card includes: null fields dimmed, PDF link, Award History panel (D-021), and **Site & Identity panel** (D-022): design_quality badge (clean=green/dated=amber/broken=red/no-site=gray), what_they_do one-liner, geographic_scope tag, ownership chips. Panel omitted when no D-022 fields present (backwards-compatible).
   - `spotter_review_<date>.csv` — clean tabular CSV, UTF-8-BOM, QUOTE_ALL. New column order: `name, naics_matched, cage_code, business_website, design_quality, what_they_do, geographic_scope, woman_owned, veteran_owned, service_disabled_veteran_owned, minority_owned, hubzone, is_8a, email, contact_name, pdf_path, award_status, first_award_date, first_award_amount, first_award_agency, latest_award_date, latest_award_amount, latest_award_agency, total_awards_count, sba_profile_url, sam_profile_url, jr_status, jr_notes, jr_priority`.
   - **Annotation preservation (D-021):** before writing the CSV, the packager reads any existing CSV at the output path and carries forward `jr_status`/`jr_notes`/`jr_priority` keyed on `cage_code`. Packager is idempotent: JR can re-run after editing the CSV in Excel without losing annotations.
