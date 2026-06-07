@@ -647,3 +647,136 @@ re-run — safe degradation, consistent with the fail-soft pattern established i
 **Files touched:**
 - `unite-passion/nascar-basketball.jsx` — FEATURED_DRIVERS gains `url`/`statsUrl`; NY_TEAM_INFO constant; NewsStrip component; news state + fetches; driver and team record cards become anchor links.
 - `unite-passion/nascar-basketball.css` — Diagonal speed lines (NASCAR), hardwood lines (hoops), On This Day tinted cards + larger year type, news strip styles, link hover states.
+
+---
+
+## D-023 · 2026-06-07 · SPOTTER Phase 2 Pass A — design-quality + ownership enrichment
+
+### Why this pass exists
+
+JR's manual annotation pass on 50 SPOTTER candidates revealed his real outreach thesis:
+he filters by **design-quality opportunity** — "their site needs design attention" /
+"no public website I can find — good entry point." The existing pipeline gives him
+names, contacts, and award history but NOT the design-quality signal he actually uses.
+Pass A surfaces that signal automatically so he can skim 50 rows instead of doing
+30+ manual website visits.
+
+### A1 — `spotter_classify.py`: website fetch + classify
+
+Reads the best available input sidecar (cascade: `_enriched.jsonl` → `_awards.jsonl` →
+`.jsonl`), fetches each `business_website` with httpx (10s timeout, Chrome UA, 1.5s
+default delay), and writes four new fields per record:
+
+| Field | Type | Description |
+|---|---|---|
+| `what_they_do` | string | 1-2 sentence plain-language summary: `<meta description>` → `<h1>` + first prominent `<p>` → first prominent `<p>` → `<title>` |
+| `design_quality` | string | `clean` / `dated` / `broken` / `no-site` |
+| `geographic_scope` | string | `local` / `regional` / `national` / `unknown` |
+| `tech_signals` | dict | `{generator, has_ssl, has_viewport, framework_hint}` |
+
+#### `design_quality` four-bucket rubric
+
+| Bucket | Condition |
+|---|---|
+| `no-site` | `business_website` null OR HTTP fails to connect |
+| `broken` | HTTP 4xx/5xx, OR 200 but body < 200 chars |
+| `clean` | has `<meta name="viewport">` AND https AND ≥1 external CSS link AND no legacy generator signal (FrontPage, GoLive, etc.) |
+| `dated` | default fallback — loaded but not clearly clean |
+
+**Why this rubric:** The three clean signals are the minimum stack of a modernly-maintained
+site. `<meta viewport>` = mobile awareness. https = basic ops hygiene. External CSS =
+not a bare HTML page with `<style>` inline. Absence of any one signal is a JR-actionable
+hook. Legacy generator signals (FrontPage, GoLive) are a hard upgrade opportunity regardless
+of other signals, so they trump to `dated` before the clean test runs.
+
+#### `geographic_scope` heuristic
+
+1. Scan for "nationwide" / "across the country" / "all 50 states" → `national`
+2. Scan for regional keywords (Tri-State, Northeast, Pacific Northwest, Midwest, etc.) → `regional`
+3. Count distinct US state name mentions: 0 → `unknown`, 1 → `local`, 2-4 → `local`,
+   5+ → `regional` (national signals already handled above)
+
+**Interpretation note:** State-abbreviation matching fires on `\b[A-Z]{2}\b`, which can
+false-positive on non-state two-letter codes (e.g. "IT", "HR", "DC"). DC is not in the
+abbreviation set. False positives are conservative (they can only elevate scope from
+`unknown` to `local`, never to `regional` or `national`).
+
+### A2 — `spotter_ownership.py`: SBA PDF ownership extraction
+
+Reads profile PDFs captured by `spotter_find.py` (via `pypdf`, pure-Python, no native
+deps). Regex-scans extracted text for six ownership flags. Output per record:
+
+```json
+{
+  "woman_owned": false,
+  "veteran_owned": false,
+  "service_disabled_veteran_owned": false,
+  "minority_owned": false,
+  "hubzone": false,
+  "8a": false,
+  "raw_phrases": []
+}
+```
+
+**Why pypdf over pdfplumber:** pdfplumber wraps pdfminer.six, which adds native-extension
+exposure and a heavier footprint. pypdf is pure Python (~80 KB wheel), has no native deps,
+and text extraction from the SBA cert React SPA print PDFs is straightforward — no need
+for pdfplumber's table extraction or coordinate-aware layout engine. Matches the "no new
+heavy deps" pattern established across the pipeline.
+
+**Veteran-owned suppression:** The `veteran_owned` pattern fires on "veteran-owned" but
+is suppressed when that match sits inside a "service-disabled veteran" phrase (60-char
+lookahead window). This prevents double-flagging service-disabled veteran-owned businesses.
+
+**Fail-soft:** corrupt file, missing file, or parse error → `ownership = null`, error
+logged per record, run continues.
+
+### A3 — Unified `_enriched.jsonl` sidecar + cascade pattern
+
+Both classify and ownership write to `spotter_<date>_enriched.jsonl`. The second pass
+to run reads the first pass's output and adds to it (merge semantics: existing fields
+are preserved, missing fields are added). This means running classify then ownership,
+or ownership then classify, or either alone, all produce a valid enriched file. No
+pass is required before the other.
+
+**Cascade order in `spotter_package.py` (D-022 extension of D-021):**
+```
+spotter_<date>_enriched.jsonl  ← preferred (classify + ownership + awards)
+spotter_<date>_awards.jsonl    ← fallback (awards only)
+spotter_<date>.jsonl           ← last resort (raw scrape)
+```
+
+### A4 — `spotter_package.py` extensions
+
+- `load_records()` extended to prefer `_enriched.jsonl` over `_awards.jsonl`
+- HTML: new "Site & Identity" panel on each business card:
+  - `design_quality` as a colored badge (clean=green, dated=amber, broken=red, no-site=gray)
+  - `what_they_do` as a one-liner under the panel header
+  - `geographic_scope` as a small rounded tag
+  - Ownership flags as chips (only rendered when present)
+  - Panel is omitted entirely when no D-022 fields are present (backwards-compatible with
+    awards-only or raw-scrape inputs)
+- CSV: new columns added after `business_website`, before `email`:
+  `design_quality`, `what_they_do`, `geographic_scope`, `woman_owned`, `veteran_owned`,
+  `service_disabled_veteran_owned`, `minority_owned`, `hubzone`, `is_8a`
+  (`"8a"` key renamed `is_8a` for CSV header friendliness — "8a" starts with a digit)
+- Annotation preservation (CAGE-keyed carry-forward, D-021) still works — new columns
+  don't affect the annotation-keying logic
+
+### What is deferred (Pass B)
+
+| Item | Reason deferred |
+|---|---|
+| `/spotter-narrate` slash command | Requires C-Comms agent and JR-approved outreach voice. Separate session. |
+| Refined `geographic_scope` heuristic for multi-state businesses | Current heuristic is good enough for a visual skim; precision tuning deferred until JR has reviewed the first full 50-row run. |
+| Anti-bot detection for classify (captcha / JS-only pages) | httpx fetches only static HTML. JS-heavy SPAs may return empty bodies and classify as `broken` instead of `dated`/`clean`. Known limitation; Playwright fallback deferred to Pass B if prevalence warrants it. |
+
+### Files touched
+
+- `HZ/scripts/spotter_classify.py` — new script (D-022 A1)
+- `HZ/scripts/spotter_ownership.py` — new script (D-022 A2)
+- `HZ/scripts/spotter_package.py` — extended (cascade, Site & Identity panel, CSV columns)
+- `HZ/backend/requirements.txt` — added `pypdf==5.1.0`
+- `Central Hub/pipeline/AGENTS.md` — C-SPOTTER section updated
+
+**Note:** Originally drafted as D-022 but renumbered to D-023 after merge with a concurrent D-022 (Unite Passion visual identity). HZ commit `2010574` and the script docstrings reference the original "D-022" number; the canonical entry lives here under D-023. Future references should cite D-023 for SPOTTER Pass A.
