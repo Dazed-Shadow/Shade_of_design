@@ -3,26 +3,254 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>The Pit Stop &amp; The Paint — Shade of Design</title>
-  <meta name="description" content="Live NASCAR and NBA dashboard. Dad's drivers, New York's teams." />
+  <title>The Pit Stop &amp; The Paint — Coming Soon · Shade of Design</title>
+  <meta name="description" content="A live NASCAR and NBA passion project. Coming soon from Shade of Design." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="nascar-basketball.css" />
   <link rel="icon" type="image/png" href="../assets/logo-mark.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body, "Space Grotesk", sans-serif);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ambient dual-sport background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(55% 45% at 15% 25%, rgba(26,62,98,0.07), transparent 65%),
+        radial-gradient(55% 45% at 85% 75%, rgba(201,123,74,0.08), transparent 65%);
+    }
+
+    /* Header */
+    .cs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--s-4, 1rem) var(--s-8, 2rem);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .cs-back {
+      font-family: var(--font-mono, "JetBrains Mono", monospace);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 160ms ease;
+      min-width: 120px;
+    }
+    .cs-back:hover { color: var(--ocean); }
+
+    .cs-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .cs-brand-mark { width: 28px; height: 28px; }
+    .cs-brand-name {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .cs-header-spacer { min-width: 120px; }
+
+    /* Main centred block */
+    .cs-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--s-16, 4rem) var(--s-8, 2rem);
+      gap: var(--s-6, 1.5rem);
+    }
+
+    /* Pulsing "coming soon" badge */
+    .cs-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono, monospace);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ember);
+      background: rgba(201,123,74,0.09);
+      border: 1px solid rgba(201,123,74,0.28);
+      padding: 5px 14px;
+      border-radius: 100px;
+    }
+    .cs-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ember);
+      animation: cs-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes cs-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Split sport banner */
+    .cs-banner {
+      display: flex;
+      height: 4px;
+      width: 260px;
+      border-radius: 100px;
+      overflow: hidden;
+      gap: 2px;
+    }
+    .cs-banner-nascar {
+      flex: 1;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--ocean-900, #0B1F33) 0px, var(--ocean-900, #0B1F33) 8px,
+        #dee5ed 8px, #dee5ed 16px
+      );
+      border-radius: 100px 0 0 100px;
+    }
+    .cs-banner-nba {
+      flex: 1;
+      background: linear-gradient(90deg, var(--ember, #C97B4A), var(--ember-soft, #d9a882));
+      border-radius: 0 100px 100px 0;
+    }
+
+    /* Eyebrow */
+    .cs-eyebrow {
+      font-family: var(--font-mono, monospace);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Title */
+    .cs-title {
+      font-size: clamp(34px, 6vw, 58px);
+      font-weight: 600;
+      letter-spacing: -0.032em;
+      line-height: 1;
+      color: var(--ink);
+    }
+    .cs-title em {
+      font-style: normal;
+      color: var(--ember);
+    }
+
+    /* Description */
+    .cs-sub {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      max-width: 44ch;
+    }
+
+    /* Sport pills */
+    .cs-pills {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cs-pill {
+      font-family: var(--font-mono, monospace);
+      font-size: 10px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .cs-pill-nascar {
+      border-color: rgba(26,62,98,0.25);
+      color: var(--ocean);
+      background: rgba(26,62,98,0.04);
+    }
+    .cs-pill-nba {
+      border-color: rgba(201,123,74,0.28);
+      color: var(--ember);
+      background: rgba(201,123,74,0.05);
+    }
+
+    /* Footer */
+    .cs-foot {
+      padding: var(--s-4, 1rem) var(--s-8, 2rem);
+      border-top: 1px solid var(--border-soft);
+      text-align: center;
+      font-family: var(--font-mono, monospace);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    @media (max-width: 480px) {
+      .cs-header { padding: 1rem; }
+      .cs-brand-name { display: none; }
+      .cs-back { min-width: auto; font-size: 10px; }
+      .cs-header-spacer { min-width: 0; }
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
+  <header class="cs-header">
+    <a href="../index.html" class="cs-back">← Shade of Design</a>
+    <a href="../index.html" class="cs-brand">
+      <img class="cs-brand-mark" src="../assets/logo-mark.png" alt="Shade of Design" />
+      <span class="cs-brand-name">Shade of Design</span>
+    </a>
+    <span class="cs-header-spacer"></span>
+  </header>
 
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <main class="cs-main">
+    <span class="cs-badge">
+      <span class="cs-badge-dot"></span>
+      Coming Soon
+    </span>
 
-  <!-- Supabase CDN — powers the family comment wall -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
+    <div class="cs-banner" aria-hidden="true">
+      <div class="cs-banner-nascar"></div>
+      <div class="cs-banner-nba"></div>
+    </div>
 
-  <script type="text/babel" src="../tweaks-panel.jsx"></script>
-  <script type="text/babel" src="nascar-basketball.jsx"></script>
+    <p class="cs-eyebrow">Unite Passion · A Shade of Design Project</p>
+
+    <h1 class="cs-title">The Pit Stop<br>&amp; <em>The Paint</em></h1>
+
+    <p class="cs-sub">
+      A live dashboard celebrating dad's love for NASCAR and a New York
+      basketball obsession — race leaders, NY team records, season standings,
+      and a little family history. Almost ready.
+    </p>
+
+    <div class="cs-pills">
+      <span class="cs-pill cs-pill-nascar">NASCAR · Cup Series</span>
+      <span class="cs-pill cs-pill-nba">NBA · New York</span>
+    </div>
+  </main>
+
+  <footer class="cs-foot">
+    &copy; 2026 Shade of Design &nbsp;·&nbsp; All rights reserved
+  </footer>
 </body>
 </html>

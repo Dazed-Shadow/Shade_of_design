@@ -84,7 +84,7 @@ const PROJECTS = [
     title: "Lofi Sanctuary",
     blurb: "A place to land. Calm, intentional listening.",
     href: "https://lfsjbeats.netlify.app/",
-    status: "live",
+    status: "soon",
     accent: "ember",
   },
   {
@@ -93,7 +93,7 @@ const PROJECTS = [
     title: "Pit Stop & The Paint",
     blurb: "Dad's drivers. New York's teams. Live, side by side.",
     href: "unite-passion/nascar-basketball.html",
-    status: "live",
+    status: "soon",
     accent: "sport",
   },
 ];
