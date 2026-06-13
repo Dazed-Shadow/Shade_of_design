@@ -1,4 +1,5 @@
 internal assets/
+Design Content/
 
 # Claude Code workspace state (but keep project-shared skills tracked)
 .claude/*
