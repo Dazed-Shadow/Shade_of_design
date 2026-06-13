@@ -1,7 +1,8 @@
 internal assets/
 
-# Claude Code workspace state
-.claude/
+# Claude Code workspace state (but keep project-shared skills tracked)
+.claude/*
+!.claude/skills/
 
 # Design-bundle staging (raw drop from Claude Design + normalizer output)
 shade-of-design-site/

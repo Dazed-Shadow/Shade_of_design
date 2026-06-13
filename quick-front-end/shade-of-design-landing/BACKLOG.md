@@ -7,37 +7,43 @@ Copy/paste rows into **GitHub Projects** (or as individual issues) per repo.
 
 ## Repo: `shade-of-design-landing` → `unite-passion/`
 
-### Sprint · 2026-05-31
+### Sprint · 2026-06-13 (Shipped)
 
-- [ ] **[BUG] Driver card links broken for active racers**
-  `url` field points to nascar.com paths that resolve to an image or decade-old article.
-  Fix: use `statsUrl` (ESPN racing profile) as the primary `href` for all driver cards.
-  _Done when:_ clicking Dale Jr. and Denny Hamlin opens their ESPN stats page in a new tab.
+- [x] **[BUG] Driver card links broken for active racers** — `df8cd98`
+  Cards now link to `statsUrl` (ESPN racing profile).
 
-- [ ] **[BUG] Knicks missing from "New York Records" strip**
-  ESPN standings API nests teams inside division sub-groups (Atlantic / Central / Southeast)
-  under the conference node. `eastGroup.standings.entries` is empty at the conference level.
-  Fix: recursive `flattenEntries` helper collects entries from all nested children.
-  _Done when:_ both NYK and BKN cards render at the top of "The Paint".
+- [x] **[BUG] Knicks missing from "New York Records" strip** — `df8cd98`
+  Added `flattenAllEntries` recursive helper to traverse nested division children.
 
-- [ ] **[VISUAL] Deepen panel background colors**
-  Both panels use `var(--surface)` (white) — sport identity is only in the top border.
-  Add an ocean-blue tint to "The Pit" and an ember-amber tint to "The Paint" panel body.
-  _Done when:_ the two panels are visually distinct even without the top bar.
+- [x] **[VISUAL] Deepen panel background colors** — `df8cd98`
+  NASCAR panel ocean-tinted, hoops panel ember-tinted.
 
-- [ ] **[FEATURE] League boards — recent results + season leaders**
-  Below existing panel content, add two new sub-sections per sport:
-  (a) Last race / last game — full top-10 results (NASCAR) or full final box (NBA).
-  (b) Season leaders — NASCAR: top 5 win leaders + wins / top-5s / pts from standings;
-      NBA: PPG / APG / RPG leaders via ESPN leaders endpoint.
-  _Done when:_ each panel has a "League Board" section visible any time the panel loads.
+- [x] **[FEATURE] League boards — last results + season leaders** — `cca4b67`
+  `NascarLeaderBoard` (top-10 + win leaders), `NbaLeaderBoard` (final box + PPG/APG/RPG).
+  New endpoint: `NBA_LEADERS_URL`.
 
-- [ ] **[FEATURE] Family comment wall — cross-device notes**
-  A title + body form at the bottom of the page so dad or JR can leave a note from any device.
-  Backed by Supabase free-tier (persistent, cross-device). Code ships with placeholder
-  credentials and a setup block; activates once Supabase URL + anon key are filled in.
-  _Done when:_ comments persist across page refreshes and are visible on any device after
-  Supabase credentials are configured.
+- [x] **[FEATURE] Family comment wall — Supabase-backed** — `15a25e4` + `1dae81e`
+  Title/body/author form, 20-comment feed, relative timestamps. Live with credentials
+  filled in. Setup SQL lives in the JSX header comment.
+
+- [x] **[OPS] Wrap Pit/Paint as coming-soon on landing** — `3526c54`
+  `nascar-basketball.html` → branded coming-soon page; live dashboard now at
+  `nascar-basketball_dev.html`. Tile 03 (Lofi) and tile 04 (Pit/Paint) marked `status: "soon"`.
+
+### Open follow-ups (uncovered this sprint)
+
+- [ ] **[OPS] Lofi Sanctuary — coming-soon page on its own domain**
+  The landing tile is hidden, but `lfsjbeats.netlify.app` still serves the prior site.
+  When ready, add a matching coming-soon page in the `lofi-sanctuary` repo.
+
+- [ ] **[OPS] Supabase JWT-key fallback (only if `sb_publishable_*` rejected)**
+  Current implementation uses the new publishable-key format. If the JS v2 client returns
+  an auth error on first load, swap to the legacy `anon` JWT (long `eyJ...` string under
+  Settings → API → Project API Keys).
+
+- [ ] **[CMD-CENTER] Unify project context across Claude instances**
+  Refactor MD files across Shade of Design, Horizon Search, and Claude Design into a
+  single readable command center. Scheduled for evening / next-weekend Opus session.
 
 ---
 
