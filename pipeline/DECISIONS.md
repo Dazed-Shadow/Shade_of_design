@@ -780,3 +780,48 @@ spotter_<date>.jsonl           ← last resort (raw scrape)
 - `Central Hub/pipeline/AGENTS.md` — C-SPOTTER section updated
 
 **Note:** Originally drafted as D-022 but renumbered to D-023 after merge with a concurrent D-022 (Unite Passion visual identity). HZ commit `2010574` and the script docstrings reference the original "D-022" number; the canonical entry lives here under D-023. Future references should cite D-023 for SPOTTER Pass A.
+
+---
+
+## D-024 · 2026-06-14 · Unite Passion as a Central Hub landing component
+
+**Decision:** Treat Unite Passion as a landing-page component owned by Central Hub, not a standalone project. Its canonical home is `quick-front-end/shade-of-design-landing/unite-passion/`. The original `conversations/2026-03_stock-dashboard-project/` folder remains as historical reference only; no new work lands there.
+
+**Context:** The 2026-05-31 merge ("Merge Unite Passion dashboard into main") brought Unity's surface area into Central Hub, but the parent/child relationship between the two had been treated ambiguously across project notes. Jon confirmed the architectural relationship on 2026-06-01: Unity is an extension page of Central Hub, not a peer project.
+
+**Why:**
+- Lets the Shade of Design system (evergreen palette, typography, brand kit) apply to Unity uniformly without forking a second design language.
+- Avoids dependency drift between two near-duplicate repos that would otherwise need cross-sync.
+- The single human-review gate (C-Comms → JR) automatically covers any Unity-surfaced content.
+- Simplifies portfolio cognition: ten active projects is honest; eleven (with Unity as a peer) was misleading.
+
+**Trade-off accepted:** The "Project Unity" name persists in some older docs and the workspace shortcut. Renaming everywhere would be churn; instead, every new reference (CLAUDE.md, MR_C_INDEX.md, this DECISIONS.md) clarifies "Unite Passion is a Central Hub component."
+
+**Complements:** D-022 (Unite Passion visual identity). D-022 decided how Unity should look inside the brand; D-024 decides where Unity lives architecturally.
+
+**Files / surfaces touched:**
+- `Central Hub/MR_C_INDEX.md` — `related` includes PROJECT_UNITY as sub-component (already done 2026-06-02).
+- `conversations/2026-03_stock-dashboard-project/MR_C_INDEX.md` — declares parent: CENTRAL_HUB.
+- Workspace shortcut `MR_C-PROJECT_UNITY.code-workspace` kept for now; can be retired when Unity's surfaces are stable.
+
+---
+
+## D-025 · 2026-06-14 · "Coming Soon" treatment for unbuilt landing surfaces
+
+**Decision:** Pages that exist in `quick-front-end/shade-of-design-landing/` navigation but don't have a real implementation yet show a deliberate **"Coming Soon"** placeholder rather than a 404, a "lorem ipsum" stub, or being hidden from nav.
+
+**Context:** The Shade of Design landing is the public face of Central Hub. Jon's directional aim is a more "alive" iterative site (see Pitt/Paint design strategy — separate memory). That iterative process requires real surfaces to push concepts against, but most concept surfaces aren't shippable in their first state.
+
+**Why:**
+- Empty nav slots or broken links read as abandoned; a designed placeholder reads as roadmap.
+- Placeholder pages give Jon a no-friction surface to test design intent (Pitt/Paint iteration) before committing to a full build.
+- Visitors form a mental model of "this brand is shipping" rather than "this brand stalled."
+
+**Rules:**
+- Every "Coming Soon" page must share enough design language (palette, typography, motif) with shipped pages that it doesn't break the visitor's mental model. Use the evergreen palette and serif typography by default.
+- A simple status table at the top of `quick-front-end/shade-of-design-landing/README.md` tracks which routes are placeholders vs. shipped. Update on the same commit that promotes a placeholder to a real page.
+- When a placeholder ships for real, the changeover is a single commit — design-system-compliant from the start because the placeholder already was.
+
+**Trade-off accepted:** Placeholder pages still need design work to feel intentional rather than empty. The cost is small (10-20 min per page) and is part of the design process itself, not separate from it.
+
+**Complements:** D-024 (Unite Passion as Central Hub landing component) — any Unity sub-pages follow this convention — and the Pitt/Paint design strategy reference held in Mr. C's memory.
