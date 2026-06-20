@@ -1,7 +1,7 @@
 /* global React, ReactDOM, supabase */
 const { useState, useEffect, useRef } = React;
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "light" }/*EDITMODE-END*/;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "dark" }/*EDITMODE-END*/;
 
 // ─── API endpoints ────────────────────────────────────────────────────────────
 const NASCAR_SCOREBOARD  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
@@ -1070,7 +1070,7 @@ function App() {
   const [fetchError, setFetchError]     = useState(null);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", t.theme ?? "light");
+    document.documentElement.setAttribute("data-theme", t.theme ?? "dark");
   }, [t.theme]);
 
   async function fetchAll() {
