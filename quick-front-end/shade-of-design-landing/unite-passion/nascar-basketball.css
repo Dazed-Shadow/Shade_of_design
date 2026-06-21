@@ -1680,8 +1680,6 @@
 
 /* Error banner */
 .nb-error {
-  background: rgba(176,70,58,0.06);
-  border: 1px solid rgba(176,70,58,0.18);
   color: var(--danger);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1691,3 +1689,558 @@
   margin-bottom: var(--s-5);
   text-align: center;
 }
+
+/* ============================================================
+   VISUAL REVAMP & PROTOTYPE STYLES (Telemetry vs Glass)
+   ============================================================ */
+
+/* Common UI adjustments for custom style presets */
+.panel-background-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.25;
+  transition: opacity 240ms ease;
+}
+.panel-background-pattern svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Tweak panel dark theme overrides ── */
+.twk-panel {
+  background: rgba(10, 16, 26, 0.8) !important;
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+.twk-hd {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+.twk-hd b {
+  color: #fff !important;
+}
+.twk-lbl {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.twk-val {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+.twk-sect {
+  color: rgba(255, 255, 255, 0.35) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+.twk-field {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+.twk-field:focus {
+  border-color: var(--ocean) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+select.twk-field {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='white' d='M0 0h10L5 6z'/></svg>") !important;
+}
+.twk-seg {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.twk-seg-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+.twk-x {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.twk-x:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   A. TELEMETRY COCKPIT PRESET
+   ──────────────────────────────────────────────────────────── */
+html[data-style-preset="telemetry"] {
+  --font-sans: "Chakra Petch", sans-serif;
+  --font-mono: "Share Tech Mono", monospace;
+  
+  /* Deep telemetry colors */
+  --bg: #050a12 !important;
+  --paper: #07101c !important;
+  --surface: #0a1626 !important;
+  --border: rgba(0, 240, 255, 0.12) !important;
+  --border-soft: rgba(0, 240, 255, 0.06) !important;
+  --ink: #f0f6fc !important;
+  --ink-soft: #b1c2d9 !important;
+  --muted: #627b9c !important;
+  
+  --ocean: #00f0ff;
+  --ember: #ff7a00;
+}
+
+/* Telemetry global body styling */
+html[data-style-preset="telemetry"] body {
+  background: var(--bg) !important;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(0, 240, 255, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(255, 122, 0, 0.04) 0%, transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.005) 1px, transparent 1px) !important;
+  background-size: auto, auto, 30px 30px, 30px 30px !important;
+}
+
+/* Telemetry panel adjustments */
+html[data-style-preset="telemetry"] .nb-panel {
+  background: rgba(10, 22, 38, 0.85) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+html[data-style-preset="telemetry"] .nascar-panel {
+  border-top: 1px solid rgba(0, 240, 255, 0.3) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 240, 255, 0.05) !important;
+}
+html[data-style-preset="telemetry"] .nascar-panel::before,
+html[data-style-preset="telemetry"] .nascar-panel::after,
+html[data-style-preset="telemetry"] .hoops-panel::before,
+html[data-style-preset="telemetry"] .hoops-panel::after {
+  display: none !important;
+}
+html[data-style-preset="telemetry"] .nascar-panel .panel-background-pattern {
+  color: var(--ocean);
+  opacity: 0.12;
+}
+html[data-style-preset="telemetry"] .hoops-panel {
+  border-top: 1px solid rgba(255, 122, 0, 0.3) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 122, 0, 0.05) !important;
+}
+html[data-style-preset="telemetry"] .hoops-panel .panel-background-pattern {
+  color: var(--ember);
+  opacity: 0.12;
+}
+
+/* Telemetry typography */
+html[data-style-preset="telemetry"] .panel-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+html[data-style-preset="telemetry"] .panel-eye {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+}
+
+/* Telemetry dials & countdowns */
+html[data-style-preset="telemetry"] .countdown-card {
+  background: rgba(4, 9, 16, 0.6) !important;
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  border-radius: 8px !important;
+}
+html[data-style-preset="telemetry"] .dial-n {
+  font-family: var(--font-mono) !important;
+  color: #fff !important;
+  font-size: 32px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+html[data-style-preset="telemetry"] .dial-sep {
+  font-size: 26px;
+  color: var(--muted);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+/* Driver cards - Collectible cards layout */
+html[data-style-preset="telemetry"] .driver-card {
+  background: rgba(4, 9, 16, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 6px !important;
+  padding: 10px var(--s-4) !important;
+  transition: all 180ms ease !important;
+}
+html[data-style-preset="telemetry"] .driver-card:hover {
+  background: rgba(0, 240, 255, 0.05) !important;
+  border-color: var(--ocean) !important;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15) !important;
+  transform: translateX(4px) !important;
+}
+html[data-style-preset="telemetry"] .driver-car {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 45px;
+}
+html[data-style-preset="telemetry"] .driver-3 {
+  border-left: 4px solid #fff !important;
+}
+html[data-style-preset="telemetry"] .driver-3 .driver-car {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.1);
+}
+html[data-style-preset="telemetry"] .driver-43 {
+  border-left: 4px solid #00f0ff !important;
+}
+html[data-style-preset="telemetry"] .driver-43 .driver-car {
+  color: #00f0ff !important;
+  background: rgba(0, 240, 255, 0.1);
+}
+html[data-style-preset="telemetry"] .driver-24 {
+  border-left: 4px solid #ffd700 !important;
+}
+html[data-style-preset="telemetry"] .driver-24 .driver-car {
+  color: #ffd700 !important;
+  background: rgba(255, 215, 0, 0.1);
+}
+html[data-style-preset="telemetry"] .driver-88 {
+  border-left: 4px solid #00ff66 !important;
+}
+html[data-style-preset="telemetry"] .driver-88 .driver-car {
+  color: #00ff66 !important;
+  background: rgba(0, 255, 102, 0.1);
+}
+html[data-style-preset="telemetry"] .driver-11 {
+  border-left: 4px solid #ff7a00 !important;
+}
+html[data-style-preset="telemetry"] .driver-11 .driver-car {
+  color: #ff7a00 !important;
+  background: rgba(255, 122, 0, 0.1);
+}
+
+/* Telemetry NBA Scoreboard */
+html[data-style-preset="telemetry"] .score-card {
+  background: rgba(4, 9, 16, 0.6) !important;
+  border: 1px solid rgba(255, 122, 0, 0.15) !important;
+  border-radius: 8px !important;
+}
+html[data-style-preset="telemetry"] .score-live {
+  border-color: var(--positive) !important;
+  box-shadow: 0 0 15px rgba(47, 125, 91, 0.15) !important;
+}
+html[data-style-preset="telemetry"] .team-score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 38px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+html[data-style-preset="telemetry"] .score-ny .team-score {
+  color: var(--ember) !important;
+  text-shadow: 0 0 10px rgba(255, 122, 0, 0.3) !important;
+}
+
+/* Telemetry Tables (Standings) */
+html[data-style-preset="telemetry"] .st-header,
+html[data-style-preset="telemetry"] .lb-header,
+html[data-style-preset="telemetry"] .leader-header {
+  font-family: var(--font-mono);
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--muted) !important;
+}
+html[data-style-preset="telemetry"] .st-row,
+html[data-style-preset="telemetry"] .lb-row,
+html[data-style-preset="telemetry"] .leader-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+html[data-style-preset="telemetry"] .st-row:hover,
+html[data-style-preset="telemetry"] .lb-row:hover,
+html[data-style-preset="telemetry"] .leader-row:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+html[data-style-preset="telemetry"] .st-row-ny,
+html[data-style-preset="telemetry"] .lb-fav,
+html[data-style-preset="telemetry"] .leader-fav {
+  background: rgba(255, 122, 0, 0.06) !important;
+  border-left: 2px solid var(--ember) !important;
+}
+
+/* Telemetry News and OTD */
+html[data-style-preset="telemetry"] .news-item,
+html[data-style-preset="telemetry"] .otd-card {
+  background: rgba(4, 9, 16, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 8px !important;
+}
+html[data-style-preset="telemetry"] .news-item:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html[data-style-preset="telemetry"] .otd-nascar .otd-year {
+  color: var(--ocean) !important;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+html[data-style-preset="telemetry"] .otd-nba .otd-year {
+  color: var(--ember) !important;
+  text-shadow: 0 0 10px rgba(255, 122, 0, 0.2);
+}
+
+/* ────────────────────────────────────────────────────────────
+   C. CLEAN GLASSMORPHISM PRESET
+   ──────────────────────────────────────────────────────────── */
+html[data-style-preset="glass"] {
+  --font-sans: "Sora", sans-serif;
+  --font-mono: "Space Grotesk", sans-serif;
+  
+  /* Frosted Glass colors */
+  --bg: #0d0f22 !important;
+  --paper: rgba(255, 255, 255, 0.02) !important;
+  --surface: rgba(255, 255, 255, 0.03) !important;
+  --border: rgba(255, 255, 255, 0.08) !important;
+  --border-soft: rgba(255, 255, 255, 0.04) !important;
+  --ink: #ffffff !important;
+  --ink-soft: #e2e5ec !important;
+  --muted: #8d95a6 !important;
+  
+  --ocean: #4fa4e6;
+  --ember: #f0824b;
+}
+
+/* Glass global body styling */
+html[data-style-preset="glass"] body {
+  background: var(--bg) !important;
+  background-image: 
+    radial-gradient(circle at 25% 15%, rgba(79, 164, 230, 0.12) 0%, transparent 55%),
+    radial-gradient(circle at 75% 85%, rgba(240, 130, 75, 0.12) 0%, transparent 55%) !important;
+}
+
+/* Glass panel adjustments (Ultra Glassmorphism) */
+html[data-style-preset="glass"] .nb-panel {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+}
+html[data-style-preset="glass"] .nascar-panel {
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.3), 
+    inset 0 1px 0 rgba(79, 164, 230, 0.15) !important;
+}
+html[data-style-preset="glass"] .nascar-panel::before,
+html[data-style-preset="glass"] .nascar-panel::after,
+html[data-style-preset="glass"] .hoops-panel::before,
+html[data-style-preset="glass"] .hoops-panel::after {
+  display: none !important;
+}
+html[data-style-preset="glass"] .nascar-panel .panel-background-pattern {
+  color: #fff;
+  opacity: 0.04;
+}
+html[data-style-preset="glass"] .hoops-panel {
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.3), 
+    inset 0 1px 0 rgba(240, 130, 75, 0.15) !important;
+}
+html[data-style-preset="glass"] .hoops-panel .panel-background-pattern {
+  color: #fff;
+  opacity: 0.04;
+}
+
+/* Glass typography */
+html[data-style-preset="glass"] .panel-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+html[data-style-preset="glass"] .panel-eye {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Glass dials & countdowns */
+html[data-style-preset="glass"] .countdown-card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(10px) !important;
+}
+html[data-style-preset="glass"] .dial-n {
+  font-family: var(--font-sans) !important;
+  font-weight: 700;
+  color: #fff !important;
+  font-size: 30px;
+}
+
+/* Driver cards - Smooth Glass Chips */
+html[data-style-preset="glass"] .driver-card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  padding: 12px var(--s-4) !important;
+  transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+html[data-style-preset="glass"] .driver-card:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25) !important;
+}
+html[data-style-preset="glass"] .driver-car {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 8px;
+  color: #fff;
+  min-width: 42px;
+}
+html[data-style-preset="glass"] .driver-3 {
+  border-left: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+html[data-style-preset="glass"] .driver-43 {
+  border-left: 2px solid rgba(79, 164, 230, 0.4) !important;
+}
+html[data-style-preset="glass"] .driver-24 {
+  border-left: 2px solid rgba(255, 215, 0, 0.4) !important;
+}
+html[data-style-preset="glass"] .driver-88 {
+  border-left: 2px solid rgba(0, 255, 102, 0.4) !important;
+}
+html[data-style-preset="glass"] .driver-11 {
+  border-left: 2px solid rgba(240, 130, 75, 0.4) !important;
+}
+
+/* Glass NBA Scoreboard */
+html[data-style-preset="glass"] .score-card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+}
+html[data-style-preset="glass"] .score-live {
+  border-color: rgba(47, 125, 91, 0.3) !important;
+  background: rgba(47, 125, 91, 0.03) !important;
+}
+html[data-style-preset="glass"] .team-score {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 34px;
+  color: #fff;
+}
+html[data-style-preset="glass"] .score-ny .team-score {
+  color: var(--ember) !important;
+}
+
+/* Glass Tables */
+html[data-style-preset="glass"] .st-header,
+html[data-style-preset="glass"] .lb-header,
+html[data-style-preset="glass"] .leader-header {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+html[data-style-preset="glass"] .st-row,
+html[data-style-preset="glass"] .lb-row,
+html[data-style-preset="glass"] .leader-row {
+  border-radius: 8px;
+  margin-bottom: 2px;
+}
+html[data-style-preset="glass"] .st-row:hover,
+html[data-style-preset="glass"] .lb-row:hover,
+html[data-style-preset="glass"] .leader-row:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+html[data-style-preset="glass"] .st-row-ny,
+html[data-style-preset="glass"] .lb-fav,
+html[data-style-preset="glass"] .leader-fav {
+  background: rgba(240, 130, 75, 0.05) !important;
+  border-left: 2px solid var(--ember) !important;
+}
+
+/* Glass News and OTD */
+html[data-style-preset="glass"] .news-item,
+html[data-style-preset="glass"] .otd-card {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+}
+html[data-style-preset="glass"] .news-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html[data-style-preset="glass"] .otd-card::after {
+  display: none !important;
+}
+html[data-style-preset="glass"] .otd-nascar {
+  border-top: 3px solid var(--ocean) !important;
+}
+html[data-style-preset="glass"] .otd-nba {
+  border-top: 3px solid var(--ember) !important;
+}
+html[data-style-preset="glass"] .otd-world {
+  border-top: 3px solid var(--muted) !important;
+}
+html[data-style-preset="glass"] .otd-year {
+  font-family: var(--font-sans);
+  font-weight: 700;
+}
+
+/* ============================================================
+   LIVE STATE ANIMATIONS & PULSES
+   ============================================================ */
+
+@keyframes telemetry-pulse {
+  0%, 100% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 240, 255, 0.08); }
+  50% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 28px rgba(0, 240, 255, 0.22); }
+}
+
+@keyframes hoops-telemetry-pulse {
+  0%, 100% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 122, 0, 0.08); }
+  50% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 28px rgba(255, 122, 0, 0.22); }
+}
+
+@keyframes glass-pulse-nascar {
+  0%, 100% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(79, 164, 230, 0.15); }
+  50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(79, 164, 230, 0.3), 0 0 25px rgba(79, 164, 230, 0.25); }
+}
+
+@keyframes glass-pulse-nba {
+  0%, 100% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(240, 130, 75, 0.15); }
+  50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(240, 130, 75, 0.3), 0 0 25px rgba(240, 130, 75, 0.25); }
+}
+
+html[data-style-preset="telemetry"] .nascar-panel.score-live, 
+html[data-style-preset="telemetry"] .nascar-panel.race-live {
+  animation: telemetry-pulse 2s infinite ease-in-out;
+}
+
+html[data-style-preset="telemetry"] .hoops-panel.score-live {
+  animation: hoops-telemetry-pulse 2s infinite ease-in-out;
+}
+
+html[data-style-preset="glass"] .nascar-panel.score-live,
+html[data-style-preset="glass"] .nascar-panel.race-live {
+  animation: glass-pulse-nascar 2.5s infinite ease-in-out;
+}
+
+html[data-style-preset="glass"] .hoops-panel.score-live {
+  animation: glass-pulse-nba 2.5s infinite ease-in-out;
+}
+
+/* Make sure container handles stacking correctly */
+.nb-panel {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+

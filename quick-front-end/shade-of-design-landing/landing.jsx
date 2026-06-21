@@ -93,7 +93,7 @@ const PROJECTS = [
     title: "Pit Stop & The Paint",
     blurb: "Dad's drivers. New York's teams. Live, side by side.",
     href: "unite-passion/nascar-basketball.html",
-    status: "soon",
+    status: "live",
     accent: "sport",
   },
 ];
