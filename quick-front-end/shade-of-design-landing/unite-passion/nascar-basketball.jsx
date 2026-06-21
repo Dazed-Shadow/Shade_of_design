@@ -1,7 +1,7 @@
 /* global React, ReactDOM, supabase */
 const { useState, useEffect, useRef } = React;
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "dark" }/*EDITMODE-END*/;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "dark", "stylePreset": "telemetry" }/*EDITMODE-END*/;
 
 // ─── API endpoints ────────────────────────────────────────────────────────────
 const NASCAR_SCOREBOARD  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
@@ -667,6 +667,16 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
 
   return (
     <div className="nb-panel nascar-panel">
+      <div className="panel-background-pattern">
+        <svg className="telemetry-grid" width="100%" height="100%">
+          <defs>
+            <pattern id="nascar-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#nascar-grid)" />
+        </svg>
+      </div>
       <p className="panel-eye">NASCAR · Cup Series</p>
       <h2 className="panel-title">The Pit</h2>
 
@@ -729,7 +739,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
             <p className="nb-eye">Dad's Drivers</p>
             <div className="driver-cards">
               {FEATURED_DRIVERS.map((d) => (
-                <a key={d.car} className={`driver-card driver-link driver-${d.era}`} href={d.statsUrl} target="_blank" rel="noopener noreferrer">
+                <a key={d.car} className={`driver-card driver-link driver-${d.era} driver-${d.car}`} href={d.statsUrl} target="_blank" rel="noopener noreferrer">
                   <span className="driver-car">#{d.car}</span>
                   <div className="driver-info">
                     <span className="driver-name">{d.name}</span>
@@ -809,6 +819,13 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
 
   return (
     <div className="nb-panel hoops-panel">
+      <div className="panel-background-pattern">
+        <svg className="court-lines" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M 0 50 L 100 50 M 50 0 L 50 100 M 50 50 C 35 50, 35 65, 50 65 C 65 65, 65 50, 50 50" fill="none" stroke="currentColor" strokeWidth="0.2"/>
+          <path d="M 0 20 L 20 20 L 20 80 L 0 80" fill="none" stroke="currentColor" strokeWidth="0.2" />
+          <path d="M 100 20 L 80 20 L 80 80 L 100 80" fill="none" stroke="currentColor" strokeWidth="0.2" />
+        </svg>
+      </div>
       <p className="panel-eye">NBA · Basketball</p>
       <h2 className="panel-title">The Paint</h2>
 
@@ -1071,7 +1088,8 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", t.theme ?? "dark");
-  }, [t.theme]);
+    document.documentElement.setAttribute("data-style-preset", t.stylePreset ?? "telemetry");
+  }, [t.theme, t.stylePreset]);
 
   async function fetchAll() {
     const [nascar, nascarStand, nascarNewsRes, nba, nbaStand, nbaNewsRes, nbaLeadRes, wiki] = await Promise.allSettled([
@@ -1157,6 +1175,15 @@ function App() {
             options={[
               { value: "light", label: "Light" },
               { value: "dark",  label: "Dark"  },
+            ]}
+          />
+          <TweakRadio
+            label="Preset"
+            value={t.stylePreset}
+            onChange={(v) => setTweak("stylePreset", v)}
+            options={[
+              { value: "telemetry", label: "Telemetry" },
+              { value: "glass",     label: "Glass"  },
             ]}
           />
         </TweakSection>
