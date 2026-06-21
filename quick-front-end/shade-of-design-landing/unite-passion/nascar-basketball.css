@@ -2243,4 +2243,94 @@ html[data-style-preset="glass"] .hoops-panel.score-live {
   transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
+/* ============================================================
+   OPTION C (GLASSMORPHISM) COMPONENT DETAILED OVERRIDES
+   ============================================================ */
+
+/* Soft white SVG watermarks for both themes */
+html[data-style-preset="glass"] .panel-background-pattern {
+  color: rgba(255, 255, 255, 0.04) !important;
+  opacity: 1 !important;
+}
+html[data-style-preset="telemetry"] .panel-background-pattern {
+  color: rgba(255, 255, 255, 0.05) !important;
+  opacity: 1 !important;
+}
+
+/* Oval badges for Option C */
+html[data-style-preset="glass"] .driver-car {
+  border-radius: 99px !important; /* Oval shape */
+  padding: 3px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Low-profile Ribbon Countdown Timers */
+html[data-style-preset="glass"] .countdown-card {
+  background: rgba(255, 255, 255, 0.015) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: var(--s-2) !important;
+  margin-bottom: var(--s-3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html[data-style-preset="glass"] .countdown-card .card-eye {
+  margin: 0 !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.10em !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html[data-style-preset="glass"] .countdown-dials {
+  margin-top: 0 !important;
+  gap: 5px !important;
+  align-items: center !important;
+}
+
+html[data-style-preset="glass"] .countdown-dials .dial {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+html[data-style-preset="glass"] .countdown-dials .dial-n {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  min-width: auto !important;
+  color: #ffffff !important;
+}
+
+html[data-style-preset="glass"] .countdown-dials .dial-l {
+  font-size: 9px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  text-transform: lowercase !important;
+  margin-left: 2px !important;
+  letter-spacing: 0.02em !important;
+}
+
+html[data-style-preset="glass"] .countdown-dials .dial-sep {
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.25) !important;
+  padding-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Sparkline styles */
+.sparkline {
+  margin-left: var(--s-3);
+  margin-right: var(--s-3);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.08));
+}
+
+
 

@@ -1,7 +1,7 @@
 /* global React, ReactDOM, supabase */
 const { useState, useEffect, useRef } = React;
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "dark", "stylePreset": "telemetry" }/*EDITMODE-END*/;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{ "theme": "dark", "stylePreset": "glass" }/*EDITMODE-END*/;
 
 // ─── API endpoints ────────────────────────────────────────────────────────────
 const NASCAR_SCOREBOARD  = "https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard";
@@ -45,17 +45,17 @@ const NY_TEAMS   = ["NYK", "BKN"];
 
 // ─── NY team external links ───────────────────────────────────────────────────
 const NY_TEAM_INFO = {
-  NYK: { url: "https://www.nba.com/knicks",  statsUrl: "https://www.nba.com/stats/team/1610612752" },
-  BKN: { url: "https://www.nba.com/nets",    statsUrl: "https://www.nba.com/stats/team/1610612751" },
+  NYK: { url: "https://www.nba.com/knicks",  statsUrl: "https://www.nba.com/stats/team/1610612752", trend: [1, 1, 0, 1, 1, 1] },
+  BKN: { url: "https://www.nba.com/nets",    statsUrl: "https://www.nba.com/stats/team/1610612751", trend: [0, 1, 0, 0, 1, 0] },
 };
 
 // ─── Static driver data ───────────────────────────────────────────────────────
 const FEATURED_DRIVERS = [
-  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver", url: "https://www.nascar.com/dale-earnhardt-jr/",  statsUrl: "https://www.espn.com/racing/driver/_/id/1027/dale-earnhardt-jr" },
-  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner",   url: "https://www.nascar.com/denny-hamlin/",       statsUrl: "https://www.espn.com/racing/driver/_/id/1025/denny-hamlin" },
-  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator",           url: "https://www.nascar.com/dale-earnhardt/",    statsUrl: "https://www.espn.com/racing/driver/_/id/1004/dale-earnhardt" },
-  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King",                  url: "https://www.nascar.com/richard-petty/",    statsUrl: "https://www.espn.com/racing/driver/_/id/1002/richard-petty" },
-  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior",           url: "https://www.nascar.com/jeff-gordon/",      statsUrl: "https://www.espn.com/racing/driver/_/id/1007/jeff-gordon" },
+  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver", url: "https://www.nascar.com/dale-earnhardt-jr/",  statsUrl: "https://www.espn.com/racing/driver/_/id/150/dale-earnhardt-jr", trend: [10, 5, 8, 2, 4, 1] },
+  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner",   url: "https://www.nascar.com/denny-hamlin/",       statsUrl: "https://www.espn.com/racing/driver/_/id/747/denny-hamlin", trend: [3, 11, 2, 1, 8, 4] },
+  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator",           url: "https://www.nascar.com/dale-earnhardt/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/2675/dale-earnhardt", trend: [1, 2, 1, 3, 1, 1] },
+  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King",                  url: "https://www.nascar.com/richard-petty/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/918/richard-petty", trend: [1, 1, 1, 2, 1, 1] },
+  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior",           url: "https://www.nascar.com/jeff-gordon/",      statsUrl: "https://www.espn.com/racing/driver/stats/_/id/67/jeff-gordon", trend: [5, 3, 1, 2, 4, 2] },
 ];
 
 // ─── "On This Day" curated lore ───────────────────────────────────────────────
@@ -174,6 +174,33 @@ function pickRandom(arr, n) {
   if (!arr?.length) return [];
   const copy = [...arr].sort(() => Math.random() - 0.5);
   return copy.slice(0, n);
+}
+
+function Sparkline({ data, color = "currentColor" }) {
+  if (!Array.isArray(data) || data.length < 2) return null;
+  const w = 44;
+  const h = 14;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min === 0 ? 1 : max - min;
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((val - min) / range) * h;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg className="sparkline" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible", flexShrink: 0, opacity: 0.65 }}>
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
 }
 
 // ─── CountdownTimer ───────────────────────────────────────────────────────────
@@ -365,6 +392,7 @@ function TeamRecordStrip({ entries }) {
               <div className="rec-header">
                 <span className="rec-abbr">{abbr}</span>
                 <span className="rec-name">{name}</span>
+                {NY_TEAM_INFO[abbr]?.trend && <Sparkline data={NY_TEAM_INFO[abbr].trend} color="var(--ember)" />}
                 <span className="rec-link-arrow">↗</span>
               </div>
               <div className="rec-stats">
@@ -714,6 +742,9 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
         /* ── OFF-RACE ── */
         <div className="off-race">
 
+          {/* Last race result */}
+          {lastEvent && <LastRaceCard event={lastEvent} />}
+
           {/* Countdown to next race */}
           {nextEvent?.date && (
             <CountdownTimer
@@ -721,9 +752,6 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
               label={`Next Race · ${nextEvent.name ?? nextEvent.shortName ?? ""}`}
             />
           )}
-
-          {/* Last race result */}
-          {lastEvent && <LastRaceCard event={lastEvent} />}
 
           {/* Upcoming schedule */}
           <ScheduleStrip events={events} label="Upcoming Races" max={3} />
@@ -749,6 +777,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
                       {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
                     </span>
                   </div>
+                  {d.trend && <Sparkline data={d.trend} color="var(--ocean)" />}
                   {d.era === "legend" ? <span className="driver-era-badge">Legend</span> : <span className="driver-link-arrow">↗</span>}
                 </a>
               ))}
@@ -844,6 +873,9 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             </div>
           )}
 
+          {/* Last NY game result */}
+          {!liveNY.length && lastNY && <LastGameCard event={lastNY} />}
+
           {/* Countdown to next NY game */}
           {!liveNY.length && nextNY?.date && (
             <CountdownTimer
@@ -851,9 +883,6 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
               label={`Next · ${nextNY.competitions?.[0]?.competitors?.find(c => !NY_TEAMS.includes(c.team?.abbreviation))?.team?.shortDisplayName ?? "NY game"}`}
             />
           )}
-
-          {/* Last NY game result */}
-          {!liveNY.length && lastNY && <LastGameCard event={lastNY} />}
 
           {/* Completed NY games (post) */}
           {nyGames.filter(ev => ev.competitions?.[0]?.status?.type?.state === "post" && ev !== lastNY).slice(0,2).map((ev, i) =>
