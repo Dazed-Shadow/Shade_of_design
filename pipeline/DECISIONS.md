@@ -825,3 +825,25 @@ spotter_<date>.jsonl           ← last resort (raw scrape)
 **Trade-off accepted:** Placeholder pages still need design work to feel intentional rather than empty. The cost is small (10-20 min per page) and is part of the design process itself, not separate from it.
 
 **Complements:** D-024 (Unite Passion as Central Hub landing component) — any Unity sub-pages follow this convention — and the Pitt/Paint design strategy reference held in Mr. C's memory.
+
+---
+
+## D-026 · 2026-06-21 · C-Legal opinion normalization — cascade order and null contract
+
+**Decision:** Normalization cascade is `plain_text` → `html` → `html_lawbox` → `xml_harvard` → skip (log stderr, no .md written). Fields that require cluster-level data (`citation`, `court`, `date_filed`, `jurisdiction`) are set to `null` when absent from the opinion-level cache record — never empty string, never `"N/A"`. `area_of_law` is a CLI parameter (default `federal_administrative_law`). `jurisdiction` is derived from embedded cluster metadata when present.
+
+**Context:** CourtListener v4's opinions endpoint returns opinion-level JSON only. Citation, court name, date_filed, and court slug live in the cluster object (a separate endpoint). Sonnet A (`legal_fetch.py`) caches one opinion JSON per file. The normalizer must handle the common case where cluster fields are absent from the cache record.
+
+**Why this cascade:**
+- `plain_text` is always preferred — it's what the API guarantees for indexed opinions and maps directly to Markdown with no parsing.
+- `html` is the next best: well-formed HTML for most older opinions that lack plain text. BeautifulSoup strips it cleanly.
+- `html_lawbox` and `xml_harvard` are format-specific variants on a minority of records. BeautifulSoup handles both; lxml-xml is tried first for the XML variant, with html.parser as fallback.
+- If none of the four fields yield text, the case is logged to stderr and skipped with no output written. Same fail-soft principle as C-Transit D-008.
+
+**Why null over empty string:**
+Per DD-021 Mr.C review pre-decision #6: any field that can't be populated from CourtListener is `null`. This is a downstream contract for DD-022's SR landing zone — the consumer can test `if record["citation"]` cleanly; empty strings would force extra strip/falsiness checks and obscure whether data was missing vs. blank.
+
+**Downstream contract lock (DD-022 dependency):**
+Schema `{case_id, citation, court, date_filed, area_of_law, jurisdiction, opinion_text_md, summary_md, source_url}` is locked at this ship. Do not add, remove, or rename fields without a new D-NNN entry and Opus@CH review. DD-022's C-Build spawn must not start until DD-021 ships and the schema is confirmed in normalized output.
+
+**Trade-off accepted:** `citation`, `court`, `date_filed`, `jurisdiction` will be null in the initial 50-case MVP cache if CourtListener v4 does not inline cluster data in opinion responses (which is the typical v4 behavior). DD-022's landing zone handles null gracefully. A future enrichment pass (separate DD) can add a cluster-fetch step to backfill these fields without modifying the locked schema — new fields would be additive.
