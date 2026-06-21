@@ -2,7 +2,7 @@
 const { useState, useEffect } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "light"
+  "theme": "dark"
 }/*EDITMODE-END*/;
 
 /* Socials — add a row to this array to add a platform.
@@ -239,7 +239,7 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", t.theme || "light");
+    document.documentElement.setAttribute("data-theme", t.theme || "dark");
   }, [t.theme]);
 
   return (

@@ -2,7 +2,7 @@
 const { useState, useEffect, useMemo } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "light"
+  "theme": "dark"
 }/*EDITMODE-END*/;
 
 /* ---------- helpers ---------- */
@@ -254,7 +254,7 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", t.theme || "light");
+    document.documentElement.setAttribute("data-theme", t.theme || "dark");
   }, [t.theme]);
 
   return (

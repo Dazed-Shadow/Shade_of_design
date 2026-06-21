@@ -4,23 +4,23 @@
 
 :root {
   /* Core palette */
-  --ocean: #1A3E62;
-  --ocean-700: #14304D;
+  --ocean: #4A7BAA;
+  --ocean-700: #3A6493;
   --ocean-900: #0B1F33;
   --slate: #5D809D;
   --slate-300: #93AABF;
   --ember: #C97B4A;
   --ember-soft: #E4A57E;
 
-  /* Surfaces (light) */
-  --bg: #F3F4F6;
-  --paper: #FAFAF7;
-  --surface: #FFFFFF;
-  --ink: #0B1726;
-  --ink-soft: #324155;
-  --muted: #6B7785;
-  --border: #DCE2EA;
-  --border-soft: #E8ECF1;
+  /* Surfaces — dark is canonical */
+  --bg: #0B1726;
+  --paper: #0F1D30;
+  --surface: #142841;
+  --ink: #F3F4F6;
+  --ink-soft: #C7D0DC;
+  --muted: #8593A6;
+  --border: rgba(255,255,255,0.10);
+  --border-soft: rgba(255,255,255,0.06);
 
   /* Status */
   --positive: #2F7D5B;
@@ -52,12 +52,51 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Shadows */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-3: 0 24px 60px -20px rgba(0,0,0,0.6);
+}
+
+/* Light — system preference auto-switch */
+@media (prefers-color-scheme: light) {
+  :root {
+    --ocean: #1A3E62;
+    --ocean-700: #14304D;
+    --bg: #F3F4F6;
+    --paper: #FAFAF7;
+    --surface: #FFFFFF;
+    --ink: #0B1726;
+    --ink-soft: #324155;
+    --muted: #6B7785;
+    --border: #DCE2EA;
+    --border-soft: #E8ECF1;
+    --shadow-1: 0 1px 2px rgba(11,23,38,0.06), 0 1px 1px rgba(11,23,38,0.04);
+    --shadow-2: 0 4px 16px rgba(11,23,38,0.08), 0 1px 2px rgba(11,23,38,0.04);
+    --shadow-3: 0 24px 60px -20px rgba(11,23,38,0.25), 0 8px 24px -8px rgba(11,23,38,0.1);
+  }
+}
+
+/* Light — explicit toggle */
+[data-theme="light"] {
+  --ocean: #1A3E62;
+  --ocean-700: #14304D;
+  --bg: #F3F4F6;
+  --paper: #FAFAF7;
+  --surface: #FFFFFF;
+  --ink: #0B1726;
+  --ink-soft: #324155;
+  --muted: #6B7785;
+  --border: #DCE2EA;
+  --border-soft: #E8ECF1;
   --shadow-1: 0 1px 2px rgba(11,23,38,0.06), 0 1px 1px rgba(11,23,38,0.04);
   --shadow-2: 0 4px 16px rgba(11,23,38,0.08), 0 1px 2px rgba(11,23,38,0.04);
   --shadow-3: 0 24px 60px -20px rgba(11,23,38,0.25), 0 8px 24px -8px rgba(11,23,38,0.1);
 }
 
+/* Dark — explicit toggle (overrides @media light in system-light environments) */
 [data-theme="dark"] {
+  --ocean: #4A7BAA;
+  --ocean-700: #3A6493;
   --bg: #0B1726;
   --paper: #0F1D30;
   --surface: #142841;
@@ -66,8 +105,6 @@
   --muted: #8593A6;
   --border: rgba(255,255,255,0.10);
   --border-soft: rgba(255,255,255,0.06);
-  --ocean: #4A7BAA;
-  --ocean-700: #3A6493;
   --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
   --shadow-2: 0 4px 16px rgba(0,0,0,0.4);
   --shadow-3: 0 24px 60px -20px rgba(0,0,0,0.6);

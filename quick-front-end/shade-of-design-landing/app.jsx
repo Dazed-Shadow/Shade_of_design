@@ -14,7 +14,7 @@ const TABS = [
 ];
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "light"
+  "theme": "dark"
 }/*EDITMODE-END*/;
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", t.theme || "light");
+    document.documentElement.setAttribute("data-theme", t.theme || "dark");
   }, [t.theme]);
 
   const render = {
