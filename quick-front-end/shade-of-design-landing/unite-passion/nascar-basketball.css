@@ -1995,11 +1995,11 @@ html[data-style-preset="glass"] {
   --font-mono: "Space Grotesk", sans-serif;
   
   /* Frosted Glass colors */
-  --bg: #0d0f22 !important;
-  --paper: rgba(255, 255, 255, 0.02) !important;
-  --surface: rgba(255, 255, 255, 0.03) !important;
-  --border: rgba(255, 255, 255, 0.08) !important;
-  --border-soft: rgba(255, 255, 255, 0.04) !important;
+  --bg: #070913 !important;
+  --paper: rgba(255, 255, 255, 0.015) !important;
+  --surface: rgba(255, 255, 255, 0.02) !important;
+  --border: rgba(255, 255, 255, 0.10) !important;
+  --border-soft: rgba(255, 255, 255, 0.05) !important;
   --ink: #ffffff !important;
   --ink-soft: #e2e5ec !important;
   --muted: #8d95a6 !important;
@@ -2008,29 +2008,33 @@ html[data-style-preset="glass"] {
   --ember: #f0824b;
 }
 
-/* Glass global body styling */
+/* Glass global body styling - Vibrant Ambient Backlights */
 html[data-style-preset="glass"] body {
   background: var(--bg) !important;
   background-image: 
-    radial-gradient(circle at 25% 15%, rgba(79, 164, 230, 0.12) 0%, transparent 55%),
-    radial-gradient(circle at 75% 85%, rgba(240, 130, 75, 0.12) 0%, transparent 55%) !important;
+    radial-gradient(circle at 10% 15%, rgba(0, 240, 255, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 90% 25%, rgba(255, 122, 0, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 60%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 30% 85%, rgba(0, 240, 255, 0.06) 0%, transparent 40%) !important;
+  background-attachment: fixed;
 }
 
 /* Glass panel adjustments (Ultra Glassmorphism) */
 html[data-style-preset="glass"] .nb-panel {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
   border: 1px solid var(--border) !important;
   border-radius: 20px !important;
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(16px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 html[data-style-preset="glass"] .nascar-panel {
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.3), 
-    inset 0 1px 0 rgba(79, 164, 230, 0.15) !important;
+    0 24px 64px rgba(0, 0, 0, 0.45), 
+    inset 0 1px 1px rgba(79, 164, 230, 0.20),
+    0 0 30px rgba(0, 240, 255, 0.04) !important;
 }
 html[data-style-preset="glass"] .nascar-panel::before,
 html[data-style-preset="glass"] .nascar-panel::after,
@@ -2044,8 +2048,9 @@ html[data-style-preset="glass"] .nascar-panel .panel-background-pattern {
 }
 html[data-style-preset="glass"] .hoops-panel {
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.3), 
-    inset 0 1px 0 rgba(240, 130, 75, 0.15) !important;
+    0 24px 64px rgba(0, 0, 0, 0.45), 
+    inset 0 1px 1px rgba(240, 130, 75, 0.20),
+    0 0 30px rgba(255, 122, 0, 0.04) !important;
 }
 html[data-style-preset="glass"] .hoops-panel .panel-background-pattern {
   color: #fff;
@@ -2211,43 +2216,7 @@ html[data-style-preset="glass"] .otd-year {
 }
 
 @keyframes glass-pulse-nascar {
-  0%, 100% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(79, 164, 230, 0.15); }
-  50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(79, 164, 230, 0.3), 0 0 25px rgba(79, 164, 230, 0.25); }
-}
-
-@keyframes glass-pulse-nba {
-  0%, 100% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(240, 130, 75, 0.15); }
-  50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(240, 130, 75, 0.3), 0 0 25px rgba(240, 130, 75, 0.25); }
-}
-
-html[data-style-preset="telemetry"] .nascar-panel.score-live, 
-html[data-style-preset="telemetry"] .nascar-panel.race-live {
-  animation: telemetry-pulse 2s infinite ease-in-out;
-}
-
-html[data-style-preset="telemetry"] .hoops-panel.score-live {
-  animation: hoops-telemetry-pulse 2s infinite ease-in-out;
-}
-
-html[data-style-preset="glass"] .nascar-panel.score-live,
-html[data-style-preset="glass"] .nascar-panel.race-live {
-  animation: glass-pulse-nascar 2.5s infinite ease-in-out;
-}
-
-html[data-style-preset="glass"] .hoops-panel.score-live {
-  animation: glass-pulse-nba 2.5s infinite ease-in-out;
-}
-
-/* Make sure container handles stacking correctly */
-.nb-panel {
-  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
-}
-
-/* ============================================================
-   OPTION C (GLASSMORPHISM) COMPONENT DETAILED OVERRIDES
-   ============================================================ */
-
-/* Soft white SVG watermarks for both themes */
+  /* Soft white SVG watermarks for both themes */
 html[data-style-preset="glass"] .panel-background-pattern {
   color: rgba(255, 255, 255, 0.04) !important;
   opacity: 1 !important;
@@ -2257,14 +2226,85 @@ html[data-style-preset="telemetry"] .panel-background-pattern {
   opacity: 1 !important;
 }
 
-/* Oval badges for Option C */
+/* Glass ovals for featured driver number badges */
 html[data-style-preset="glass"] .driver-car {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  min-width: 44px !important;
   border-radius: 99px !important; /* Oval shape */
-  padding: 3px 12px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  padding: 0 10px !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}
+
+/* Float-lift driver cards & NY record cards */
+html[data-style-preset="glass"] .driver-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  margin-bottom: var(--s-2) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+html[data-style-preset="glass"] .driver-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  transform: translateY(-3px) scale(1.005) !important;
+}
+
+/* Driver-specific glass accents (badge + hover shadows) */
+html[data-style-preset="glass"] .driver-88 .driver-car { color: #00ff66 !important; border-color: rgba(0, 255, 102, 0.3) !important; background: rgba(0, 255, 102, 0.06) !important; }
+html[data-style-preset="glass"] .driver-88:hover { border-color: rgba(0, 255, 102, 0.4) !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(0, 255, 102, 0.25) !important; }
+
+html[data-style-preset="glass"] .driver-11 .driver-car { color: #ff7a00 !important; border-color: rgba(255, 122, 0, 0.3) !important; background: rgba(255, 122, 0, 0.06) !important; }
+html[data-style-preset="glass"] .driver-11:hover { border-color: rgba(255, 122, 0, 0.4) !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 122, 0, 0.25) !important; }
+
+html[data-style-preset="glass"] .driver-3 .driver-car { color: #ffffff !important; border-color: rgba(255, 255, 255, 0.3) !important; background: rgba(255, 255, 255, 0.06) !important; }
+html[data-style-preset="glass"] .driver-3:hover { border-color: rgba(255, 255, 255, 0.4) !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 255, 255, 0.25) !important; }
+
+html[data-style-preset="glass"] .driver-43 .driver-car { color: #00f0ff !important; border-color: rgba(0, 240, 255, 0.3) !important; background: rgba(0, 240, 255, 0.06) !important; }
+html[data-style-preset="glass"] .driver-43:hover { border-color: rgba(0, 240, 255, 0.4) !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(0, 240, 255, 0.25) !important; }
+
+html[data-style-preset="glass"] .driver-24 .driver-car { color: #ffd700 !important; border-color: rgba(255, 215, 0, 0.3) !important; background: rgba(255, 215, 0, 0.06) !important; }
+html[data-style-preset="glass"] .driver-24:hover { border-color: rgba(255, 215, 0, 0.4) !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 215, 0, 0.25) !important; }
+
+/* NY Records float glass style */
+html[data-style-preset="glass"] .rec-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+html[data-style-preset="glass"] .rec-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  transform: translateY(-3px) !important;
+}
+html[data-style-preset="glass"] .rec-nyk:hover { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(0, 107, 182, 0.2) !important; }
+html[data-style-preset="glass"] .rec-bkn:hover { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 255, 255, 0.15) !important; }
+
+/* NBA Scoreboard card styling */
+html[data-style-preset="glass"] .score-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+  padding: 16px 20px !important;
+}
+html[data-style-preset="glass"] .score-live {
+  border-color: rgba(47, 125, 91, 0.3) !important;
+  background: rgba(47, 125, 91, 0.04) !important;
 }
 
 /* Low-profile Ribbon Countdown Timers */
@@ -2293,7 +2333,7 @@ html[data-style-preset="glass"] .countdown-card .card-eye {
 html[data-style-preset="glass"] .countdown-dials {
   margin-top: 0 !important;
   gap: 5px !important;
-  align-items: center !important;
+  align-items: center;
 }
 
 html[data-style-preset="glass"] .countdown-dials .dial {
@@ -2325,11 +2365,442 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
   line-height: 1 !important;
 }
 
-/* Sparkline styles */
+/* Sparkline styles with glow drop-shadow filters */
 .sparkline {
   margin-left: var(--s-3);
   margin-right: var(--s-3);
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.08));
+}
+
+/* Sparkline containers */
+.driver-trend-container,
+.team-trend-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  margin-left: auto;
+  margin-right: var(--s-2);
+}
+.driver-trend-label,
+.team-trend-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Sparkline pulsing dot */
+@keyframes spark-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+.sparkline-dot {
+  transform-origin: center;
+  animation: spark-pulse 1.5s infinite ease-in-out;
+}
+
+/* Dynamic Glass View Switcher (Tabs) */
+.nb-tabs-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--s-6);
+}
+
+.nb-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px;
+  border-radius: var(--r-3);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.nb-tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px 16px;
+  border-radius: var(--r-2);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.nb-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nb-tab-btn.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+/* NASCAR Track Weather Widget styles */
+.weather-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: var(--s-4);
+  backdrop-filter: blur(10px);
+}
+
+.weather-card.loading {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: var(--s-6) 0;
+}
+
+.weather-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.surface-status {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+}
+.surface-green {
+  background: rgba(47, 125, 91, 0.1);
+  color: #00ff66;
+  border-color: rgba(47, 125, 91, 0.25);
+}
+.surface-wet {
+  background: rgba(176, 70, 58, 0.1);
+  color: #ff4a4a;
+  border-color: rgba(176, 70, 58, 0.25);
+  animation: pulse-border 1.5s infinite ease-in-out;
+}
+.surface-hot {
+  background: rgba(201, 145, 60, 0.1);
+  color: #ffaa00;
+  border-color: rgba(201, 145, 60, 0.25);
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(176, 70, 58, 0.25); }
+  50% { border-color: rgba(176, 70, 58, 0.6); }
+}
+
+.weather-loc {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: var(--s-3);
+}
+
+.weather-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+}
+
+.weather-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ws-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ws-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Driver career stats overlay modal */
+.driver-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+}
+
+.driver-modal-content {
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  position: relative;
+  animation: modal-pop 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  backdrop-filter: blur(20px);
+}
+
+@keyframes modal-pop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.driver-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  z-index: 10;
+}
+.driver-modal-close:hover {
+  color: #fff;
+}
+
+.driver-modal-header {
+  padding: var(--s-6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.dm-car {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-width: 58px;
+  border-radius: 99px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.driver-modal-header.driver-88 .dm-car { color: #00ff66; border-color: rgba(0, 255, 102, 0.3); background: rgba(0, 255, 102, 0.08); }
+.driver-modal-header.driver-11 .dm-car { color: #ff7a00; border-color: rgba(255, 122, 0, 0.3); background: rgba(255, 122, 0, 0.08); }
+.driver-modal-header.driver-3 .dm-car { color: #ffffff; border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); }
+.driver-modal-header.driver-43 .dm-car { color: #00f0ff; border-color: rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.08); }
+.driver-modal-header.driver-24 .dm-car { color: #ffd700; border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.08); }
+
+.dm-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 20px;
+  color: #fff;
+  margin: 0 0 2px;
+}
+
+.dm-team {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.driver-modal-body {
+  padding: var(--s-6);
+}
+
+.dm-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+  margin-bottom: var(--s-5);
+}
+
+.dm-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.dms-val {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.dms-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.dm-note {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--s-5);
+  text-align: center;
+}
+
+.dm-trend-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: var(--s-4);
+}
+
+.dm-trend-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.dm-trend-history {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.dm-trend-pos {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--ink-soft);
+}
+
+/* Interactive Matchup Predictions styles */
+.predictions-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: var(--s-5) var(--s-6);
+  margin-bottom: var(--s-4);
+  backdrop-filter: blur(20px);
+}
+
+.pred-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  margin: var(--s-2) 0 4px;
+}
+
+.pred-sub {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 var(--s-5);
+}
+
+.pred-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-5);
+}
+
+.pred-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pred-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.btn-nyk.selected {
+  background: rgba(0, 107, 182, 0.15) !important;
+  border-color: #006BB6 !important;
+  color: #4A9FD4 !important;
+  box-shadow: 0 0 15px rgba(0, 107, 182, 0.25);
+}
+
+.btn-bkn.selected {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+}
+
+.pred-bar-container {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--r-pill);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: var(--s-2);
+}
+
+.pred-bar {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bar-nyk { background: #006BB6; }
+.bar-bkn { background: #eeeeee; }
+
+.pred-labels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.lbl-nyk, .lbl-bkn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
 }
 
 

@@ -21,6 +21,11 @@ function wikipediaOTD() {
 
 // ─── Comment wall config ─────────────────────────────────────────────────────
 // SETUP (~5 min, one-time):
+
+// THis was redirected to point at a Google Sheets via Google Apps Script's extension. 
+// Sheet name is "Family Notes DB"
+
+// KEEPING THE BELOW IN CASE WE MOVE TO USING SUPABASE AGAIN ****************************
 //  1. Create free account at https://supabase.com
 //  2. New project → Settings → API → copy "Project URL" and "anon public" key
 //  3. SQL Editor → run:
@@ -35,10 +40,8 @@ function wikipediaOTD() {
 //       create policy "read all"   on comments for select using (true);
 //       create policy "insert all" on comments for insert with check (true);
 //  4. Replace the two placeholder strings below with your values and push.
-const SUPABASE_URL  = "https://emyierfkxcscieqggyjd.supabase.co";
-const SUPABASE_KEY  = "sb_publishable_1bAn7tEdADRhVwSJtYdpTg_ge6hxqK3";
-const COMMENTS_ON   = !SUPABASE_URL.startsWith("YOUR_");
-const sb            = COMMENTS_ON ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqM-A9Sld3y66E8PXd0TjRQcaWrF0I2Yik1WTWD8nLDgzXT8Wsf1TpXmQSyl6tC_qY/exec";
+const COMMENTS_ON   = true;
 
 const REFRESH_MS = 60_000;
 const NY_TEAMS   = ["NYK", "BKN"];
@@ -176,30 +179,225 @@ function pickRandom(arr, n) {
   return copy.slice(0, n);
 }
 
-function Sparkline({ data, color = "currentColor" }) {
+function Sparkline({ data, color = "currentColor", invert = false }) {
   if (!Array.isArray(data) || data.length < 2) return null;
-  const w = 44;
-  const h = 14;
+  const w = 70;
+  const h = 22;
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min === 0 ? 1 : max - min;
+  
   const points = data.map((val, i) => {
     const x = (i / (data.length - 1)) * w;
-    const y = h - ((val - min) / range) * h;
-    return `${x},${y}`;
-  }).join(" ");
+    const normalizedY = (val - min) / range;
+    const y = invert ? normalizedY * h : (1 - normalizedY) * h;
+    return { x, y };
+  });
+
+  // Generate smooth Bezier curve
+  let linePath = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    const cp1x = p0.x + (p1.x - p0.x) / 2;
+    const cp1y = p0.y;
+    const cp2x = p0.x + (p1.x - p0.x) / 2;
+    const cp2y = p1.y;
+    linePath += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+  }
+
+  const fillPath = `${linePath} L ${w.toFixed(1)},${h.toFixed(1)} L 0,${h.toFixed(1)} Z`;
+  
+  const idRef = React.useRef(Math.random().toString(36).substring(2, 9));
+  const gradId = `spark-grad-${idRef.current}`;
+  const glowId = `spark-glow-${idRef.current}`;
 
   return (
-    <svg className="sparkline" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible", flexShrink: 0, opacity: 0.65 }}>
-      <polyline
+    <svg className="sparkline" width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: "visible", flexShrink: 0 }}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+        </linearGradient>
+        <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor={color} floodOpacity="0.4" />
+        </filter>
+      </defs>
+      <path d={fillPath} fill={`url(#${gradId})`} />
+      <path
+        d={linePath}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        points={points}
+        filter={`url(#${glowId})`}
       />
+      {points.length > 0 && (
+        <circle
+          cx={points[points.length - 1].x}
+          cy={points[points.length - 1].y}
+          r="2.5"
+          fill={color}
+          className="sparkline-dot"
+          filter={`url(#${glowId})`}
+        />
+      )}
     </svg>
+  );
+}
+
+// ─── Weather Coordinates Dictionary ──────────────────────────────────────────
+const TRACK_COORDINATES = {
+  "daytona": { lat: 29.1856, lon: -81.0694, label: "Daytona Beach, FL" },
+  "talladega": { lat: 33.5670, lon: -86.0660, label: "Talladega, AL" },
+  "charlotte": { lat: 35.3514, lon: -80.6861, label: "Concord, NC" },
+  "bristol": { lat: 36.5156, lon: -82.2569, label: "Bristol, TN" },
+  "darlington": { lat: 34.2952, lon: -79.9056, label: "Darlington, SC" },
+  "indianapolis": { lat: 39.7950, lon: -86.2356, label: "Speedway, IN" },
+  "martinsville": { lat: 36.6342, lon: -79.8519, label: "Ridgeway, VA" },
+  "richmond": { lat: 37.5925, lon: -77.4194, label: "Richmond, VA" },
+  "atlanta": { lat: 33.3867, lon: -84.3175, label: "Hampton, GA" },
+  "las vegas": { lat: 36.2717, lon: -115.0103, label: "Las Vegas, NV" },
+  "lasvegas": { lat: 36.2717, lon: -115.0103, label: "Las Vegas, NV" },
+  "phoenix": { lat: 33.3748, lon: -112.3112, label: "Avondale, AZ" },
+  "homestead": { lat: 25.4619, lon: -80.4089, label: "Homestead, FL" },
+  "texas": { lat: 33.0269, lon: -97.2825, label: "Fort Worth, TX" },
+  "kansas": { lat: 39.1156, lon: -94.8311, label: "Kansas City, KS" },
+  "michigan": { lat: 42.0672, lon: -84.2411, label: "Brooklyn, MI" },
+  "pocono": { lat: 41.0544, lon: -75.5114, label: "Long Pond, PA" },
+  "sonoma": { lat: 38.1611, lon: -122.4594, label: "Sonoma, CA" },
+  "watkins glen": { lat: 42.3369, lon: -76.9242, label: "Watkins Glen, NY" },
+  "dover": { lat: 39.1897, lon: -75.5306, label: "Dover, DE" },
+  "nashville": { lat: 36.1472, lon: -86.4069, label: "Lebanon, TN" },
+  "gateway": { lat: 38.6508, lon: -90.1356, label: "Madison, IL" },
+  "wwtr": { lat: 38.6508, lon: -90.1356, label: "Madison, IL" },
+  "wilkesboro": { lat: 36.1311, lon: -81.0769, label: "North Wilkesboro, NC" },
+  "new hampshire": { lat: 43.3625, lon: -71.4614, label: "Loudon, NH" },
+  "coliseum": { lat: 34.0141, lon: -118.2878, label: "Los Angeles, CA" },
+  "chicago": { lat: 41.8758, lon: -87.6244, label: "Chicago, IL" },
+  "iowa": { lat: 41.6778, lon: -93.0142, label: "Newton, IA" }
+};
+
+function findCoordinates(venueName, eventName) {
+  const text = ((venueName || "") + " " + (eventName || "")).toLowerCase();
+  for (const key in TRACK_COORDINATES) {
+    if (text.includes(key)) {
+      return TRACK_COORDINATES[key];
+    }
+  }
+  return { lat: 35.3514, lon: -80.6861, label: "Charlotte (Default), NC" };
+}
+
+// ─── TrackWeather Component ──────────────────────────────────────────────────
+function TrackWeather({ venueName, eventName }) {
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const loc = findCoordinates(venueName, eventName);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchWeather() {
+      setLoading(true);
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (active) {
+          setWeather(data.current);
+          setLoading(false);
+        }
+      } catch (e) {
+        if (active) setLoading(false);
+      }
+    }
+    fetchWeather();
+    return () => { active = false; };
+  }, [loc.lat, loc.lon]);
+
+  if (loading) return <div className="weather-card loading">Loading track weather…</div>;
+  if (!weather) return null;
+
+  const temp = Math.round(weather.temperature_2m);
+  const rain = weather.rain;
+  const wind = Math.round(weather.wind_speed_10m);
+  const code = weather.weather_code;
+
+  let desc = "Clear";
+  if (code > 0 && code <= 3) desc = "Partly Cloudy";
+  else if (code >= 45 && code <= 48) desc = "Foggy";
+  else if (code >= 51 && code <= 67) desc = "Drizzle/Rain";
+  else if (code >= 71 && code <= 77) desc = "Snow";
+  else if (code >= 80 && code <= 82) desc = "Rain Showers";
+  else if (code >= 95) desc = "Thunderstorm";
+
+  let surfaceStatus = "Green Track";
+  let surfaceClass = "surface-green";
+  if (rain > 0 || code >= 51) {
+    surfaceStatus = "Wet Track / Caution";
+    surfaceClass = "surface-wet";
+  } else if (temp > 32) {
+    surfaceStatus = "Hot Track / Low Grip";
+    surfaceClass = "surface-hot";
+  }
+
+  return (
+    <div className="weather-card">
+      <div className="weather-header">
+        <p className="card-eye">Trackside Telemetry</p>
+        <span className={`surface-status ${surfaceClass}`}>{surfaceStatus}</span>
+      </div>
+      <div className="weather-loc">{loc.label}</div>
+      <div className="weather-stats">
+        <div className="weather-stat"><span className="ws-val">{temp}°C</span><span className="ws-lbl">Temp</span></div>
+        <div className="weather-stat"><span className="ws-val">{desc}</span><span className="ws-lbl">Condition</span></div>
+        <div className="weather-stat"><span className="ws-val">{wind} km/h</span><span className="ws-lbl">Wind</span></div>
+        <div className="weather-stat"><span className="ws-val">{rain > 0 ? `${rain}mm` : "None"}</span><span className="ws-lbl">Rain</span></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MatchupPredictions Component ────────────────────────────────────────────
+function MatchupPredictions({ scores, scoreboard }) {
+  const [vote, setVote] = useState(() => localStorage.getItem("family_vote") || null);
+  const [stats, setStats] = useState({ NYK: 12, BKN: 8 });
+
+  function handleVote(team) {
+    if (vote) return;
+    setVote(team);
+    localStorage.setItem("family_vote", team);
+    setStats(prev => ({ ...prev, [team]: prev[team] + 1 }));
+  }
+
+  const total = stats.NYK + stats.BKN;
+  const nykPct = total === 0 ? 50 : Math.round((stats.NYK / total) * 100);
+  const bknPct = 100 - nykPct;
+
+  return (
+    <div className="predictions-card">
+      <p className="card-eye">Family Matchup Prediction</p>
+      <h3 className="pred-title">Battle of New York</h3>
+      <p className="pred-sub">Cast your vote for tonight's matchup. Who takes the W?</p>
+      <div className="pred-buttons">
+        <button className={`pred-btn btn-nyk ${vote === "NYK" ? "selected" : ""}`} disabled={vote !== null} onClick={() => handleVote("NYK")}>
+          NYK Knicks
+        </button>
+        <button className={`pred-btn btn-bkn ${vote === "BKN" ? "selected" : ""}`} disabled={vote !== null} onClick={() => handleVote("BKN")}>
+          BKN Nets
+        </button>
+      </div>
+      <div className="pred-results">
+        <div className="pred-bar-container">
+          <div className="pred-bar bar-nyk" style={{ width: `${nykPct}%` }} />
+          <div className="pred-bar bar-bkn" style={{ width: `${bknPct}%` }} />
+        </div>
+        <div className="pred-labels">
+          <span className="lbl-nyk">Knicks: {nykPct}% ({stats.NYK} votes)</span>
+          <span className="lbl-bkn">Nets: {bknPct}% ({stats.BKN} votes)</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -392,7 +590,12 @@ function TeamRecordStrip({ entries }) {
               <div className="rec-header">
                 <span className="rec-abbr">{abbr}</span>
                 <span className="rec-name">{name}</span>
-                {NY_TEAM_INFO[abbr]?.trend && <Sparkline data={NY_TEAM_INFO[abbr].trend} color="var(--ember)" />}
+                {NY_TEAM_INFO[abbr]?.trend && (
+                  <div className="team-trend-container">
+                    <Sparkline data={NY_TEAM_INFO[abbr].trend} color="var(--ember)" />
+                    <span className="team-trend-label">Form (L6)</span>
+                  </div>
+                )}
                 <span className="rec-link-arrow">↗</span>
               </div>
               <div className="rec-stats">
@@ -669,7 +872,8 @@ function NewsStrip({ articles, sport }) {
 
 // ─── NascarPanel ─────────────────────────────────────────────────────────────
 
-function NascarPanel({ scoreboard, standings, news, loading }) {
+function NascarPanel({ activeTab, scoreboard, standings, news, loading }) {
+  const [selectedDriver, setSelectedDriver] = useState(null);
   const events     = scoreboard?.events ?? [];
   const liveEvent  = events.find(ev =>
     (ev.status?.type?.state ?? ev.competitions?.[0]?.status?.type?.state) === "in"
@@ -694,7 +898,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
   const top10  = sorted.slice(0, 10);
 
   return (
-    <div className="nb-panel nascar-panel">
+    <div className={`nb-panel nascar-panel${isLive ? " score-live" : ""}`}>
       <div className="panel-background-pattern">
         <svg className="telemetry-grid" width="100%" height="100%">
           <defs>
@@ -710,83 +914,116 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
 
       {loading && !scoreboard ? (
         <div className="panel-loading">Loading race data…</div>
-      ) : isLive && active ? (
-        /* ── LIVE RACE ── */
-        <div className="race-live">
-          <div className="race-name">{active.name ?? active.shortName ?? "Race in Progress"}</div>
-          <FlagBadge state={getFlagState(competition)} />
-          {lapLine && <div className="race-lap">{lapLine}</div>}
-          {top10.length > 0 && (
-            <div className="leaderboard">
-              <div className="lb-header">
-                <span>POS</span><span>CAR</span><span>DRIVER</span><span>GAP</span>
+      ) : activeTab === "telemetry" ? (
+        /* ── TELEMETRY TAB ── */
+        isLive && active ? (
+          <div className="race-live">
+            <div className="race-name">{active.name ?? active.shortName ?? "Race in Progress"}</div>
+            <FlagBadge state={getFlagState(competition)} />
+            {lapLine && <div className="race-lap">{lapLine}</div>}
+            {top10.length > 0 && (
+              <div className="leaderboard">
+                <div className="lb-header">
+                  <span>POS</span><span>CAR</span><span>DRIVER</span><span>GAP</span>
+                </div>
+                {top10.map((c, i) => {
+                  const name = c.athlete?.displayName ?? c.athlete?.shortName ?? `P${i+1}`;
+                  const car  = c.vehicle?.number ?? c.car?.number ?? "—";
+                  const gap  = i === 0 ? "Leader" : (c.gap ?? c.gapLaps ?? "—");
+                  return (
+                    <div key={i} className={`lb-row${i === 0 ? " lb-leader" : ""}`}>
+                      <span className="lb-pos">{c.order ?? i + 1}</span>
+                      <span className="lb-car">#{car}</span>
+                      <span className="lb-name">{name}</span>
+                      <span className="lb-gap">{gap}</span>
+                    </div>
+                  );
+                })}
               </div>
-              {top10.map((c, i) => {
-                const name = c.athlete?.displayName ?? c.athlete?.shortName ?? `P${i+1}`;
-                const car  = c.vehicle?.number ?? c.car?.number ?? "—";
-                const gap  = i === 0 ? "Leader" : (c.gap ?? c.gapLaps ?? "—");
-                return (
-                  <div key={i} className={`lb-row${i === 0 ? " lb-leader" : ""}`}>
-                    <span className="lb-pos">{c.order ?? i + 1}</span>
-                    <span className="lb-car">#{car}</span>
-                    <span className="lb-name">{name}</span>
-                    <span className="lb-gap">{gap}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-      ) : (
-        /* ── OFF-RACE ── */
+            )}
+          </div>
+        ) : (
+          <div className="off-race">
+            {lastEvent && <LastRaceCard event={lastEvent} />}
+            <TrackWeather venueName={competition?.venue?.fullName || nextEvent?.competitions?.[0]?.venue?.fullName} eventName={active?.name || nextEvent?.name} />
+            {nextEvent?.date && (
+              <CountdownTimer
+                targetIso={nextEvent.date}
+                label={`Next Race · ${nextEvent.name ?? nextEvent.shortName ?? ""}`}
+              />
+            )}
+            <ScheduleStrip events={events} label="Upcoming Races" max={3} />
+            <NewsStrip articles={news} sport="nascar" />
+          </div>
+        )
+      ) : activeTab === "stats" ? (
+        /* ── STATS TAB ── */
         <div className="off-race">
-
-          {/* Last race result */}
-          {lastEvent && <LastRaceCard event={lastEvent} />}
-
-          {/* Countdown to next race */}
-          {nextEvent?.date && (
-            <CountdownTimer
-              targetIso={nextEvent.date}
-              label={`Next Race · ${nextEvent.name ?? nextEvent.shortName ?? ""}`}
-            />
-          )}
-
-          {/* Upcoming schedule */}
-          <ScheduleStrip events={events} label="Upcoming Races" max={3} />
-
-          {/* Season standings */}
           <NascarStandingsTable data={standings} />
-
-          {/* League board — last race results + win leaders */}
           <NascarLeaderBoard standings={standings} lastEvent={lastEvent} />
-
-          {/* Dad's driver cards */}
-          <div className="drivers-section">
-            <p className="nb-eye">Dad's Drivers</p>
-            <div className="driver-cards">
-              {FEATURED_DRIVERS.map((d) => (
-                <a key={d.car} className={`driver-card driver-link driver-${d.era} driver-${d.car}`} href={d.statsUrl} target="_blank" rel="noopener noreferrer">
-                  <span className="driver-car">#{d.car}</span>
-                  <div className="driver-info">
-                    <span className="driver-name">{d.name}</span>
-                    <span className="driver-team">{d.team}</span>
-                    <span className="driver-note">
-                      {d.wins != null ? `${d.wins} wins` : d.note}
-                      {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
-                    </span>
+        </div>
+      ) : activeTab === "garage" ? (
+        /* ── GARAGE TAB ── */
+        <div className="drivers-section">
+          <div className="driver-cards">
+            {FEATURED_DRIVERS.map((d) => (
+              <div key={d.car} className={`driver-card driver-link driver-${d.era} driver-${d.car}`} onClick={() => setSelectedDriver(d)} style={{ cursor: "pointer" }}>
+                <span className="driver-car">#{d.car}</span>
+                <div className="driver-info">
+                  <span className="driver-name">{d.name}</span>
+                  <span className="driver-team">{d.team}</span>
+                  <span className="driver-note">
+                    {d.wins != null ? `${d.wins} wins` : d.note}
+                    {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
+                  </span>
+                </div>
+                {d.trend && (
+                  <div className="driver-trend-container">
+                    <Sparkline data={d.trend} color="var(--ocean)" invert={d.era !== "legend"} />
+                    <span className="driver-trend-label">Recent Trend</span>
                   </div>
-                  {d.trend && <Sparkline data={d.trend} color="var(--ocean)" />}
-                  {d.era === "legend" ? <span className="driver-era-badge">Legend</span> : <span className="driver-link-arrow">↗</span>}
-                </a>
-              ))}
+                )}
+                {d.era === "legend" ? <span className="driver-era-badge">Legend</span> : <span className="driver-link-arrow">↗</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Driver career details modal */}
+      {selectedDriver && (
+        <div className="driver-modal-overlay" onClick={() => setSelectedDriver(null)}>
+          <div className="driver-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="driver-modal-close" onClick={() => setSelectedDriver(null)}>×</button>
+            <div className={`driver-modal-header driver-${selectedDriver.car}`}>
+              <span className="dm-car">#{selectedDriver.car}</span>
+              <div className="dm-header-info">
+                <h3 className="dm-name">{selectedDriver.name}</h3>
+                <p className="dm-team">{selectedDriver.team}</p>
+              </div>
+            </div>
+            <div className="driver-modal-body">
+              <div className="dm-stats-grid">
+                <div className="dm-stat"><span className="dms-val">{selectedDriver.wins !== null ? selectedDriver.wins : "—"}</span><span className="dms-lbl">Wins</span></div>
+                <div className="dm-stat"><span className="dms-val">{selectedDriver.champs}</span><span className="dms-lbl">Championships</span></div>
+                <div className="dm-stat"><span className="dms-val">{selectedDriver.era.toUpperCase()}</span><span className="dms-lbl">Era</span></div>
+              </div>
+              <p className="dm-note">{selectedDriver.note}</p>
+              {selectedDriver.trend && (
+                <div className="dm-trend-section">
+                  <p className="nb-eye">Recent Race Finishes</p>
+                  <div className="dm-trend-visual">
+                    <Sparkline data={selectedDriver.trend} color="var(--ocean)" invert={selectedDriver.era !== "legend"} />
+                    <div className="dm-trend-history">
+                      {selectedDriver.trend.map((pos, idx) => (
+                        <span key={idx} className="dm-trend-pos">P{pos}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* NASCAR news */}
-          <NewsStrip articles={news} sport="nascar" />
-
         </div>
       )}
     </div>
@@ -795,7 +1032,7 @@ function NascarPanel({ scoreboard, standings, news, loading }) {
 
 // ─── BasketballPanel ──────────────────────────────────────────────────────────
 
-function BasketballPanel({ scores, standings, leaders, news, loading }) {
+function BasketballPanel({ activeTab, scores, standings, leaders, news, loading }) {
   const allEvents = scores?.events ?? [];
 
   const nyGames   = allEvents.filter(ev =>
@@ -810,7 +1047,6 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
   ) ?? standings?.groups?.find(g =>
     (g.header ?? g.name ?? "").toLowerCase().includes("east")
   );
-  // ESPN nests teams inside division children; flattenAllEntries collects from all levels
   const allEntries = flattenAllEntries(eastGroup);
   const nyEntries  = allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation));
 
@@ -860,12 +1096,9 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
 
       {loading && !scores ? (
         <div className="panel-loading">Loading game data…</div>
-      ) : (
+      ) : activeTab === "telemetry" ? (
+        /* ── TELEMETRY TAB ── */
         <>
-          {/* Team records always visible at top */}
-          <TeamRecordStrip entries={nyEntries.length ? nyEntries : allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation))} />
-
-          {/* Live NY games */}
           {liveNY.length > 0 && (
             <div className="ny-games">
               <p className="nb-eye">Live Now · New York</p>
@@ -873,10 +1106,8 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             </div>
           )}
 
-          {/* Last NY game result */}
           {!liveNY.length && lastNY && <LastGameCard event={lastNY} />}
 
-          {/* Countdown to next NY game */}
           {!liveNY.length && nextNY?.date && (
             <CountdownTimer
               targetIso={nextNY.date}
@@ -884,12 +1115,10 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             />
           )}
 
-          {/* Completed NY games (post) */}
           {nyGames.filter(ev => ev.competitions?.[0]?.status?.type?.state === "post" && ev !== lastNY).slice(0,2).map((ev, i) =>
             <GameCard key={i} event={ev} />
           )}
 
-          {/* All today's games if no NY action */}
           {nyGames.length === 0 && allEvents.length > 0 && (
             <div className="all-games">
               <p className="nb-eye">Today's Scoreboard</p>
@@ -915,7 +1144,6 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             </div>
           )}
 
-          {/* Upcoming NY schedule */}
           {!liveNY.length && (
             <ScheduleStrip
               events={nyGames.length ? nyGames : allEvents.filter(ev =>
@@ -926,10 +1154,13 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             />
           )}
 
-          {/* Playoff picture */}
+          <NewsStrip articles={news} sport="nba" />
+        </>
+      ) : activeTab === "stats" ? (
+        /* ── STATS TAB ── */
+        <>
           <PlayoffPicture entries={allEntries} conference="East" />
 
-          {/* Eastern standings */}
           {allEntries.length > 0 && (
             <div className="standings-section">
               <p className="nb-eye">Eastern Conference</p>
@@ -962,20 +1193,12 @@ function BasketballPanel({ scores, standings, leaders, news, loading }) {
             </div>
           )}
 
-          {nyGames.length === 0 && allEvents.length === 0 && allEntries.length === 0 && (
-            <div className="no-data">
-              <span className="no-data-text">No games today.</span>
-              <span className="no-data-sub">Check back on game day.</span>
-            </div>
-          )}
-
-          {/* League board — last NY game + stat leaders */}
           <NbaLeaderBoard leaders={leaders} lastNY={lastNY} />
-
-          {/* NBA news */}
-          <NewsStrip articles={news} sport="nba" />
         </>
-      )}
+      ) : activeTab === "garage" ? (
+        /* ── GARAGE TAB ── */
+        <TeamRecordStrip entries={nyEntries.length ? nyEntries : allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation))} />
+      ) : null}
     </div>
   );
 }
@@ -992,14 +1215,15 @@ function CommentWall() {
   const [loadErr,    setLoadErr]    = useState(false);
 
   async function loadComments() {
-    if (!sb) return;
-    const { data, error } = await sb
-      .from("comments")
-      .select("id, title, body, author, created_at")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (!error && data) setComments(data);
-    else setLoadErr(true);
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setComments(data);
+      setLoadErr(false);
+    } catch (e) {
+      setLoadErr(true);
+    }
   }
 
   useEffect(() => { loadComments(); }, []);
@@ -1008,16 +1232,23 @@ function CommentWall() {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     setSending(true);
-    const { error } = await sb.from("comments").insert({
-      title:  title.trim(),
-      body:   body.trim(),
-      author: author.trim() || "Anonymous",
-    });
-    if (!error) {
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        redirect: "follow",
+        body: JSON.stringify({
+          title:  title.trim(),
+          body:   body.trim(),
+          author: author.trim() || "Anonymous",
+        }),
+      });
+      if (!res.ok) throw new Error();
       setSent(true);
       setTitle(""); setBody(""); setAuthor("");
       setTimeout(() => setSent(false), 3000);
-      loadComments();
+      await loadComments();
+    } catch (err) {
+      alert("Could not save note. Please try again.");
     }
     setSending(false);
   }
@@ -1038,63 +1269,57 @@ function CommentWall() {
       <div className="cw-header">
         <p className="nb-eye">Family Notes</p>
         <h3 className="cw-title">Leave a Note</h3>
-        <p className="cw-sub">Check in from any device — dad, JR, anyone with the link.</p>
+        <p className="cw-sub">Check in from any device — dad, JR, anyone with the link. Synced live with Google Sheets.</p>
       </div>
 
-      {!COMMENTS_ON ? (
-        <div className="cw-unconfigured">
-          <p>Comment wall coming soon — see setup instructions in <code>nascar-basketball.jsx</code>.</p>
-        </div>
-      ) : (
-        <div className="cw-body">
-          <form className="cw-form" onSubmit={handleSubmit}>
-            <input
-              className="cw-input"
-              placeholder="Your name (optional)"
-              value={author}
-              onChange={e => setAuthor(e.target.value)}
-              maxLength={40}
-            />
-            <input
-              className="cw-input"
-              placeholder="Title *"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              maxLength={80}
-              required
-            />
-            <textarea
-              className="cw-textarea"
-              placeholder="What's on your mind? *"
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              maxLength={400}
-              rows={3}
-              required
-            />
-            <button className="cw-submit" type="submit" disabled={sending || !title.trim() || !body.trim()}>
-              {sent ? "Note saved ✓" : sending ? "Saving…" : "Leave Note →"}
-            </button>
-          </form>
+      <div className="cw-body">
+        <form className="cw-form" onSubmit={handleSubmit}>
+          <input
+            className="cw-input"
+            placeholder="Your name (optional)"
+            value={author}
+            onChange={e => setAuthor(e.target.value)}
+            maxLength={40}
+          />
+          <input
+            className="cw-input"
+            placeholder="Title *"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            maxLength={80}
+            required
+          />
+          <textarea
+            className="cw-textarea"
+            placeholder="What's on your mind? *"
+            value={body}
+            onChange={e => setBody(e.target.value)}
+            maxLength={400}
+            rows={3}
+            required
+          />
+          <button className="cw-submit" type="submit" disabled={sending || !title.trim() || !body.trim()}>
+            {sent ? "Note saved ✓" : sending ? "Saving…" : "Leave Note →"}
+          </button>
+        </form>
 
-          <div className="cw-feed">
-            {loadErr && <p className="cw-error">Could not load notes — check back shortly.</p>}
-            {!loadErr && comments.length === 0 && (
-              <p className="cw-empty">No notes yet — be the first to leave one.</p>
-            )}
-            {comments.map(c => (
-              <div key={c.id} className="cw-card">
-                <div className="cwc-head">
-                  <span className="cwc-title">{c.title}</span>
-                  <span className="cwc-time">{fmtRelative(c.created_at)}</span>
-                </div>
-                <p className="cwc-body">{c.body}</p>
-                <span className="cwc-author">— {c.author || "Anonymous"}</span>
+        <div className="cw-feed">
+          {loadErr && <p className="cw-error">Could not load notes — check back shortly.</p>}
+          {!loadErr && comments.length === 0 && (
+            <p className="cw-empty">No notes yet — be the first to leave one.</p>
+          )}
+          {comments.map(c => (
+            <div key={c.id || Math.random().toString()} className="cw-card">
+              <div className="cwc-head">
+                <span className="cwc-title">{c.title}</span>
+                <span className="cwc-time">{fmtRelative(c.created_at)}</span>
               </div>
-            ))}
-          </div>
+              <p className="cwc-body">{c.body}</p>
+              <span className="cwc-author">— {c.author || "Anonymous"}</span>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </section>
   );
 }
@@ -1103,6 +1328,7 @@ function CommentWall() {
 
 function App() {
   const [t, setTweak]           = useTweaks(TWEAK_DEFAULTS);
+  const [activeTab, setActiveTab] = useState("telemetry");
   const [nascarBoard, setNascarBoard]   = useState(null);
   const [nascarPts, setNascarPts]       = useState(null);
   const [nascarNews, setNascarNews]     = useState([]);
@@ -1178,13 +1404,37 @@ function App() {
       <main className="nb-main">
         {fetchError && <div className="nb-error">{fetchError}</div>}
 
-        <div className="nb-grid">
-          <NascarPanel scoreboard={nascarBoard} standings={nascarPts} news={nascarNews} loading={loading} />
-          <BasketballPanel scores={nbaScores} standings={nbaStandings} leaders={nbaLeaders} news={nbaNews} loading={loading} />
+        {/* Dynamic Glass View Switcher */}
+        <div className="nb-tabs-container">
+          <div className="nb-tabs">
+            <button className={`nb-tab-btn ${activeTab === "telemetry" ? "active" : ""}`} onClick={() => setActiveTab("telemetry")}>
+              <span className="tab-icon">⚡</span> Telemetry HUD
+            </button>
+            <button className={`nb-tab-btn ${activeTab === "stats" ? "active" : ""}`} onClick={() => setActiveTab("stats")}>
+              <span className="tab-icon">📊</span> Stats &amp; Standings
+            </button>
+            <button className={`nb-tab-btn ${activeTab === "garage" ? "active" : ""}`} onClick={() => setActiveTab("garage")}>
+              <span className="tab-icon">🏁</span> Dad's Garage
+            </button>
+            <button className={`nb-tab-btn ${activeTab === "notes" ? "active" : ""}`} onClick={() => setActiveTab("notes")}>
+              <span className="tab-icon">💬</span> Family Notes
+            </button>
+          </div>
         </div>
 
-        <OnThisDay worldEvents={worldEvents} />
-        <CommentWall />
+        {activeTab === "notes" ? (
+          <div className="nb-grid">
+            <CommentWall />
+            <MatchupPredictions scores={nbaScores} scoreboard={nascarBoard} />
+          </div>
+        ) : (
+          <div className="nb-grid">
+            <NascarPanel activeTab={activeTab} scoreboard={nascarBoard} standings={nascarPts} news={nascarNews} loading={loading} />
+            <BasketballPanel activeTab={activeTab} scores={nbaScores} standings={nbaStandings} leaders={nbaLeaders} news={nbaNews} loading={loading} />
+          </div>
+        )}
+
+        {activeTab !== "notes" && <OnThisDay worldEvents={worldEvents} />}
       </main>
 
       <footer className="nb-foot">
