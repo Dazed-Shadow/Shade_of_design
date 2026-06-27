@@ -388,10 +388,10 @@ function NascarHighlights() {
 
 // ─── TapeDeck Component ──────────────────────────────────────────────────────
 const PLAYLIST = [
-  { id: "branching", title: "The Branching Point", artist: "Logic and the Branch", src: "/Design Content/wavs/Logic and the Branch - The Branching Point - Sonauto.wav" },
-  { id: "opus", title: "Building My Opus", artist: "Shade of Design", src: "/Design Content/wavs/Shade of Design - Building My Opus - Sonauto.wav" },
-  { id: "neon", title: "Neon Delta Suite", artist: "Cobalt Symphony", src: "/Design Content/wavs/Cobalt Symphony - Neon Delta Suite - Sonauto.wav" },
-  { id: "lofi", title: "Cozy Study Session", artist: "Lofi Sanctuary", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "branching", title: "The Branching Point", artist: "Logic and the Branch", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "opus", title: "Building My Opus", artist: "Shade of Design", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { id: "neon", title: "Neon Delta Suite", artist: "Cobalt Symphony", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  { id: "lofi", title: "Cozy Study Session", artist: "Lofi Sanctuary", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
   { id: "synth", title: "Sunset Cruise", artist: "Neon Horizons", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
 ];
 
@@ -495,69 +495,290 @@ function TapeDeck() {
 
 // ─── CourtShooter Component ──────────────────────────────────────────────────
 function CourtShooter() {
+  const canvasRef = useRef(null);
   const [shots, setShots] = useState(() => parseInt(localStorage.getItem("paint_shots") || "0", 10));
   const [makes, setMakes] = useState(() => parseInt(localStorage.getItem("paint_makes") || "0", 10));
   const [streak, setStreak] = useState(() => parseInt(localStorage.getItem("paint_streak") || "0", 10));
-  const [ball, setBall] = useState(null);
   const [status, setStatus] = useState("Click the court to shoot!");
+  const animRef = useRef(null);
+  const shotRef = useRef(null);
+
+  // Draw the court and any active ball animation
+  function drawCourt(ctx, W, H) {
+    ctx.clearRect(0, 0, W, H);
+
+    // Court floor
+    ctx.fillStyle = "rgba(30, 50, 80, 0.15)";
+    ctx.fillRect(0, 0, W, H);
+
+    // Court outline
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(2, 2, W - 4, H - 4);
+
+    // Three-point arc
+    ctx.beginPath();
+    ctx.arc(W / 2, 0, W * 0.42, 0.15, Math.PI - 0.15);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Paint / key rectangle
+    const keyW = W * 0.28;
+    const keyH = H * 0.4;
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect((W - keyW) / 2, 0, keyW, keyH);
+
+    // Free throw circle
+    ctx.beginPath();
+    ctx.arc(W / 2, keyH, keyW * 0.37, 0, Math.PI);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.stroke();
+
+    // Backboard
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - 22, 18);
+    ctx.lineTo(W / 2 + 22, 18);
+    ctx.stroke();
+
+    // Hoop rim
+    ctx.beginPath();
+    ctx.arc(W / 2, 28, 9, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ff5500";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Net lines
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 0.8;
+    for (let i = -6; i <= 6; i += 3) {
+      ctx.beginPath();
+      ctx.moveTo(W / 2 + i, 32);
+      ctx.lineTo(W / 2 + i * 0.5, 48);
+      ctx.stroke();
+    }
+  }
+
+  function drawBall(ctx, bx, by, radius) {
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(bx + 2, by + 2, radius, radius * 0.6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fill();
+
+    // Ball body
+    ctx.beginPath();
+    ctx.arc(bx, by, radius, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(bx - 2, by - 2, 1, bx, by, radius);
+    grad.addColorStop(0, "#ff9944");
+    grad.addColorStop(0.7, "#cc5500");
+    grad.addColorStop(1, "#993300");
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Seam lines
+    ctx.strokeStyle = "rgba(0,0,0,0.25)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(bx, by, radius * 0.65, -0.3, Math.PI + 0.3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bx - radius * 0.1, by - radius * 0.7);
+    ctx.lineTo(bx + radius * 0.1, by + radius * 0.7);
+    ctx.stroke();
+  }
+
+  function drawResult(ctx, W, result, progress) {
+    if (progress < 0 || progress > 1) return;
+    const alpha = Math.max(0, 1 - progress);
+    const yOff = -20 * progress;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = "bold 18px 'Space Grotesk', sans-serif";
+    ctx.textAlign = "center";
+
+    if (result === "make") {
+      ctx.fillStyle = "#00ff66";
+      ctx.fillText("SWISH! 🏀", W / 2, 80 + yOff);
+    } else {
+      ctx.fillStyle = "#ff4444";
+      ctx.fillText("CLANK! 🛑", W / 2, 80 + yOff);
+    }
+    ctx.restore();
+  }
 
   function takeShot(e) {
-    if (ball) return;
+    if (shotRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
 
-    const dx = x - 50;
-    const dy = y - 12;
+    const W = canvas.width;
+
+    // Target: hoop center
+    const hoopX = W / 2;
+    const hoopY = 28;
+
+    // Distance from hoop determines shot type
+    const dx = clickX - hoopX;
+    const dy = clickY - hoopY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    let type = "mid";
     let prob = 0.45;
     let points = 2;
+    let shotName = "mid-range";
 
-    if (dist < 18) {
-      type = "paint";
-      prob = 0.75;
+    if (dist < 60) {
+      prob = 0.72;
       points = 2;
-    } else if (dist > 35) {
-      type = "three";
-      prob = 0.33;
+      shotName = "paint";
+    } else if (dist > 140) {
+      prob = 0.30;
       points = 3;
+      shotName = "three";
     }
 
     const isMake = Math.random() < prob;
-    const newBall = { x, y, isMake, id: Date.now(), type, points };
-    setBall(newBall);
-    setStatus("Ball is in the air...");
 
-    setTimeout(() => {
-      setShots(s => {
-        const next = s + 1;
-        localStorage.setItem("paint_shots", next);
-        return next;
-      });
+    // Setup animation state
+    const startTime = performance.now();
+    const flightDuration = 700; // ms
+    const resultDuration = 800; // ms after landing
 
-      if (isMake) {
-        setMakes(m => {
-          const next = m + 1;
-          localStorage.setItem("paint_makes", next);
-          return next;
-        });
-        setStreak(st => {
-          const next = st + 1;
-          localStorage.setItem("paint_streak", next);
-          return next;
-        });
-        setStatus(`SPLASH! Made a ${points}-pointer! 🏀`);
-      } else {
-        setStreak(0);
-        localStorage.setItem("paint_streak", 0);
-        setStatus("CLANK! Missed the shot. 🛑");
-      }
-      setBall(null);
-    }, 1000);
+    shotRef.current = {
+      startX: clickX,
+      startY: clickY,
+      endX: hoopX + (isMake ? 0 : (Math.random() - 0.5) * 18),
+      endY: hoopY + (isMake ? 8 : -5),
+      isMake,
+      points,
+      shotName,
+      startTime,
+      flightDuration,
+      resultDuration,
+      phase: "flight" // "flight" -> "result" -> done
+    };
+
+    setStatus(`${shotName === "three" ? "Three-pointer" : shotName === "paint" ? "Paint shot" : "Mid-range"} in the air...`);
   }
+
+  // Animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+
+    function animate() {
+      drawCourt(ctx, W, H);
+
+      const shot = shotRef.current;
+      if (shot) {
+        const now = performance.now();
+        const elapsed = now - shot.startTime;
+
+        if (shot.phase === "flight") {
+          const t = Math.min(1, elapsed / shot.flightDuration);
+          // Parabolic arc: lerp x, arc y with peak at halfway
+          const bx = shot.startX + (shot.endX - shot.startX) * t;
+          const peakHeight = Math.min(shot.startY, shot.endY) - 80 - Math.abs(shot.endX - shot.startX) * 0.15;
+          const by = shot.startY + (shot.endY - shot.startY) * t + (peakHeight - shot.startY) * 4 * t * (1 - t);
+
+          // Ball gets smaller as it approaches the hoop (perspective feel)
+          const radius = 8 - t * 2.5;
+          drawBall(ctx, bx, by, Math.max(4, radius));
+
+          // Draw arc trail
+          ctx.strokeStyle = "rgba(255,140,0,0.2)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let i = 0; i <= 20; i++) {
+            const tt = (t * i) / 20;
+            const tx = shot.startX + (shot.endX - shot.startX) * tt;
+            const ty = shot.startY + (shot.endY - shot.startY) * tt + (peakHeight - shot.startY) * 4 * tt * (1 - tt);
+            if (i === 0) ctx.moveTo(tx, ty);
+            else ctx.lineTo(tx, ty);
+          }
+          ctx.stroke();
+
+          if (t >= 1) {
+            shot.phase = "result";
+            shot.resultStart = now;
+
+            // Register the shot
+            setShots(s => {
+              const next = s + 1;
+              localStorage.setItem("paint_shots", next);
+              return next;
+            });
+
+            if (shot.isMake) {
+              setMakes(m => {
+                const next = m + 1;
+                localStorage.setItem("paint_makes", next);
+                return next;
+              });
+              setStreak(st => {
+                const next = st + 1;
+                localStorage.setItem("paint_streak", next);
+                return next;
+              });
+              setStatus(`SPLASH! Made a ${shot.points}-pointer! 🏀`);
+            } else {
+              setStreak(0);
+              localStorage.setItem("paint_streak", 0);
+              setStatus("CLANK! Missed the shot. 🛑");
+            }
+          }
+        } else if (shot.phase === "result") {
+          const resultElapsed = now - shot.resultStart;
+          const rp = Math.min(1, resultElapsed / shot.resultDuration);
+
+          // Show make/miss text fading
+          drawResult(ctx, W, shot.isMake ? "make" : "miss", rp);
+
+          // Swish animation: ball drops through net on make
+          if (shot.isMake) {
+            const dropY = shot.endY + rp * 25;
+            const alpha = Math.max(0, 1 - rp);
+            ctx.globalAlpha = alpha;
+            drawBall(ctx, shot.endX, dropY, 5);
+            ctx.globalAlpha = 1;
+          } else {
+            // Bounce off rim
+            const bounceX = shot.endX + rp * 30 * (shot.endX > W / 2 ? 1 : -1);
+            const bounceY = shot.endY + rp * 50 - 20 * rp * (1 - rp);
+            const alpha = Math.max(0, 1 - rp);
+            ctx.globalAlpha = alpha;
+            drawBall(ctx, bounceX, bounceY, 5);
+            ctx.globalAlpha = 1;
+          }
+
+          if (rp >= 1) {
+            shotRef.current = null;
+            setStatus("Click the court to shoot!");
+          }
+        }
+      }
+
+      animRef.current = requestAnimationFrame(animate);
+    }
+
+    animRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, []);
 
   const pct = shots === 0 ? 0 : Math.round((makes / shots) * 100);
 
@@ -571,33 +792,12 @@ function CourtShooter() {
     setStatus("Stats reset. Click the court to shoot!");
   }
 
-  const ballStyle = ball ? {
-    left: `${ball.x}%`,
-    top: `${ball.y}%`,
-    "--dx": `${50 - ball.x}%`,
-    "--dy": `${12 - ball.y}%`,
-    "--dx-half": `${(50 - ball.x) / 2}%`,
-    "--dy-half": `${(12 - ball.y) / 2 - 25}%`,
-    animation: "shot-flight 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards"
-  } : {};
-
   return (
     <div className="court-shooter-card">
       <p className="card-eye">The Paint Arcade</p>
       
       <div className="cs-court-container">
-        <svg className="court-svg" viewBox="0 0 100 60" onClick={takeShot}>
-          <rect x="0" y="0" width="100" height="60" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.15" />
-          <path d="M 18 0 A 32 32 0 0 0 82 0" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
-          <line x1="18" y1="0" x2="18" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
-          <line x1="82" y1="0" x2="82" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
-          <rect x="39" y="0" width="22" height="24" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
-          <path d="M 43 24 A 7 7 0 0 0 57 24" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
-          <line x1="44" y1="10" x2="56" y2="10" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
-          <circle cx="50" cy="12" r="2.2" fill="none" stroke="var(--ember)" strokeWidth="1.5" />
-        </svg>
-
-        {ball && <div className="basketball-node" style={ballStyle} />}
+        <canvas ref={canvasRef} className="court-canvas" width="400" height="300" onClick={takeShot} />
       </div>
 
       <div className="cs-status">{status}</div>
@@ -622,6 +822,8 @@ function ArcadeRacer() {
   const [isCrashed, setIsCrashed] = useState(false);
   const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem("racer_highscore") || "0", 10));
 
+  const gameLoopRef = useRef(null);
+
   const stateRef = useRef({
     speed: 0,
     distance: 0,
@@ -631,32 +833,36 @@ function ArcadeRacer() {
     obstacles: [],
     keys: { left: false, right: false, up: false, down: false },
     animationId: null,
-    crashCooldown: 0
+    crashCooldown: 0,
+    frameCount: 0,
+    carColor: "#111111",
+    carNum: "3",
+    running: false
   });
 
-  const driverColors = {
-    "Dale Sr.": "#111111",
-    "Dale Jr.": "#00ff66",
-    "Jeff Gordon": "#ffcc00",
-    "Richard Petty": "#0099ff",
-    "Denny Hamlin": "#ff6600"
+  const DRIVER_COLORS = {
+    "Dale Sr.": { color: "#111111", num: "3" },
+    "Dale Jr.": { color: "#00ff66", num: "88" },
+    "Jeff Gordon": { color: "#ffcc00", num: "24" },
+    "Richard Petty": { color: "#0099ff", num: "43" },
+    "Denny Hamlin": { color: "#ff6600", num: "11" }
   };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!stateRef.current) return;
-      if (e.key === "ArrowLeft" || e.key === "a") stateRef.current.keys.left = true;
-      if (e.key === "ArrowRight" || e.key === "d") stateRef.current.keys.right = true;
-      if (e.key === "ArrowUp" || e.key === "w") stateRef.current.keys.up = true;
-      if (e.key === "ArrowDown" || e.key === "s") stateRef.current.keys.down = true;
+      const s = stateRef.current;
+      if (e.key === "ArrowLeft" || e.key === "a") { s.keys.left = true; e.preventDefault(); }
+      if (e.key === "ArrowRight" || e.key === "d") { s.keys.right = true; e.preventDefault(); }
+      if (e.key === "ArrowUp" || e.key === "w") { s.keys.up = true; e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "s") { s.keys.down = true; e.preventDefault(); }
     };
 
     const handleKeyUp = (e) => {
-      if (!stateRef.current) return;
-      if (e.key === "ArrowLeft" || e.key === "a") stateRef.current.keys.left = false;
-      if (e.key === "ArrowRight" || e.key === "d") stateRef.current.keys.right = false;
-      if (e.key === "ArrowUp" || e.key === "w") stateRef.current.keys.up = false;
-      if (e.key === "ArrowDown" || e.key === "s") stateRef.current.keys.down = false;
+      const s = stateRef.current;
+      if (e.key === "ArrowLeft" || e.key === "a") s.keys.left = false;
+      if (e.key === "ArrowRight" || e.key === "d") s.keys.right = false;
+      if (e.key === "ArrowUp" || e.key === "w") s.keys.up = false;
+      if (e.key === "ArrowDown" || e.key === "s") s.keys.down = false;
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -664,22 +870,205 @@ function ArcadeRacer() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      stopGame();
     };
   }, []);
 
-  function startGame() {
-    setIsPlaying(true);
-    setIsCrashed(false);
-    setScore(0);
-    setSpeed(0);
+  // Store the gameLoop in a ref so RAF always calls the latest version
+  useEffect(() => {
+    gameLoopRef.current = function gameLoop() {
+      const canvas = canvasRef.current;
+      const s = stateRef.current;
+      if (!canvas || !s.running) return;
 
+      const ctx = canvas.getContext("2d");
+      const CW = canvas.width;
+      const CH = canvas.height;
+
+      // Physics
+      if (s.crashCooldown > 0) {
+        s.crashCooldown--;
+        s.speed = Math.max(0, s.speed - 4);
+        if (s.crashCooldown === 0) setIsCrashed(false);
+      } else {
+        if (s.keys.up) s.speed = Math.min(180, s.speed + 2);
+        else if (s.keys.down) s.speed = Math.max(0, s.speed - 5);
+        else s.speed = Math.max(0, s.speed - 0.8);
+
+        if (s.keys.left) s.carX = Math.max(-1.4, s.carX - 0.05 * (s.speed / 100 + 0.3));
+        if (s.keys.right) s.carX = Math.min(1.4, s.carX + 0.05 * (s.speed / 100 + 0.3));
+
+        // Grass drag
+        if (Math.abs(s.carX) > 0.9 && s.speed > 40) s.speed = Math.max(40, s.speed - 3);
+      }
+
+      s.distance += s.speed * 0.04;
+      s.frameCount++;
+
+      // Update React state sparingly (every 6 frames)
+      if (s.frameCount % 6 === 0) {
+        const sv = Math.floor(s.speed);
+        const scv = Math.floor(s.distance / 10);
+        setSpeed(sv);
+        setScore(scv);
+      }
+
+      const segIdx = Math.floor(s.distance / 25) % s.roadSegments.length;
+      const seg = s.roadSegments[segIdx];
+      s.roadX += -s.carX * (s.speed / 600) + seg.curve * 0.012 * (s.speed / 80);
+
+      // Obstacles
+      s.obstacles.forEach(o => {
+        o.z -= s.speed * 0.04;
+        if (o.z <= 0) {
+          o.z = 500 + Math.random() * 300;
+          o.x = (Math.random() - 0.5) * 1.4;
+          o.color = ["#ff3333", "#ffff33", "#33ff33", "#ffffff", "#ff00ff"][Math.floor(Math.random() * 5)];
+        }
+        if (o.z > 5 && o.z < 25 && Math.abs(s.carX - o.x) < 0.3 && s.crashCooldown === 0) {
+          s.crashCooldown = 35;
+          setIsCrashed(true);
+          s.speed = 5;
+        }
+      });
+
+      // ── RENDER ──
+      // Sky
+      ctx.fillStyle = "#0a0e1a";
+      ctx.fillRect(0, 0, CW, CH);
+      ctx.fillStyle = "#121a30";
+      ctx.fillRect(0, 0, CW, CH * 0.4);
+
+      // Sunset line
+      const grad = ctx.createLinearGradient(0, CH * 0.36, 0, CH * 0.42);
+      grad.addColorStop(0, "#ff5500");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, CH * 0.36, CW, CH * 0.06);
+
+      // Stars
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      const skyOff = (s.roadX * 40) % CW;
+      for (let i = 0; i < 15; i++) {
+        const sx = ((i * 47 - skyOff) % CW + CW) % CW;
+        const sy = 5 + (i * 13) % (CH * 0.35);
+        ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+
+      // Road
+      const horizonY = CH * 0.4;
+      const groundH = CH - horizonY;
+      for (let row = 0; row < groundH; row += 3) {
+        const y = horizonY + row;
+        const perspT = row / groundH;
+        const z = 1 / (perspT + 0.001);
+        const roadW = (CW * 0.5) * perspT + 30;
+        const si = (segIdx + Math.floor(z * 2)) % s.roadSegments.length;
+        const cx = CW / 2 + (s.roadX * 200) * perspT - s.roadSegments[si].curve * 10 * perspT;
+        const stripe = Math.floor(s.distance / 12 + z) % 2 === 0;
+
+        // Grass
+        ctx.fillStyle = stripe ? "#0a2210" : "#061a0c";
+        ctx.fillRect(0, y, CW, 3);
+
+        // Rumble strips
+        ctx.fillStyle = stripe ? "#cc2222" : "#ffffff";
+        ctx.fillRect(cx - roadW / 2 - 4, y, roadW + 8, 3);
+
+        // Asphalt
+        ctx.fillStyle = "#1a1a2a";
+        ctx.fillRect(cx - roadW / 2, y, roadW, 3);
+
+        // Center dashes
+        if (Math.floor(s.distance / 18 + z) % 2 === 0) {
+          ctx.fillStyle = "#ee8800";
+          ctx.fillRect(cx - 1, y, 2, 3);
+        }
+      }
+
+      // Other cars
+      s.obstacles.forEach(o => {
+        if (o.z > 0 && o.z < 500) {
+          const perspT = 60 / o.z;
+          if (perspT > 0.01 && perspT < 1) {
+            const y = horizonY + groundH * perspT;
+            if (y >= horizonY && y <= CH) {
+              const size = Math.max(4, 120 / o.z);
+              const si = (segIdx + Math.floor((60 / o.z) * 2)) % s.roadSegments.length;
+              const cx = CW / 2 + (s.roadX * 200) * perspT - s.roadSegments[si].curve * 10 * perspT;
+              const ox = cx + (o.x - s.carX) * 120 * perspT;
+              
+              // Car body
+              ctx.fillStyle = o.color;
+              ctx.fillRect(ox - size / 2, y - size, size, size * 0.6);
+              // Wheels
+              ctx.fillStyle = "#000";
+              ctx.fillRect(ox - size / 2 - 1, y - size * 0.3, 2, size * 0.3);
+              ctx.fillRect(ox + size / 2 - 1, y - size * 0.3, 2, size * 0.3);
+              // Roof highlight
+              ctx.fillStyle = "#ff8800";
+              ctx.fillRect(ox - size / 2, y - size - 1, size, 1.5);
+            }
+          }
+        }
+      });
+
+      // Player car
+      const pW = 40;
+      const pH = 22;
+      const px = CW / 2;
+      const py = CH - 12;
+
+      ctx.save();
+      if (s.crashCooldown > 0) {
+        ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 5);
+      }
+
+      // Shadow
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillRect(px - pW / 2 + 3, py - 4, pW, 6);
+
+      // Body
+      ctx.fillStyle = s.carColor;
+      ctx.fillRect(px - pW / 2, py - pH, pW, pH - 4);
+      // Windshield
+      ctx.fillStyle = "#88ccff";
+      ctx.fillRect(px - pW / 3, py - pH + 2, (pW * 2) / 3, 5);
+      // Spoiler
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(px - pW / 2 - 1, py - pH - 2, pW + 2, 2);
+      // Wheels
+      ctx.fillStyle = "#111";
+      ctx.fillRect(px - pW / 2 - 3, py - 8, 4, 7);
+      ctx.fillRect(px + pW / 2 - 1, py - 8, 4, 7);
+      ctx.fillRect(px - pW / 2 - 3, py - pH + 1, 4, 7);
+      ctx.fillRect(px + pW / 2 - 1, py - pH + 1, 4, 7);
+      // Number
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "bold 9px Courier";
+      ctx.textAlign = "center";
+      ctx.fillText(s.carNum, px, py - 10);
+
+      ctx.restore();
+
+      // Continue loop
+      s.animationId = requestAnimationFrame(() => {
+        if (gameLoopRef.current) gameLoopRef.current();
+      });
+    };
+  });
+
+  function startGame() {
+    const info = DRIVER_COLORS[driver] || DRIVER_COLORS["Dale Sr."];
     const s = stateRef.current;
     s.speed = 0;
     s.distance = 0;
     s.carX = 0;
     s.roadX = 0;
     s.crashCooldown = 0;
+    s.frameCount = 0;
+    s.carColor = info.color;
+    s.carNum = info.num;
+    s.running = true;
     
     s.roadSegments = [];
     for (let i = 0; i < 500; i++) {
@@ -690,174 +1079,42 @@ function ArcadeRacer() {
     }
 
     s.obstacles = [
-      { z: 100, x: -0.5, speed: 2, color: "#ff3333" },
-      { z: 220, x: 0.4, speed: 1.5, color: "#ffff33" },
-      { z: 360, x: -0.2, speed: 3, color: "#33ff33" },
-      { z: 500, x: 0.3, speed: 2.5, color: "#ffffff" },
+      { z: 120, x: -0.5, speed: 2, color: "#ff3333" },
+      { z: 260, x: 0.4, speed: 1.5, color: "#ffff33" },
+      { z: 400, x: -0.2, speed: 3, color: "#33ff33" },
+      { z: 550, x: 0.3, speed: 2.5, color: "#ffffff" },
     ];
 
+    setIsPlaying(true);
+    setIsCrashed(false);
+    setScore(0);
+    setSpeed(0);
+
     if (s.animationId) cancelAnimationFrame(s.animationId);
-    s.animationId = requestAnimationFrame(gameLoop);
+    s.animationId = requestAnimationFrame(() => {
+      if (gameLoopRef.current) gameLoopRef.current();
+    });
   }
 
   function stopGame() {
-    setIsPlaying(false);
-    if (stateRef.current && stateRef.current.animationId) {
-      cancelAnimationFrame(stateRef.current.animationId);
-      stateRef.current.animationId = null;
-    }
-  }
-
-  function gameLoop() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
     const s = stateRef.current;
-
-    if (s.crashCooldown > 0) {
-      s.crashCooldown--;
-      s.speed = Math.max(0, s.speed - 6);
-      if (s.crashCooldown === 0) {
-        setIsCrashed(false);
-      }
-    } else {
-      if (s.keys.up) {
-        s.speed = Math.min(185, s.speed + 2.5);
-      } else if (s.keys.down) {
-        s.speed = Math.max(0, s.speed - 6);
-      } else {
-        s.speed = Math.max(0, s.speed - 1);
-      }
-
-      if (s.keys.left) {
-        s.carX = Math.max(-1.5, s.carX - 0.06 * (s.speed / 120 + 0.2));
-      }
-      if (s.keys.right) {
-        s.carX = Math.min(1.5, s.carX + 0.06 * (s.speed / 120 + 0.2));
-      }
-
-      if (Math.abs(s.carX) > 0.95 && s.speed > 50) {
-        s.speed = Math.max(50, s.speed - 4);
-      }
+    s.running = false;
+    if (s.animationId) {
+      cancelAnimationFrame(s.animationId);
+      s.animationId = null;
     }
-
-    s.distance += s.speed * 0.05;
-    const scoreVal = Math.floor(s.distance / 10);
-    setScore(scoreVal);
-    setSpeed(Math.floor(s.speed));
-
-    const currentSegmentIdx = Math.floor(s.distance / 30) % s.roadSegments.length;
-    const currentSegment = s.roadSegments[currentSegmentIdx];
-    s.roadX += -s.carX * (s.speed / 800) + currentSegment.curve * 0.015 * (s.speed / 100);
-
-    s.obstacles.forEach(o => {
-      o.z -= s.speed * 0.05;
-      if (o.z <= 0) {
-        o.z = 600 + Math.random() * 200;
-        o.x = (Math.random() - 0.5) * 1.6;
-        o.color = ["#ff3333", "#ffff33", "#33ff33", "#ffffff", "#ff00ff"][Math.floor(Math.random() * 5)];
-      }
-
-      if (o.z > 5 && o.z < 25) {
-        const distToCar = Math.abs(s.carX - o.x);
-        if (distToCar < 0.28 && s.crashCooldown === 0) {
-          s.crashCooldown = 40;
-          setIsCrashed(true);
-          s.speed = 10;
-        }
-      }
-    });
-
-    ctx.clearRect(0, 0, 320, 200);
-
-    const skyScroll = (s.roadX * 50) % 320;
-    ctx.fillStyle = "#091020";
-    ctx.fillRect(0, 0, 320, 200);
-    ctx.fillStyle = "#121a2e";
-    ctx.fillRect(0, 0, 320, 80);
-    ctx.fillStyle = "#ff5500";
-    ctx.fillRect(0, 76, 320, 4);
-
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
-    for (let star = 0; star < 12; star++) {
-      ctx.fillRect((star * 35 - skyScroll + 320) % 320, 8 + (star % 3) * 16, 2, 2);
-    }
-
-    for (let y = 80; y < 200; y += 4) {
-      const z = 1 / ((y - 80) / 120);
-      const roadWidth = 200 / z;
-      const roadCenter = 160 + (s.roadX * 300) / z - (s.roadSegments[(currentSegmentIdx + Math.floor(z*3)) % s.roadSegments.length].curve * 15);
-      const isRed = Math.floor(s.distance / 15 + z) % 2 === 0;
-
-      ctx.fillStyle = isRed ? "#092215" : "#05130b";
-      ctx.fillRect(0, y, 320, 4);
-
-      ctx.fillStyle = isRed ? "#d62828" : "#ffffff";
-      ctx.fillRect(roadCenter - roadWidth / 2 - 4, y, roadWidth + 8, 4);
-
-      ctx.fillStyle = "#141923";
-      ctx.fillRect(roadCenter - roadWidth / 2, y, roadWidth, 4);
-
-      if (Math.floor(s.distance / 20 + z) % 2 === 0) {
-        ctx.fillStyle = "#f77f00";
-        ctx.fillRect(roadCenter - 1, y, 2, 4);
-      }
-    }
-
-    s.obstacles.forEach(o => {
-      if (o.z > 0 && o.z < 600) {
-        const y = 80 + 120 * (1 / (o.z / 60));
-        if (y >= 80 && y <= 200) {
-          const size = 150 / o.z;
-          const x = 160 + (o.x - s.carX) * (150 / (o.z / 60)) + (s.roadX * 10);
-          
-          ctx.fillStyle = o.color;
-          ctx.fillRect(x - size / 2, y - size, size, size * 0.7);
-          ctx.fillStyle = "#000000";
-          ctx.fillRect(x - size / 2 - 1, y - size / 3, 2, size / 3);
-          ctx.fillRect(x + size / 2 - 1, y - size / 3, 2, size / 3);
-          ctx.fillStyle = "#ff6600";
-          ctx.fillRect(x - size / 2, y - size - 2, size, 2);
-        }
-      }
-    });
-
-    const pSize = 36;
-    const px = 160;
-    const py = 190;
-    const carColor = driverColors[driver];
-
-    ctx.save();
-    if (s.crashCooldown > 0) {
-      ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
-    }
-
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(px - pSize / 2 + 2, py - 6, pSize, 8);
-
-    ctx.fillStyle = carColor;
-    ctx.fillRect(px - pSize / 2, py - 18, pSize, 12);
-    ctx.fillStyle = "#111111";
-    ctx.fillRect(px - pSize / 2 - 2, py - 6, 4, 6);
-    ctx.fillRect(px + pSize / 2 - 2, py - 6, 4, 6);
-    ctx.fillRect(px - pSize / 2 - 2, py - 16, 4, 6);
-    ctx.fillRect(px + pSize / 2 - 2, py - 16, 4, 6);
-    
-    ctx.fillStyle = "#88ddff";
-    ctx.fillRect(px - pSize / 3, py - 15, (pSize * 2) / 3, 4);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(px - pSize / 2, py - 19, pSize, 2);
-    
-    ctx.fillStyle = "#ffcc00";
-    ctx.font = "bold 8px Courier";
-    const carNum = driver === "Dale Sr." ? "3" : driver === "Dale Jr." ? "88" : driver === "Jeff Gordon" ? "24" : driver === "Richard Petty" ? "43" : "11";
-    ctx.fillText(carNum, px - 4, py - 8);
-
-    ctx.restore();
-
-    s.animationId = requestAnimationFrame(gameLoop);
+    setIsPlaying(false);
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stateRef.current.running = false;
+      if (stateRef.current.animationId) {
+        cancelAnimationFrame(stateRef.current.animationId);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (score > highScore) {
@@ -871,7 +1128,7 @@ function ArcadeRacer() {
       <p className="card-eye">The Pit Arcade</p>
       
       <div className="ar-gameplay-container">
-        <canvas ref={canvasRef} className="ar-canvas" width="320" height="200" />
+        <canvas ref={canvasRef} className="ar-canvas" width="400" height="250" />
         
         {!isPlaying && (
           <div className="ar-overlay">
@@ -881,7 +1138,7 @@ function ArcadeRacer() {
               <div className="driver-selector">
                 <span className="ds-label">Select Car:</span>
                 <select className="ds-select" value={driver} onChange={(e) => setDriver(e.target.value)}>
-                  {Object.keys(driverColors).map(d => <option key={d} value={d}>{d}</option>)}
+                  {Object.keys(DRIVER_COLORS).map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
 
@@ -1710,11 +1967,35 @@ function CommentWall() {
   async function loadComments() {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setComments(data);
-      setLoadErr(false);
+      const text = await res.text();
+      
+      // Google Apps Script may return error HTML or an error JSON object
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        console.warn("Notes: response was not valid JSON:", text.slice(0, 200));
+        setLoadErr(true);
+        return;
+      }
+
+      // If the script returned an error object like { status: "error", message: "..." }
+      if (data && data.status === "error") {
+        console.warn("Notes: Google Apps Script error:", data.message);
+        setLoadErr(true);
+        return;
+      }
+
+      // Success: should be an array of note objects
+      if (Array.isArray(data)) {
+        setComments(data);
+        setLoadErr(false);
+      } else {
+        console.warn("Notes: unexpected response format:", data);
+        setLoadErr(true);
+      }
     } catch (e) {
+      console.warn("Notes: fetch failed:", e.message);
       setLoadErr(true);
     }
   }
