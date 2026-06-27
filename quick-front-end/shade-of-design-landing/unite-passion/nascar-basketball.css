@@ -3041,45 +3041,16 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
 .cs-court-container {
   position: relative;
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  aspect-ratio: 1.66;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   cursor: crosshair;
 }
-.court-svg {
+.court-canvas {
   width: 100%;
-  height: 100%;
-  color: rgba(255, 255, 255, 0.2);
-}
-.court-svg:hover {
-  color: rgba(255, 255, 255, 0.35);
-}
-.basketball-node {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at 35% 35%, #ff8833, #bb5500);
-  border-radius: 50%;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.6);
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-@keyframes shot-flight {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    left: calc(var(--dx-half) + 50%);
-    top: calc(var(--dy-half) + 12%);
-    transform: translate(-50%, -50%) scale(1.6);
-  }
-  100% {
-    left: 50%;
-    top: 12%;
-    transform: translate(-50%, -50%) scale(0.65);
-  }
+  height: auto;
+  display: block;
 }
 .cs-status {
   text-align: center;
