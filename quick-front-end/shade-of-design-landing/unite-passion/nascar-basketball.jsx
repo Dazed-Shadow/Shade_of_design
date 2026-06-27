@@ -54,11 +54,11 @@ const NY_TEAM_INFO = {
 
 // ─── Static driver data ───────────────────────────────────────────────────────
 const FEATURED_DRIVERS = [
-  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver", url: "https://www.nascar.com/dale-earnhardt-jr/",  statsUrl: "https://www.espn.com/racing/driver/_/id/150/dale-earnhardt-jr", trend: [10, 5, 8, 2, 4, 1] },
-  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner",   url: "https://www.nascar.com/denny-hamlin/",       statsUrl: "https://www.espn.com/racing/driver/_/id/747/denny-hamlin", trend: [3, 11, 2, 1, 8, 4] },
-  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator",           url: "https://www.nascar.com/dale-earnhardt/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/2675/dale-earnhardt", trend: [1, 2, 1, 3, 1, 1] },
-  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King",                  url: "https://www.nascar.com/richard-petty/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/918/richard-petty", trend: [1, 1, 1, 2, 1, 1] },
-  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior",           url: "https://www.nascar.com/jeff-gordon/",      statsUrl: "https://www.espn.com/racing/driver/stats/_/id/67/jeff-gordon", trend: [5, 3, 1, 2, 4, 2] },
+  { name: "Dale Earnhardt Jr.", car: "88", team: "JR Motorsports",           era: "modern", wins: 26,  champs: 0, note: "15× Most Popular Driver", url: "https://www.nascar.com/dale-earnhardt-jr/",  statsUrl: "https://www.espn.com/racing/driver/_/id/150/dale-earnhardt-jr", image: "https://a.espncdn.com/combiner/i?img=/i/headshots/rpm/players/full/150.png&w=200&h=150" },
+  { name: "Denny Hamlin",       car: "11", team: "Joe Gibbs Racing",         era: "modern", wins: null, champs: 0, note: "3× Daytona 500 winner",   url: "https://www.nascar.com/denny-hamlin/",       statsUrl: "https://www.espn.com/racing/driver/_/id/747/denny-hamlin", image: "https://a.espncdn.com/combiner/i?img=/i/headshots/rpm/players/full/747.png&w=200&h=150" },
+  { name: "Dale Earnhardt Sr.", car: "3",  team: "Richard Childress Racing",  era: "legend", wins: 76,  champs: 7, note: "The Intimidator",           url: "https://www.nascar.com/dale-earnhardt/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/2675/dale-earnhardt", image: "https://a.espncdn.com/combiner/i?img=/i/headshots/rpm/players/full/2675.png&w=200&h=150" },
+  { name: "Richard Petty",      car: "43", team: "Petty Enterprises",         era: "legend", wins: 200, champs: 7, note: "The King",                  url: "https://www.nascar.com/richard-petty/",    statsUrl: "https://www.espn.com/racing/driver/stats/_/id/918/richard-petty", image: "https://a.espncdn.com/combiner/i?img=/i/headshots/rpm/players/full/918.png&w=200&h=150" },
+  { name: "Jeff Gordon",        car: "24", team: "Hendrick Motorsports",      era: "legend", wins: 93,  champs: 4, note: "Rainbow Warrior",           url: "https://www.nascar.com/jeff-gordon/",      statsUrl: "https://www.espn.com/racing/driver/stats/_/id/67/jeff-gordon", image: "https://a.espncdn.com/combiner/i?img=/i/headshots/rpm/players/full/67.png&w=200&h=150" },
 ];
 
 // ─── "On This Day" curated lore ───────────────────────────────────────────────
@@ -358,45 +358,551 @@ function TrackWeather({ venueName, eventName }) {
   );
 }
 
-// ─── MatchupPredictions Component ────────────────────────────────────────────
-function MatchupPredictions({ scores, scoreboard }) {
-  const [vote, setVote] = useState(() => localStorage.getItem("family_vote") || null);
-  const [stats, setStats] = useState({ NYK: 12, BKN: 8 });
-
-  function handleVote(team) {
-    if (vote) return;
-    setVote(team);
-    localStorage.setItem("family_vote", team);
-    setStats(prev => ({ ...prev, [team]: prev[team] + 1 }));
-  }
-
-  const total = stats.NYK + stats.BKN;
-  const nykPct = total === 0 ? 50 : Math.round((stats.NYK / total) * 100);
-  const bknPct = 100 - nykPct;
+// ─── NascarHighlights Component ──────────────────────────────────────────────
+function NascarHighlights() {
+  const highlights = [
+    { driver: "Hendrick Motorsports", record: "300+ Cup Wins", desc: "First organization in NASCAR history to surpass 300 wins." },
+    { driver: "Denny Hamlin", record: "Daytona Dominance", desc: "Won the Clash at the Coliseum and Bristol in the same year." },
+    { driver: "Kyle Larson", record: "198.4 mph lap", desc: "Clocked the fastest modern telemetry loop at Texas." },
+    { driver: "Martin Truex Jr.", record: "15k Laps Led", desc: "Entered the elite group of drivers with 15,000+ career laps led." },
+  ];
 
   return (
-    <div className="predictions-card">
-      <p className="card-eye">Family Matchup Prediction</p>
-      <h3 className="pred-title">Battle of New York</h3>
-      <p className="pred-sub">Cast your vote for tonight's matchup. Who takes the W?</p>
-      <div className="pred-buttons">
-        <button className={`pred-btn btn-nyk ${vote === "NYK" ? "selected" : ""}`} disabled={vote !== null} onClick={() => handleVote("NYK")}>
-          NYK Knicks
-        </button>
-        <button className={`pred-btn btn-bkn ${vote === "BKN" ? "selected" : ""}`} disabled={vote !== null} onClick={() => handleVote("BKN")}>
-          BKN Nets
-        </button>
+    <div className="highlights-card">
+      <p className="card-eye">Season Milestones</p>
+      <h3 className="highlights-title">2026 Records Set</h3>
+      <div className="highlights-list">
+        {highlights.map((h, i) => (
+          <div key={i} className="highlight-item">
+            <div className="hl-item-head">
+              <span className="hl-driver">{h.driver}</span>
+              <span className="hl-record">{h.record}</span>
+            </div>
+            <p className="hl-desc">{h.desc}</p>
+          </div>
+        ))}
       </div>
-      <div className="pred-results">
-        <div className="pred-bar-container">
-          <div className="pred-bar bar-nyk" style={{ width: `${nykPct}%` }} />
-          <div className="pred-bar bar-bkn" style={{ width: `${bknPct}%` }} />
+    </div>
+  );
+}
+
+// ─── TapeDeck Component ──────────────────────────────────────────────────────
+const PLAYLIST = [
+  { id: "branching", title: "The Branching Point", artist: "Logic and the Branch", src: "/Design Content/wavs/Logic and the Branch - The Branching Point - Sonauto.wav" },
+  { id: "opus", title: "Building My Opus", artist: "Shade of Design", src: "/Design Content/wavs/Shade of Design - Building My Opus - Sonauto.wav" },
+  { id: "neon", title: "Neon Delta Suite", artist: "Cobalt Symphony", src: "/Design Content/wavs/Cobalt Symphony - Neon Delta Suite - Sonauto.wav" },
+  { id: "lofi", title: "Cozy Study Session", artist: "Lofi Sanctuary", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "synth", title: "Sunset Cruise", artist: "Neon Horizons", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+];
+
+function TapeDeck() {
+  const [trackIdx, setTrackIdx] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef(null);
+
+  const currentTrack = PLAYLIST[trackIdx];
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.src = currentTrack.src;
+      if (isPlaying) {
+        audioRef.current.play().catch(() => setIsPlaying(false));
+      }
+    }
+  }, [trackIdx]);
+
+  function togglePlay() {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }
+  }
+
+  function handleNext() {
+    setTrackIdx(prev => (prev + 1) % PLAYLIST.length);
+  }
+
+  function handlePrev() {
+    setTrackIdx(prev => (prev - 1 + PLAYLIST.length) % PLAYLIST.length);
+  }
+
+  return (
+    <div className="tape-deck-card">
+      <audio ref={audioRef} onEnded={handleNext} />
+      <p className="card-eye">Lounge Radio</p>
+      
+      <div className="td-player-ui">
+        {/* Tape Cassette Graphic */}
+        <div className={`td-cassette ${isPlaying ? "spinning" : ""}`}>
+          <div className="cassette-label">
+            <span className="cl-title">{currentTrack.title}</span>
+            <span className="cl-artist">{currentTrack.artist}</span>
+          </div>
+          <div className="cassette-window">
+            <div className="cassette-wheel left-wheel"></div>
+            <div className="cassette-wheel right-wheel"></div>
+          </div>
         </div>
-        <div className="pred-labels">
-          <span className="lbl-nyk">Knicks: {nykPct}% ({stats.NYK} votes)</span>
-          <span className="lbl-bkn">Nets: {bknPct}% ({stats.BKN} votes)</span>
+
+        {/* Visualizer bars */}
+        <div className="td-visualizer">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <div key={i} className={`vis-bar ${isPlaying ? "active" : ""}`} style={{ animationDelay: `${i * 0.05}s` }} />
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="td-controls">
+          <button className="td-btn btn-prev" onClick={handlePrev}>⏮</button>
+          <button className="td-btn btn-play" onClick={togglePlay}>
+            {isPlaying ? "⏸" : "▶"}
+          </button>
+          <button className="td-btn btn-next" onClick={handleNext}>⏭</button>
+          
+          <div className="td-volume-control">
+            <button className="td-vol-icon" onClick={() => setIsMuted(!isMuted)}>
+              {isMuted || volume === 0 ? "🔇" : volume < 0.4 ? "🔈" : "🔊"}
+            </button>
+            <input 
+              type="range" 
+              className="td-volume-slider" 
+              min="0" 
+              max="1" 
+              step="0.05" 
+              value={volume} 
+              onChange={(e) => {
+                setVolume(parseFloat(e.target.value));
+                setIsMuted(false);
+              }} 
+            />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── CourtShooter Component ──────────────────────────────────────────────────
+function CourtShooter() {
+  const [shots, setShots] = useState(() => parseInt(localStorage.getItem("paint_shots") || "0", 10));
+  const [makes, setMakes] = useState(() => parseInt(localStorage.getItem("paint_makes") || "0", 10));
+  const [streak, setStreak] = useState(() => parseInt(localStorage.getItem("paint_streak") || "0", 10));
+  const [ball, setBall] = useState(null);
+  const [status, setStatus] = useState("Click the court to shoot!");
+
+  function takeShot(e) {
+    if (ball) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    const dx = x - 50;
+    const dy = y - 12;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    let type = "mid";
+    let prob = 0.45;
+    let points = 2;
+
+    if (dist < 18) {
+      type = "paint";
+      prob = 0.75;
+      points = 2;
+    } else if (dist > 35) {
+      type = "three";
+      prob = 0.33;
+      points = 3;
+    }
+
+    const isMake = Math.random() < prob;
+    const newBall = { x, y, isMake, id: Date.now(), type, points };
+    setBall(newBall);
+    setStatus("Ball is in the air...");
+
+    setTimeout(() => {
+      setShots(s => {
+        const next = s + 1;
+        localStorage.setItem("paint_shots", next);
+        return next;
+      });
+
+      if (isMake) {
+        setMakes(m => {
+          const next = m + 1;
+          localStorage.setItem("paint_makes", next);
+          return next;
+        });
+        setStreak(st => {
+          const next = st + 1;
+          localStorage.setItem("paint_streak", next);
+          return next;
+        });
+        setStatus(`SPLASH! Made a ${points}-pointer! 🏀`);
+      } else {
+        setStreak(0);
+        localStorage.setItem("paint_streak", 0);
+        setStatus("CLANK! Missed the shot. 🛑");
+      }
+      setBall(null);
+    }, 1000);
+  }
+
+  const pct = shots === 0 ? 0 : Math.round((makes / shots) * 100);
+
+  function resetStats() {
+    setShots(0);
+    setMakes(0);
+    setStreak(0);
+    localStorage.setItem("paint_shots", 0);
+    localStorage.setItem("paint_makes", 0);
+    localStorage.setItem("paint_streak", 0);
+    setStatus("Stats reset. Click the court to shoot!");
+  }
+
+  const ballStyle = ball ? {
+    left: `${ball.x}%`,
+    top: `${ball.y}%`,
+    "--dx": `${50 - ball.x}%`,
+    "--dy": `${12 - ball.y}%`,
+    "--dx-half": `${(50 - ball.x) / 2}%`,
+    "--dy-half": `${(12 - ball.y) / 2 - 25}%`,
+    animation: "shot-flight 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards"
+  } : {};
+
+  return (
+    <div className="court-shooter-card">
+      <p className="card-eye">The Paint Arcade</p>
+      
+      <div className="cs-court-container">
+        <svg className="court-svg" viewBox="0 0 100 60" onClick={takeShot}>
+          <rect x="0" y="0" width="100" height="60" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.15" />
+          <path d="M 18 0 A 32 32 0 0 0 82 0" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
+          <line x1="18" y1="0" x2="18" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
+          <line x1="82" y1="0" x2="82" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
+          <rect x="39" y="0" width="22" height="24" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+          <path d="M 43 24 A 7 7 0 0 0 57 24" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.3" />
+          <line x1="44" y1="10" x2="56" y2="10" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+          <circle cx="50" cy="12" r="2.2" fill="none" stroke="var(--ember)" strokeWidth="1.5" />
+        </svg>
+
+        {ball && <div className="basketball-node" style={ballStyle} />}
+      </div>
+
+      <div className="cs-status">{status}</div>
+
+      <div className="cs-scoreboard">
+        <div className="cs-score-box"><span className="css-val">{makes}/{shots}</span><span className="css-lbl">Makes</span></div>
+        <div className="cs-score-box"><span className="css-val">{pct}%</span><span className="css-lbl">Accuracy</span></div>
+        <div className="cs-score-box"><span className="css-val">{streak}</span><span className="css-lbl">Streak</span></div>
+        <button className="cs-reset-btn" onClick={resetStats}>Reset</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ArcadeRacer Component ───────────────────────────────────────────────────
+function ArcadeRacer() {
+  const canvasRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [score, setScore] = useState(0);
+  const [speed, setSpeed] = useState(0);
+  const [driver, setDriver] = useState("Dale Sr.");
+  const [isCrashed, setIsCrashed] = useState(false);
+  const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem("racer_highscore") || "0", 10));
+
+  const stateRef = useRef({
+    speed: 0,
+    distance: 0,
+    carX: 0,
+    roadX: 0,
+    roadSegments: [],
+    obstacles: [],
+    keys: { left: false, right: false, up: false, down: false },
+    animationId: null,
+    crashCooldown: 0
+  });
+
+  const driverColors = {
+    "Dale Sr.": "#111111",
+    "Dale Jr.": "#00ff66",
+    "Jeff Gordon": "#ffcc00",
+    "Richard Petty": "#0099ff",
+    "Denny Hamlin": "#ff6600"
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!stateRef.current) return;
+      if (e.key === "ArrowLeft" || e.key === "a") stateRef.current.keys.left = true;
+      if (e.key === "ArrowRight" || e.key === "d") stateRef.current.keys.right = true;
+      if (e.key === "ArrowUp" || e.key === "w") stateRef.current.keys.up = true;
+      if (e.key === "ArrowDown" || e.key === "s") stateRef.current.keys.down = true;
+    };
+
+    const handleKeyUp = (e) => {
+      if (!stateRef.current) return;
+      if (e.key === "ArrowLeft" || e.key === "a") stateRef.current.keys.left = false;
+      if (e.key === "ArrowRight" || e.key === "d") stateRef.current.keys.right = false;
+      if (e.key === "ArrowUp" || e.key === "w") stateRef.current.keys.up = false;
+      if (e.key === "ArrowDown" || e.key === "s") stateRef.current.keys.down = false;
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      stopGame();
+    };
+  }, []);
+
+  function startGame() {
+    setIsPlaying(true);
+    setIsCrashed(false);
+    setScore(0);
+    setSpeed(0);
+
+    const s = stateRef.current;
+    s.speed = 0;
+    s.distance = 0;
+    s.carX = 0;
+    s.roadX = 0;
+    s.crashCooldown = 0;
+    
+    s.roadSegments = [];
+    for (let i = 0; i < 500; i++) {
+      s.roadSegments.push({
+        curve: Math.sin(i / 30) * 1.5,
+        y: Math.sin(i / 10) * 10
+      });
+    }
+
+    s.obstacles = [
+      { z: 100, x: -0.5, speed: 2, color: "#ff3333" },
+      { z: 220, x: 0.4, speed: 1.5, color: "#ffff33" },
+      { z: 360, x: -0.2, speed: 3, color: "#33ff33" },
+      { z: 500, x: 0.3, speed: 2.5, color: "#ffffff" },
+    ];
+
+    if (s.animationId) cancelAnimationFrame(s.animationId);
+    s.animationId = requestAnimationFrame(gameLoop);
+  }
+
+  function stopGame() {
+    setIsPlaying(false);
+    if (stateRef.current && stateRef.current.animationId) {
+      cancelAnimationFrame(stateRef.current.animationId);
+      stateRef.current.animationId = null;
+    }
+  }
+
+  function gameLoop() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const s = stateRef.current;
+
+    if (s.crashCooldown > 0) {
+      s.crashCooldown--;
+      s.speed = Math.max(0, s.speed - 6);
+      if (s.crashCooldown === 0) {
+        setIsCrashed(false);
+      }
+    } else {
+      if (s.keys.up) {
+        s.speed = Math.min(185, s.speed + 2.5);
+      } else if (s.keys.down) {
+        s.speed = Math.max(0, s.speed - 6);
+      } else {
+        s.speed = Math.max(0, s.speed - 1);
+      }
+
+      if (s.keys.left) {
+        s.carX = Math.max(-1.5, s.carX - 0.06 * (s.speed / 120 + 0.2));
+      }
+      if (s.keys.right) {
+        s.carX = Math.min(1.5, s.carX + 0.06 * (s.speed / 120 + 0.2));
+      }
+
+      if (Math.abs(s.carX) > 0.95 && s.speed > 50) {
+        s.speed = Math.max(50, s.speed - 4);
+      }
+    }
+
+    s.distance += s.speed * 0.05;
+    const scoreVal = Math.floor(s.distance / 10);
+    setScore(scoreVal);
+    setSpeed(Math.floor(s.speed));
+
+    const currentSegmentIdx = Math.floor(s.distance / 30) % s.roadSegments.length;
+    const currentSegment = s.roadSegments[currentSegmentIdx];
+    s.roadX += -s.carX * (s.speed / 800) + currentSegment.curve * 0.015 * (s.speed / 100);
+
+    s.obstacles.forEach(o => {
+      o.z -= s.speed * 0.05;
+      if (o.z <= 0) {
+        o.z = 600 + Math.random() * 200;
+        o.x = (Math.random() - 0.5) * 1.6;
+        o.color = ["#ff3333", "#ffff33", "#33ff33", "#ffffff", "#ff00ff"][Math.floor(Math.random() * 5)];
+      }
+
+      if (o.z > 5 && o.z < 25) {
+        const distToCar = Math.abs(s.carX - o.x);
+        if (distToCar < 0.28 && s.crashCooldown === 0) {
+          s.crashCooldown = 40;
+          setIsCrashed(true);
+          s.speed = 10;
+        }
+      }
+    });
+
+    ctx.clearRect(0, 0, 320, 200);
+
+    const skyScroll = (s.roadX * 50) % 320;
+    ctx.fillStyle = "#091020";
+    ctx.fillRect(0, 0, 320, 200);
+    ctx.fillStyle = "#121a2e";
+    ctx.fillRect(0, 0, 320, 80);
+    ctx.fillStyle = "#ff5500";
+    ctx.fillRect(0, 76, 320, 4);
+
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    for (let star = 0; star < 12; star++) {
+      ctx.fillRect((star * 35 - skyScroll + 320) % 320, 8 + (star % 3) * 16, 2, 2);
+    }
+
+    for (let y = 80; y < 200; y += 4) {
+      const z = 1 / ((y - 80) / 120);
+      const roadWidth = 200 / z;
+      const roadCenter = 160 + (s.roadX * 300) / z - (s.roadSegments[(currentSegmentIdx + Math.floor(z*3)) % s.roadSegments.length].curve * 15);
+      const isRed = Math.floor(s.distance / 15 + z) % 2 === 0;
+
+      ctx.fillStyle = isRed ? "#092215" : "#05130b";
+      ctx.fillRect(0, y, 320, 4);
+
+      ctx.fillStyle = isRed ? "#d62828" : "#ffffff";
+      ctx.fillRect(roadCenter - roadWidth / 2 - 4, y, roadWidth + 8, 4);
+
+      ctx.fillStyle = "#141923";
+      ctx.fillRect(roadCenter - roadWidth / 2, y, roadWidth, 4);
+
+      if (Math.floor(s.distance / 20 + z) % 2 === 0) {
+        ctx.fillStyle = "#f77f00";
+        ctx.fillRect(roadCenter - 1, y, 2, 4);
+      }
+    }
+
+    s.obstacles.forEach(o => {
+      if (o.z > 0 && o.z < 600) {
+        const y = 80 + 120 * (1 / (o.z / 60));
+        if (y >= 80 && y <= 200) {
+          const size = 150 / o.z;
+          const x = 160 + (o.x - s.carX) * (150 / (o.z / 60)) + (s.roadX * 10);
+          
+          ctx.fillStyle = o.color;
+          ctx.fillRect(x - size / 2, y - size, size, size * 0.7);
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(x - size / 2 - 1, y - size / 3, 2, size / 3);
+          ctx.fillRect(x + size / 2 - 1, y - size / 3, 2, size / 3);
+          ctx.fillStyle = "#ff6600";
+          ctx.fillRect(x - size / 2, y - size - 2, size, 2);
+        }
+      }
+    });
+
+    const pSize = 36;
+    const px = 160;
+    const py = 190;
+    const carColor = driverColors[driver];
+
+    ctx.save();
+    if (s.crashCooldown > 0) {
+      ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+    }
+
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(px - pSize / 2 + 2, py - 6, pSize, 8);
+
+    ctx.fillStyle = carColor;
+    ctx.fillRect(px - pSize / 2, py - 18, pSize, 12);
+    ctx.fillStyle = "#111111";
+    ctx.fillRect(px - pSize / 2 - 2, py - 6, 4, 6);
+    ctx.fillRect(px + pSize / 2 - 2, py - 6, 4, 6);
+    ctx.fillRect(px - pSize / 2 - 2, py - 16, 4, 6);
+    ctx.fillRect(px + pSize / 2 - 2, py - 16, 4, 6);
+    
+    ctx.fillStyle = "#88ddff";
+    ctx.fillRect(px - pSize / 3, py - 15, (pSize * 2) / 3, 4);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(px - pSize / 2, py - 19, pSize, 2);
+    
+    ctx.fillStyle = "#ffcc00";
+    ctx.font = "bold 8px Courier";
+    const carNum = driver === "Dale Sr." ? "3" : driver === "Dale Jr." ? "88" : driver === "Jeff Gordon" ? "24" : driver === "Richard Petty" ? "43" : "11";
+    ctx.fillText(carNum, px - 4, py - 8);
+
+    ctx.restore();
+
+    s.animationId = requestAnimationFrame(gameLoop);
+  }
+
+  useEffect(() => {
+    if (score > highScore) {
+      setHighScore(score);
+      localStorage.setItem("racer_highscore", score);
+    }
+  }, [score, highScore]);
+
+  return (
+    <div className="arcade-racer-card">
+      <p className="card-eye">The Pit Arcade</p>
+      
+      <div className="ar-gameplay-container">
+        <canvas ref={canvasRef} className="ar-canvas" width="320" height="200" />
+        
+        {!isPlaying && (
+          <div className="ar-overlay">
+            <div className="ar-setup">
+              <p className="ar-instructions">Controls: Arrow keys / WASD to Steer &amp; Drive. Dodge traffic!</p>
+              
+              <div className="driver-selector">
+                <span className="ds-label">Select Car:</span>
+                <select className="ds-select" value={driver} onChange={(e) => setDriver(e.target.value)}>
+                  {Object.keys(driverColors).map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <button className="ar-start-btn" onClick={startGame}>Start Race 🏁</button>
+            </div>
+          </div>
+        )}
+
+        {isCrashed && (
+          <div className="ar-crash-overlay">
+            <span className="ar-crash-title">💥 CRASHED!</span>
+          </div>
+        )}
+
+        <div className="ar-instrumentation">
+          <div className="ar-gauge"><span className="arg-val">{speed}</span><span className="arg-lbl">MPH</span></div>
+          <div className="ar-gauge"><span className="arg-val">{score}</span><span className="arg-lbl">Score</span></div>
+          <div className="ar-gauge"><span className="arg-val">{highScore}</span><span className="arg-lbl">High</span></div>
+        </div>
+      </div>
+      {isPlaying && <button className="ar-stop-btn" onClick={stopGame}>Stop Race ⏹</button>}
     </div>
   );
 }
@@ -961,6 +1467,7 @@ function NascarPanel({ activeTab, scoreboard, standings, news, loading }) {
         <div className="off-race">
           <NascarStandingsTable data={standings} />
           <NascarLeaderBoard standings={standings} lastEvent={lastEvent} />
+          <NascarHighlights />
         </div>
       ) : activeTab === "garage" ? (
         /* ── GARAGE TAB ── */
@@ -977,12 +1484,6 @@ function NascarPanel({ activeTab, scoreboard, standings, news, loading }) {
                     {d.champs > 0 ? ` · ${d.champs}× champ` : ""}
                   </span>
                 </div>
-                {d.trend && (
-                  <div className="driver-trend-container">
-                    <Sparkline data={d.trend} color="var(--ocean)" invert={d.era !== "legend"} />
-                    <span className="driver-trend-label">Recent Trend</span>
-                  </div>
-                )}
                 {d.era === "legend" ? <span className="driver-era-badge">Legend</span> : <span className="driver-link-arrow">↗</span>}
               </div>
             ))}
@@ -996,6 +1497,11 @@ function NascarPanel({ activeTab, scoreboard, standings, news, loading }) {
           <div className="driver-modal-content" onClick={e => e.stopPropagation()}>
             <button className="driver-modal-close" onClick={() => setSelectedDriver(null)}>×</button>
             <div className={`driver-modal-header driver-${selectedDriver.car}`}>
+              {selectedDriver.image && (
+                <div className="dm-avatar-container">
+                  <img className="dm-avatar" src={selectedDriver.image} alt={selectedDriver.name} onError={(e) => { e.target.parentNode.style.display = 'none'; }} />
+                </div>
+              )}
               <span className="dm-car">#{selectedDriver.car}</span>
               <div className="dm-header-info">
                 <h3 className="dm-name">{selectedDriver.name}</h3>
@@ -1009,19 +1515,6 @@ function NascarPanel({ activeTab, scoreboard, standings, news, loading }) {
                 <div className="dm-stat"><span className="dms-val">{selectedDriver.era.toUpperCase()}</span><span className="dms-lbl">Era</span></div>
               </div>
               <p className="dm-note">{selectedDriver.note}</p>
-              {selectedDriver.trend && (
-                <div className="dm-trend-section">
-                  <p className="nb-eye">Recent Race Finishes</p>
-                  <div className="dm-trend-visual">
-                    <Sparkline data={selectedDriver.trend} color="var(--ocean)" invert={selectedDriver.era !== "legend"} />
-                    <div className="dm-trend-history">
-                      {selectedDriver.trend.map((pos, idx) => (
-                        <span key={idx} className="dm-trend-pos">P{pos}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1197,7 +1690,7 @@ function BasketballPanel({ activeTab, scores, standings, leaders, news, loading 
         </>
       ) : activeTab === "garage" ? (
         /* ── GARAGE TAB ── */
-        <TeamRecordStrip entries={nyEntries.length ? nyEntries : allEntries.filter(e => NY_TEAMS.includes(e.team?.abbreviation))} />
+        <NbaLeaderBoard leaders={leaders} lastNY={lastNY} />
       ) : null}
     </div>
   );
@@ -1216,7 +1709,7 @@ function CommentWall() {
 
   async function loadComments() {
     try {
-      const res = await fetch(GOOGLE_SCRIPT_URL);
+      const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setComments(data);
@@ -1417,15 +1910,21 @@ function App() {
               <span className="tab-icon">🏁</span> Dad's Garage
             </button>
             <button className={`nb-tab-btn ${activeTab === "notes" ? "active" : ""}`} onClick={() => setActiveTab("notes")}>
-              <span className="tab-icon">💬</span> Family Notes
+              <span className="tab-icon">☕</span> Spacing Out
             </button>
           </div>
         </div>
 
         {activeTab === "notes" ? (
-          <div className="nb-grid">
-            <CommentWall />
-            <MatchupPredictions scores={nbaScores} scoreboard={nascarBoard} />
+          <div className="nb-lounge">
+            <div className="nb-lounge-grid">
+              <ArcadeRacer />
+              <CourtShooter />
+            </div>
+            <div className="nb-lounge-bottom">
+              <TapeDeck />
+              <CommentWall />
+            </div>
           </div>
         ) : (
           <div className="nb-grid">

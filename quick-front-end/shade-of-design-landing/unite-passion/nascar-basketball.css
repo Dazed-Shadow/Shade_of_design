@@ -100,11 +100,25 @@
 .nb-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--s-6);
+  gap: var(--s-12);
   align-items: start;
+  position: relative;
+}
+@media (min-width: 769px) {
+  .nb-grid::after {
+    content: "";
+    position: absolute;
+    top: var(--s-4);
+    bottom: var(--s-4);
+    left: calc(50% - 1px);
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--ember) 25%, var(--ocean) 75%, transparent);
+    opacity: 0.55;
+    pointer-events: none;
+  }
 }
 @media (max-width: 768px) {
-  .nb-grid { grid-template-columns: 1fr; }
+  .nb-grid { grid-template-columns: 1fr; gap: var(--s-6); }
   .nb-main { padding: var(--s-5); }
   .nb-header { padding: var(--s-3) var(--s-5); }
 }
@@ -2801,6 +2815,535 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
   font-family: var(--font-mono);
   font-size: 9px;
   color: var(--muted);
+}
+
+/* ── Driver Modal Avatar ── */
+.dm-avatar-container {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+.dm-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.15) translateY(2px);
+}
+.driver-modal-header {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Spacing Out Lounge Layout ── */
+.nb-lounge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  width: 100%;
+}
+.nb-lounge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-6);
+}
+@media (max-width: 768px) {
+  .nb-lounge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.nb-lounge-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: var(--s-6);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .nb-lounge-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Arcade Racer Card ── */
+.arcade-racer-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: var(--s-5) var(--s-6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ar-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: #fff;
+  margin: 0;
+}
+.ar-gameplay-container {
+  position: relative;
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  aspect-ratio: 1.6;
+  background: #000;
+}
+.ar-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+.ar-overlay, .ar-crash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(9, 16, 32, 0.85);
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+}
+.ar-crash-overlay {
+  background: rgba(214, 40, 40, 0.55);
+  pointer-events: none;
+}
+.ar-crash-title {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: #ff3333;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  animation: crash-blink 0.2s infinite;
+}
+@keyframes crash-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.ar-instructions {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 80%;
+  line-height: 1.5;
+  margin-bottom: var(--s-4);
+}
+.driver-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--s-4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  font-family: var(--font-mono);
+}
+.ar-start-btn {
+  background: var(--ember);
+  border: none;
+  color: #fff;
+  padding: 10px 24px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.ar-start-btn:hover {
+  transform: scale(1.05);
+  background: #ff7722;
+}
+.ar-instrumentation {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(0,0,0,0.65);
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ar-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.arg-val {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: #00ff66;
+}
+.arg-lbl {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.ar-stop-btn {
+  align-self: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  padding: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ar-stop-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* ── Court Shooter Card ── */
+.court-shooter-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: var(--s-5) var(--s-6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cs-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: #fff;
+  margin: 0;
+}
+.cs-instructions {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+.cs-court-container {
+  position: relative;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  aspect-ratio: 1.66;
+  overflow: hidden;
+  cursor: crosshair;
+}
+.court-svg {
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.2);
+}
+.court-svg:hover {
+  color: rgba(255, 255, 255, 0.35);
+}
+.basketball-node {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 35% 35%, #ff8833, #bb5500);
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+@keyframes shot-flight {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    left: calc(var(--dx-half) + 50%);
+    top: calc(var(--dy-half) + 12%);
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+  100% {
+    left: 50%;
+    top: 12%;
+    transform: translate(-50%, -50%) scale(0.65);
+  }
+}
+.cs-status {
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #fff;
+  min-height: 20px;
+}
+.cs-scoreboard {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(255,255,255,0.02);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.cs-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.css-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ocean);
+}
+.css-lbl {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.cs-reset-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--muted);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cs-reset-btn:hover {
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+/* ── Tape Deck Card ── */
+.tape-deck-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: var(--s-5) var(--s-6);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.td-player-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.td-cassette {
+  position: relative;
+  width: 180px;
+  height: 110px;
+  background: #111;
+  border: 3px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  box-sizing: border-box;
+}
+.cassette-label {
+  background: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%);
+  height: 52px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #000;
+  padding: 4px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.cl-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cl-artist {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+.cassette-window {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid #222;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.cassette-wheel {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px dashed #555;
+  background: #000;
+}
+.td-cassette.spinning .cassette-wheel {
+  animation: spin-wheel 3s linear infinite;
+}
+@keyframes spin-wheel {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.td-visualizer {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 24px;
+  width: 100%;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 4px;
+}
+.vis-bar {
+  width: 6px;
+  height: 2px;
+  background: var(--ocean);
+  border-radius: 1px 1px 0 0;
+  transition: height 0.15s ease;
+}
+.vis-bar.active {
+  animation: vis-grow 0.6s ease-in-out infinite alternate;
+}
+@keyframes vis-grow {
+  0% { height: 2px; background: var(--ocean); }
+  50% { height: 18px; background: var(--ember); }
+  100% { height: 4px; background: var(--ocean); }
+}
+.td-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.td-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.td-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.btn-play {
+  background: var(--ocean);
+  border-color: rgba(0, 240, 255, 0.2);
+  width: 40px;
+  height: 40px;
+}
+.btn-play:hover {
+  background: #33b5e5;
+}
+.td-volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+.td-vol-icon {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+.td-volume-slider {
+  width: 60px;
+  height: 3px;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  outline: none;
+}
+.td-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ocean);
+  cursor: pointer;
+}
+
+/* ── Nascar Highlights Card ── */
+.highlights-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: var(--s-5) var(--s-6);
+  backdrop-filter: blur(20px);
+  margin-top: var(--s-4);
+}
+.highlights-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: #fff;
+  margin: 0 0 var(--s-4);
+}
+.highlights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.highlight-item {
+  background: rgba(255,255,255,0.01);
+  border: 1px solid rgba(255,255,255,0.03);
+  padding: 10px;
+  border-radius: 8px;
+}
+.hl-item-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.hl-driver {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+.hl-record {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ember);
+}
+.hl-desc {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin: 0;
 }
 
 
