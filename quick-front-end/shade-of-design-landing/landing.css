@@ -6,7 +6,7 @@
   grid-template-rows: auto 1fr auto;
   max-width: 1280px;
   margin: 0 auto;
-  padding: var(--s-8) var(--s-8) var(--s-6);
+  padding: var(--s-12) var(--s-12) var(--s-8);
 }
 
 /* Header */
@@ -14,12 +14,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: var(--s-6);
+  padding-bottom: var(--s-10);
 }
 .lp-header .brand { text-decoration: none; color: inherit; }
 .lp-header .brand-mark { width: 36px; height: 36px; }
-.lp-header .brand-name { font-size: 15px; }
-.lp-header .brand-sub { font-size: 10px; }
+.lp-header .brand-name { 
+  font-family: var(--font-serif); 
+  font-size: 17px; 
+  font-weight: 700; 
+  letter-spacing: -0.01em; 
+}
+.lp-header .brand-sub { 
+  font-family: var(--font-mono); 
+  font-size: 9px; 
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 
 .lp-nav {
   display: flex;
@@ -42,36 +52,38 @@
 /* Main */
 .lp-main {
   display: grid;
-  gap: var(--s-16);
-  padding: var(--s-12) 0 var(--s-16);
+  gap: var(--s-20);
+  padding: var(--s-16) 0 var(--s-20);
   align-content: start;
 }
 
 /* Hero */
 .lp-hero {
   display: grid;
-  gap: var(--s-5);
+  gap: var(--s-6);
   max-width: 880px;
 }
 .lp-h1 {
-  font-size: clamp(48px, 7vw, 88px);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 0.98;
+  font-family: var(--font-serif);
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
 }
 .lp-h1 em {
-  font-style: normal;
+  font-style: italic;
+  font-weight: 400;
   color: var(--ember);
 }
 .lp-sub {
-  font-size: 18px;
+  font-size: 19px;
   color: var(--ink-soft);
   margin: 0;
   max-width: 50ch;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* Work section */
