@@ -502,115 +502,413 @@ function CourtShooter() {
   const [status, setStatus] = useState("Click the court to shoot!");
   const animRef = useRef(null);
   const shotRef = useRef(null);
+  const netRef = useRef({ ripple: false, time: 0 });
+  const trailRef = useRef([]);
+  const hotZones = useRef({ paint: 0, mid: 0, three: 0 });
+  const statsRef = useRef({ shots: 0, makes: 0, streak: 0 });
 
-  // Draw the court and any active ball animation
-  function drawCourt(ctx, W, H) {
-    ctx.clearRect(0, 0, W, H);
+  // Keep statsRef in sync so canvas draw can read current values
+  statsRef.current = { shots, makes, streak };
 
-    // Court floor
-    ctx.fillStyle = "rgba(30, 50, 80, 0.15)";
+  // ── Constants ──
+  const W = 640, H = 480;
+  const HOOP_X = 320, HOOP_Y = 45, RIM_R = 10;
+  const BB_Y = 30, BB_W = 50;
+  const NET_TOP = 55, NET_BOT = 85;
+  const KEY_L = 230, KEY_R = 410, KEY_B = 180;
+  const FT_CY = 180, FT_R = 90;
+  const THREE_R = 250;
+
+  // ── Wood Floor ──
+  function drawFloor(ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#b5763a");
+    grad.addColorStop(0.25, "#c9874a");
+    grad.addColorStop(0.5, "#d4944f");
+    grad.addColorStop(0.75, "#c17e3e");
+    grad.addColorStop(1, "#a66a30");
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Court outline
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(2, 2, W - 4, H - 4);
-
-    // Three-point arc
-    ctx.beginPath();
-    ctx.arc(W / 2, 0, W * 0.42, 0.15, Math.PI - 0.15);
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Paint / key rectangle
-    const keyW = W * 0.28;
-    const keyH = H * 0.4;
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
-    ctx.lineWidth = 1.2;
-    ctx.strokeRect((W - keyW) / 2, 0, keyW, keyH);
-
-    // Free throw circle
-    ctx.beginPath();
-    ctx.arc(W / 2, keyH, keyW * 0.37, 0, Math.PI);
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.stroke();
-
-    // Backboard
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 22, 18);
-    ctx.lineTo(W / 2 + 22, 18);
-    ctx.stroke();
-
-    // Hoop rim
-    ctx.beginPath();
-    ctx.arc(W / 2, 28, 9, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ff5500";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Net lines
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 0.8;
-    for (let i = -6; i <= 6; i += 3) {
+    // Wood grain lines
+    ctx.strokeStyle = "rgba(0,0,0,0.05)";
+    ctx.lineWidth = 1;
+    for (let y = 0; y < H; y += 18) {
       ctx.beginPath();
-      ctx.moveTo(W / 2 + i, 32);
-      ctx.lineTo(W / 2 + i * 0.5, 48);
+      ctx.moveTo(0, y);
+      for (let x = 0; x < W; x += 40) {
+        ctx.lineTo(x + 20, y + (Math.sin(x * 0.05 + y * 0.1) * 2));
+      }
+      ctx.stroke();
+    }
+
+    // Plank seams
+    ctx.strokeStyle = "rgba(0,0,0,0.08)";
+    ctx.lineWidth = 0.5;
+    for (let y = 0; y < H; y += 36) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
       ctx.stroke();
     }
   }
 
-  function drawBall(ctx, bx, by, radius) {
-    // Shadow
-    ctx.beginPath();
-    ctx.ellipse(bx + 2, by + 2, radius, radius * 0.6, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fill();
+  // ── Court Lines & Zones ──
+  function drawCourtMarkings(ctx) {
+    // Paint zone shading
+    ctx.fillStyle = "rgba(100, 15, 20, 0.10)";
+    ctx.fillRect(KEY_L, 0, KEY_R - KEY_L, KEY_B);
 
-    // Ball body
+    // Hot zone glows
+    const hz = hotZones.current;
+    if (hz.paint >= 3) {
+      ctx.fillStyle = "rgba(255, 140, 0, 0.12)";
+      ctx.beginPath();
+      ctx.arc(HOOP_X, HOOP_Y, 80, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (hz.mid >= 3) {
+      ctx.fillStyle = "rgba(255, 140, 0, 0.08)";
+      ctx.beginPath();
+      ctx.arc(HOOP_X, HOOP_Y, 180, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (hz.three >= 3) {
+      ctx.fillStyle = "rgba(255, 140, 0, 0.06)";
+      ctx.beginPath();
+      ctx.arc(HOOP_X, HOOP_Y, THREE_R + 30, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Court outline
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(4, 4, W - 8, H - 8);
+
+    // Half-court line
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(bx, by, radius, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(bx - 2, by - 2, 1, bx, by, radius);
-    grad.addColorStop(0, "#ff9944");
-    grad.addColorStop(0.7, "#cc5500");
-    grad.addColorStop(1, "#993300");
+    ctx.moveTo(0, H - 40);
+    ctx.lineTo(W, H - 40);
+    ctx.stroke();
+
+    // Three-point arc
+    ctx.beginPath();
+    ctx.arc(HOOP_X, 0, THREE_R, 0.12, Math.PI - 0.12);
+    ctx.strokeStyle = "rgba(255,255,255,0.30)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Three-point sidelines
+    ctx.beginPath();
+    ctx.moveTo(HOOP_X - THREE_R + 3, 0);
+    ctx.lineTo(HOOP_X - THREE_R + 3, 30);
+    ctx.moveTo(HOOP_X + THREE_R - 3, 0);
+    ctx.lineTo(HOOP_X + THREE_R - 3, 30);
+    ctx.stroke();
+
+    // Key / paint rectangle
+    ctx.strokeStyle = "rgba(255,255,255,0.30)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(KEY_L, 0, KEY_R - KEY_L, KEY_B);
+
+    // Free throw circle
+    ctx.beginPath();
+    ctx.arc(HOOP_X, FT_CY, FT_R, 0, Math.PI);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Upper half (dashed)
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(HOOP_X, FT_CY, FT_R, Math.PI, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Restricted area arc
+    ctx.beginPath();
+    ctx.arc(HOOP_X, HOOP_Y, 30, 0.2, Math.PI - 0.2);
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // ── Backboard, Rim & Net ──
+  function drawHoop(ctx, now) {
+    // Backboard
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.fillRect(HOOP_X - BB_W / 2, BB_Y - 3, BB_W, 6);
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(HOOP_X - BB_W / 2, BB_Y - 3, BB_W, 6);
+
+    // Small backboard square
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(HOOP_X - 8, BB_Y - 2, 16, 4);
+
+    // Rim
+    ctx.beginPath();
+    ctx.arc(HOOP_X, HOOP_Y, RIM_R, 0, Math.PI * 2);
+    ctx.strokeStyle = "#dd3300";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Rim inner shine
+    ctx.beginPath();
+    ctx.arc(HOOP_X, HOOP_Y, RIM_R - 1.5, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,100,0,0.4)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Net
+    const net = netRef.current;
+    const netLines = 10;
+    const rimWidth = RIM_R * 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < netLines; i++) {
+      const frac = i / (netLines - 1);
+      const topX = HOOP_X - RIM_R + rimWidth * frac;
+      const taperFrac = 0.6;
+      const botX = HOOP_X - RIM_R * taperFrac + RIM_R * 2 * taperFrac * frac;
+      let sway = 0;
+      if (net.ripple) {
+        const elapsed = (now - net.time) / 1000;
+        if (elapsed < 0.5) {
+          const amp = 4 * (1 - elapsed / 0.5);
+          sway = Math.sin(elapsed * 18 + i * 1.2) * amp;
+        } else {
+          net.ripple = false;
+        }
+      }
+      ctx.beginPath();
+      ctx.moveTo(topX, NET_TOP);
+      ctx.quadraticCurveTo(
+        (topX + botX) / 2 + sway,
+        (NET_TOP + NET_BOT) / 2,
+        botX + sway * 0.5,
+        NET_BOT
+      );
+      ctx.stroke();
+    }
+    // Horizontal net threads
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 0.5;
+    for (let row = 0; row < 3; row++) {
+      const y = NET_TOP + (NET_BOT - NET_TOP) * (row + 1) / 4;
+      ctx.beginPath();
+      const rowTaper = 1 - (row + 1) / 5 * 0.4;
+      ctx.moveTo(HOOP_X - RIM_R * rowTaper, y);
+      ctx.lineTo(HOOP_X + RIM_R * rowTaper, y);
+      ctx.stroke();
+    }
+  }
+
+  // ── Ball Drawing ──
+  function drawBall(ctx, bx, by, radius, angle, heightRatio) {
+    // Shadow beneath ball — fades as ball rises
+    const shadowAlpha = Math.max(0.05, 0.25 * (heightRatio || 0.5));
+    const shadowScale = Math.max(0.3, heightRatio || 0.5);
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(bx, H * 0.85, radius * 1.5 * shadowScale, radius * 0.4 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+    ctx.fill();
+    ctx.restore();
+
+    // Ball body with spin
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(angle || 0);
+
+    // Main ball gradient
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(-radius * 0.25, -radius * 0.25, radius * 0.1, 0, 0, radius);
+    grad.addColorStop(0, "#ffaa55");
+    grad.addColorStop(0.4, "#ff9944");
+    grad.addColorStop(0.75, "#cc5500");
+    grad.addColorStop(1, "#773300");
     ctx.fillStyle = grad;
     ctx.fill();
 
     // Seam lines
-    ctx.strokeStyle = "rgba(0,0,0,0.25)";
-    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = "rgba(40,20,0,0.35)";
+    ctx.lineWidth = Math.max(0.6, radius * 0.06);
+    // Horizontal seam
     ctx.beginPath();
-    ctx.arc(bx, by, radius * 0.65, -0.3, Math.PI + 0.3);
+    ctx.arc(0, 0, radius * 0.7, -0.4, Math.PI + 0.4);
     ctx.stroke();
+    // Vertical seam
     ctx.beginPath();
-    ctx.moveTo(bx - radius * 0.1, by - radius * 0.7);
-    ctx.lineTo(bx + radius * 0.1, by + radius * 0.7);
+    ctx.arc(0, 0, radius * 0.7, Math.PI * 0.5 - 0.4, Math.PI * 1.5 + 0.4);
     ctx.stroke();
+
+    ctx.restore();
   }
 
-  function drawResult(ctx, W, result, progress) {
+  // ── Trail Drawing ──
+  function drawTrail(ctx, streakCount) {
+    const trail = trailRef.current;
+    if (trail.length < 2) return;
+    for (let i = 0; i < trail.length; i++) {
+      const p = trail[i];
+      const alpha = ((i + 1) / trail.length) * 0.5;
+      const r = Math.max(2, p.r * 0.5 * ((i + 1) / trail.length));
+
+      if (streakCount >= 5) {
+        // Flame particles
+        const scatter = 3;
+        for (let j = 0; j < 3; j++) {
+          const fx = p.x + (Math.random() - 0.5) * scatter * 2;
+          const fy = p.y + (Math.random() - 0.5) * scatter * 2;
+          const fr = r * (0.5 + Math.random() * 0.8);
+          ctx.beginPath();
+          ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+          const flameGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+          flameGrad.addColorStop(0, `rgba(255,255,80,${alpha})`);
+          flameGrad.addColorStop(0.5, `rgba(255,100,0,${alpha * 0.8})`);
+          flameGrad.addColorStop(1, `rgba(200,30,0,${alpha * 0.3})`);
+          ctx.fillStyle = flameGrad;
+          ctx.fill();
+        }
+      } else if (streakCount >= 3) {
+        // Orange-to-red gradient trail
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        const tGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        tGrad.addColorStop(0, `rgba(255,160,0,${alpha})`);
+        tGrad.addColorStop(1, `rgba(220,40,0,${alpha * 0.5})`);
+        ctx.fillStyle = tGrad;
+        ctx.fill();
+      } else {
+        // Normal orange dots
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,140,0,${alpha})`;
+        ctx.fill();
+      }
+    }
+  }
+
+  // ── Result Text ──
+  function drawResultText(ctx, result, progress, flashProgress) {
     if (progress < 0 || progress > 1) return;
     const alpha = Math.max(0, 1 - progress);
-    const yOff = -20 * progress;
+    const yOff = -40 * progress;
+
+    // White flash behind hoop on make
+    if (result === "make" && flashProgress !== undefined && flashProgress < 0.3) {
+      const flashAlpha = 0.6 * (1 - flashProgress / 0.3);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(HOOP_X, HOOP_Y, 35, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${flashAlpha})`;
+      ctx.fill();
+      ctx.restore();
+    }
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = "bold 18px 'Space Grotesk', sans-serif";
+    ctx.font = "bold 28px 'Space Grotesk', sans-serif";
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     if (result === "make") {
+      // Glow
+      ctx.shadowColor = "#00ff66";
+      ctx.shadowBlur = 15;
       ctx.fillStyle = "#00ff66";
-      ctx.fillText("SWISH! 🏀", W / 2, 80 + yOff);
+      ctx.fillText("SWISH!", HOOP_X, 120 + yOff);
+      ctx.shadowBlur = 0;
     } else {
+      ctx.shadowColor = "#ff4444";
+      ctx.shadowBlur = 10;
       ctx.fillStyle = "#ff4444";
-      ctx.fillText("CLANK! 🛑", W / 2, 80 + yOff);
+      ctx.fillText("CLANK!", HOOP_X, 120 + yOff);
+      ctx.shadowBlur = 0;
     }
     ctx.restore();
   }
 
+  // ── Streak Broken Text ──
+  function drawStreakBroken(ctx, progress) {
+    if (progress < 0 || progress > 1) return;
+    const alpha = Math.max(0, 1 - progress);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = "bold 16px 'Space Grotesk', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffaa00";
+    ctx.fillText("Streak broken!", HOOP_X, 155 - 15 * progress);
+    ctx.restore();
+  }
+
+  // ── HUD / Scoreboard ──
+  function drawHUD(ctx) {
+    const s = statsRef.current;
+    const pct = s.shots === 0 ? 0 : Math.round((s.makes / s.shots) * 100);
+    const hudY = H - 44;
+    const hudH = 36;
+
+    // Background bar
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.beginPath();
+    ctx.roundRect(10, hudY, W - 20, hudH, 8);
+    ctx.fill();
+
+    ctx.font = "bold 14px 'Space Grotesk', monospace";
+    ctx.textBaseline = "middle";
+    const cy = hudY + hudH / 2;
+
+    // Left: Makes/Shots
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillText("MAKES", 24, cy - 7);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 15px 'Space Grotesk', monospace";
+    ctx.fillText(`${s.makes}/${s.shots}`, 24, cy + 8);
+
+    // Center: Accuracy
+    ctx.textAlign = "center";
+    ctx.font = "bold 14px 'Space Grotesk', monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillText("ACCURACY", W / 2, cy - 7);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 15px 'Space Grotesk', monospace";
+    ctx.fillText(`${pct}%`, W / 2, cy + 8);
+
+    // Right: Streak
+    ctx.textAlign = "right";
+    ctx.font = "bold 14px 'Space Grotesk', monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillText("STREAK", W - 24, cy - 7);
+    ctx.fillStyle = s.streak >= 3 ? "#ff8800" : "#ffffff";
+    ctx.font = "bold 15px 'Space Grotesk', monospace";
+    const fireEmoji = s.streak >= 3 ? " 🔥" : "";
+    ctx.fillText(`${s.streak}${fireEmoji}`, W - 24, cy + 8);
+  }
+
+  // ── Shot Zones Utility ──
+  function getZone(clickX, clickY) {
+    const dx = clickX - HOOP_X;
+    const dy = clickY - HOOP_Y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 80) return { zone: "paint", prob: 0.70, points: 2, dist, flightMs: 500, arcPeak: 100 };
+    if (dist <= 180) return { zone: "mid", prob: 0.45, points: 2, dist, flightMs: 700, arcPeak: 120 };
+    return { zone: "three", prob: 0.30, points: 3, dist, flightMs: 900, arcPeak: 140 };
+  }
+
+  // ── Parabolic position ──
+  function getArcPos(shot, t) {
+    const bx = shot.startX + (shot.endX - shot.startX) * t;
+    const low = Math.min(shot.startY, shot.endY);
+    const peakY = low - shot.arcPeak;
+    const by = shot.startY + (shot.endY - shot.startY) * t + (peakY - shot.startY) * 4 * t * (1 - t);
+    return { x: bx, y: by };
+  }
+
+  // ── Take Shot Handler ──
   function takeShot(e) {
     if (shotRef.current) return;
     const canvas = canvasRef.current;
@@ -622,94 +920,80 @@ function CourtShooter() {
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
 
-    const W = canvas.width;
+    // Don't shoot from HUD area
+    if (clickY > H - 50) return;
 
-    // Target: hoop center
-    const hoopX = W / 2;
-    const hoopY = 28;
+    const zi = getZone(clickX, clickY);
+    const isMake = Math.random() < zi.prob;
 
-    // Distance from hoop determines shot type
-    const dx = clickX - hoopX;
-    const dy = clickY - hoopY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    let prob = 0.45;
-    let points = 2;
-    let shotName = "mid-range";
-
-    if (dist < 60) {
-      prob = 0.72;
-      points = 2;
-      shotName = "paint";
-    } else if (dist > 140) {
-      prob = 0.30;
-      points = 3;
-      shotName = "three";
-    }
-
-    const isMake = Math.random() < prob;
-
-    // Setup animation state
-    const startTime = performance.now();
-    const flightDuration = 700; // ms
-    const resultDuration = 800; // ms after landing
+    trailRef.current = [];
 
     shotRef.current = {
       startX: clickX,
       startY: clickY,
-      endX: hoopX + (isMake ? 0 : (Math.random() - 0.5) * 18),
-      endY: hoopY + (isMake ? 8 : -5),
+      endX: HOOP_X + (isMake ? 0 : (Math.random() - 0.5) * 20),
+      endY: HOOP_Y + (isMake ? 10 : -4),
       isMake,
-      points,
-      shotName,
-      startTime,
-      flightDuration,
-      resultDuration,
-      phase: "flight" // "flight" -> "result" -> done
+      points: zi.points,
+      shotName: zi.zone,
+      arcPeak: zi.arcPeak,
+      startTime: performance.now(),
+      flightDuration: zi.flightMs,
+      resultDuration: 900,
+      phase: "flight",
+      // Miss bounce physics
+      bounceVx: 0,
+      bounceVy: 0,
+      bounceBx: 0,
+      bounceBy: 0,
+      // Streak broken tracking
+      prevStreak: statsRef.current.streak
     };
 
-    setStatus(`${shotName === "three" ? "Three-pointer" : shotName === "paint" ? "Paint shot" : "Mid-range"} in the air...`);
+    setStatus(`${zi.zone === "three" ? "Three-pointer" : zi.zone === "paint" ? "Paint shot" : "Mid-range"} in the air...`);
   }
 
-  // Animation loop
+  // ── Animation Loop ──
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const W = canvas.width;
-    const H = canvas.height;
 
-    function animate() {
-      drawCourt(ctx, W, H);
+    function animate(timestamp) {
+      const now = timestamp || performance.now();
 
+      // ── Draw court ──
+      ctx.clearRect(0, 0, W, H);
+      drawFloor(ctx);
+      drawCourtMarkings(ctx);
+      drawHoop(ctx, now);
+
+      // ── Active shot ──
       const shot = shotRef.current;
       if (shot) {
-        const now = performance.now();
         const elapsed = now - shot.startTime;
 
         if (shot.phase === "flight") {
           const t = Math.min(1, elapsed / shot.flightDuration);
-          // Parabolic arc: lerp x, arc y with peak at halfway
-          const bx = shot.startX + (shot.endX - shot.startX) * t;
-          const peakHeight = Math.min(shot.startY, shot.endY) - 80 - Math.abs(shot.endX - shot.startX) * 0.15;
-          const by = shot.startY + (shot.endY - shot.startY) * t + (peakHeight - shot.startY) * 4 * t * (1 - t);
+          const pos = getArcPos(shot, t);
+          const bx = pos.x, by = pos.y;
 
-          // Ball gets smaller as it approaches the hoop (perspective feel)
-          const radius = 8 - t * 2.5;
-          drawBall(ctx, bx, by, Math.max(4, radius));
+          // Perspective radius: 16 at start → 10 at end
+          const radius = 16 - t * 6;
+          // Spin angle
+          const angle = t * Math.PI * 4;
+          // Height ratio for shadow
+          const heightRatio = by / H;
 
-          // Draw arc trail
-          ctx.strokeStyle = "rgba(255,140,0,0.2)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          for (let i = 0; i <= 20; i++) {
-            const tt = (t * i) / 20;
-            const tx = shot.startX + (shot.endX - shot.startX) * tt;
-            const ty = shot.startY + (shot.endY - shot.startY) * tt + (peakHeight - shot.startY) * 4 * tt * (1 - tt);
-            if (i === 0) ctx.moveTo(tx, ty);
-            else ctx.lineTo(tx, ty);
-          }
-          ctx.stroke();
+          // Store trail
+          const trail = trailRef.current;
+          trail.push({ x: bx, y: by, r: radius });
+          if (trail.length > 8) trail.shift();
+
+          // Draw trail
+          drawTrail(ctx, statsRef.current.streak);
+          // Draw ball
+          drawBall(ctx, bx, by, Math.max(6, radius), angle, heightRatio);
 
           if (t >= 1) {
             shot.phase = "result";
@@ -733,43 +1017,69 @@ function CourtShooter() {
                 localStorage.setItem("paint_streak", next);
                 return next;
               });
+              // Update hot zones
+              hotZones.current[shot.shotName] = (hotZones.current[shot.shotName] || 0) + 1;
+              // Trigger net ripple
+              netRef.current = { ripple: true, time: now };
               setStatus(`SPLASH! Made a ${shot.points}-pointer! 🏀`);
             } else {
+              const wasStreak = statsRef.current.streak;
+              shot.prevStreak = wasStreak;
               setStreak(0);
               localStorage.setItem("paint_streak", 0);
-              setStatus("CLANK! Missed the shot. 🛑");
+              // Reset hot zone for that zone
+              hotZones.current[shot.shotName] = 0;
+              setStatus("CLANK! Missed the shot.");
+              // Initialize bounce physics
+              const dir = shot.endX > HOOP_X ? 1 : (shot.endX < HOOP_X ? -1 : (Math.random() > 0.5 ? 1 : -1));
+              shot.bounceVx = dir * (2 + Math.random() * 2);
+              shot.bounceVy = -(1 + Math.random() * 2);
+              shot.bounceBx = shot.endX;
+              shot.bounceBy = shot.endY;
             }
           }
         } else if (shot.phase === "result") {
           const resultElapsed = now - shot.resultStart;
           const rp = Math.min(1, resultElapsed / shot.resultDuration);
 
-          // Show make/miss text fading
-          drawResult(ctx, W, shot.isMake ? "make" : "miss", rp);
+          // Result text
+          drawResultText(ctx, shot.isMake ? "make" : "miss", rp, rp);
 
-          // Swish animation: ball drops through net on make
+          // Streak broken text
+          if (!shot.isMake && shot.prevStreak >= 3) {
+            drawStreakBroken(ctx, rp);
+          }
+
           if (shot.isMake) {
-            const dropY = shot.endY + rp * 25;
+            // Ball drops through net
+            const dropY = shot.endY + rp * 35;
             const alpha = Math.max(0, 1 - rp);
+            ctx.save();
             ctx.globalAlpha = alpha;
-            drawBall(ctx, shot.endX, dropY, 5);
-            ctx.globalAlpha = 1;
+            drawBall(ctx, shot.endX, dropY, 8, rp * 2, 0.8);
+            ctx.restore();
           } else {
-            // Bounce off rim
-            const bounceX = shot.endX + rp * 30 * (shot.endX > W / 2 ? 1 : -1);
-            const bounceY = shot.endY + rp * 50 - 20 * rp * (1 - rp);
+            // Bounce physics
+            shot.bounceVy += 0.5;
+            shot.bounceBx += shot.bounceVx;
+            shot.bounceBy += shot.bounceVy;
             const alpha = Math.max(0, 1 - rp);
+            ctx.save();
             ctx.globalAlpha = alpha;
-            drawBall(ctx, bounceX, bounceY, 5);
-            ctx.globalAlpha = 1;
+            drawBall(ctx, shot.bounceBx, shot.bounceBy, 8, rp * 5, 0.5);
+            ctx.restore();
           }
 
           if (rp >= 1) {
             shotRef.current = null;
+            trailRef.current = [];
             setStatus("Click the court to shoot!");
           }
         }
       }
+
+      // ── HUD ──
+      drawHUD(ctx);
 
       animRef.current = requestAnimationFrame(animate);
     }
@@ -780,12 +1090,11 @@ function CourtShooter() {
     };
   }, []);
 
-  const pct = shots === 0 ? 0 : Math.round((makes / shots) * 100);
-
   function resetStats() {
     setShots(0);
     setMakes(0);
     setStreak(0);
+    hotZones.current = { paint: 0, mid: 0, three: 0 };
     localStorage.setItem("paint_shots", 0);
     localStorage.setItem("paint_makes", 0);
     localStorage.setItem("paint_streak", 0);
@@ -795,19 +1104,10 @@ function CourtShooter() {
   return (
     <div className="court-shooter-card">
       <p className="card-eye">The Paint Arcade</p>
-      
       <div className="cs-court-container">
-        <canvas ref={canvasRef} className="court-canvas" width="400" height="300" onClick={takeShot} />
+        <canvas ref={canvasRef} className="court-canvas" width="640" height="480" onClick={takeShot} />
       </div>
-
-      <div className="cs-status">{status}</div>
-
-      <div className="cs-scoreboard">
-        <div className="cs-score-box"><span className="css-val">{makes}/{shots}</span><span className="css-lbl">Makes</span></div>
-        <div className="cs-score-box"><span className="css-val">{pct}%</span><span className="css-lbl">Accuracy</span></div>
-        <div className="cs-score-box"><span className="css-val">{streak}</span><span className="css-lbl">Streak</span></div>
-        <button className="cs-reset-btn" onClick={resetStats}>Reset</button>
-      </div>
+      <button className="cs-reset-btn" onClick={resetStats}>Reset Stats</button>
     </div>
   );
 }
@@ -821,23 +1121,35 @@ function ArcadeRacer() {
   const [driver, setDriver] = useState("Dale Sr.");
   const [isCrashed, setIsCrashed] = useState(false);
   const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem("racer_highscore") || "0", 10));
+  const [lap, setLap] = useState(1);
 
   const gameLoopRef = useRef(null);
 
   const stateRef = useRef({
     speed: 0,
+    maxSpeed: 200,
     distance: 0,
     carX: 0,
+    steerVel: 0,
     roadX: 0,
     roadSegments: [],
     obstacles: [],
     keys: { left: false, right: false, up: false, down: false },
     animationId: null,
     crashCooldown: 0,
+    crashFlash: 0,
     frameCount: 0,
     carColor: "#111111",
     carNum: "3",
-    running: false
+    running: false,
+    lap: 1,
+    lapDistance: 0,
+    lapFlash: 0,
+    lapFlashText: "",
+    curveIntensity: 1.0,
+    trafficCount: 3,
+    stars: [],
+    mountains: []
   });
 
   const DRIVER_COLORS = {
@@ -847,6 +1159,9 @@ function ArcadeRacer() {
     "Richard Petty": { color: "#0099ff", num: "43" },
     "Denny Hamlin": { color: "#ff6600", num: "11" }
   };
+
+  const LAP_DISTANCE = 3000;
+  const TRAFFIC_COLORS = ["#ff3333", "#ffff33", "#33ff33", "#ffffff", "#ff00ff", "#00ccff", "#ff8800", "#cc33ff"];
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -873,235 +1188,498 @@ function ArcadeRacer() {
     };
   }, []);
 
+  // Helper: draw a NASCAR-shaped car sprite on canvas
+  function drawCarSprite(ctx, cx, cy, w, h, color, num, isPlayer) {
+    const hw = w / 2;
+    const hh = h / 2;
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(cx + 2, cy + hh + 2, hw + 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Main body — rounded NASCAR shape
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx - hw * 0.6, cy - hh);          // nose left
+    ctx.quadraticCurveTo(cx, cy - hh - h * 0.12, cx + hw * 0.6, cy - hh); // nose curve
+    ctx.lineTo(cx + hw, cy - hh * 0.4);           // right side expand
+    ctx.lineTo(cx + hw, cy + hh * 0.6);           // right side body
+    ctx.lineTo(cx + hw * 0.85, cy + hh);          // rear right taper
+    ctx.lineTo(cx - hw * 0.85, cy + hh);          // rear left taper
+    ctx.lineTo(cx - hw, cy + hh * 0.6);           // left side body
+    ctx.lineTo(cx - hw, cy - hh * 0.4);           // left side expand
+    ctx.closePath();
+    ctx.fill();
+
+    // Darker stripe down center
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
+    ctx.fillRect(cx - w * 0.06, cy - hh, w * 0.12, h);
+
+    // Windshield
+    ctx.fillStyle = "#88ccff";
+    ctx.fillRect(cx - hw * 0.5, cy - hh + h * 0.08, hw, h * 0.18);
+
+    // Spoiler line at rear
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(cx - hw * 0.9, cy + hh - 2, hw * 1.8, 2);
+
+    // Wheel bumps — left side
+    ctx.fillStyle = "#111";
+    ctx.fillRect(cx - hw - 2, cy - hh * 0.2, 3, h * 0.22);
+    ctx.fillRect(cx - hw - 2, cy + hh * 0.3, 3, h * 0.22);
+    // Right side
+    ctx.fillRect(cx + hw - 1, cy - hh * 0.2, 3, h * 0.22);
+    ctx.fillRect(cx + hw - 1, cy + hh * 0.3, 3, h * 0.22);
+
+    // Number on roof
+    if (num && w >= 10) {
+      var fontSize = Math.max(6, Math.min(11, w * 0.28));
+      ctx.fillStyle = color === "#111111" ? "#ffcc00" : "#ffffff";
+      ctx.font = "bold " + Math.round(fontSize) + "px Courier";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(num, cx, cy + 1);
+    }
+  }
+
   // Store the gameLoop in a ref so RAF always calls the latest version
   useEffect(() => {
     gameLoopRef.current = function gameLoop() {
-      const canvas = canvasRef.current;
-      const s = stateRef.current;
+      var canvas = canvasRef.current;
+      var s = stateRef.current;
       if (!canvas || !s.running) return;
 
-      const ctx = canvas.getContext("2d");
-      const CW = canvas.width;
-      const CH = canvas.height;
+      var ctx = canvas.getContext("2d");
+      var CW = canvas.width;   // 640
+      var CH = canvas.height;   // 400
 
-      // Physics
+      // ── PHYSICS ──
       if (s.crashCooldown > 0) {
         s.crashCooldown--;
-        s.speed = Math.max(0, s.speed - 4);
+        s.speed *= 0.97;
+        if (s.speed < 5) s.speed = 0;
         if (s.crashCooldown === 0) setIsCrashed(false);
       } else {
-        if (s.keys.up) s.speed = Math.min(180, s.speed + 2);
-        else if (s.keys.down) s.speed = Math.max(0, s.speed - 5);
-        else s.speed = Math.max(0, s.speed - 0.8);
+        // Acceleration: ease-in curve — takes ~4s to reach max
+        if (s.keys.up) {
+          s.speed += (s.maxSpeed - s.speed) * 0.02;
+        } else if (s.keys.down) {
+          // Braking
+          s.speed *= 0.96;
+        } else {
+          // Coast deceleration
+          s.speed *= 0.985;
+        }
+        if (s.speed < 0.5) s.speed = 0;
 
-        if (s.keys.left) s.carX = Math.max(-1.4, s.carX - 0.05 * (s.speed / 100 + 0.3));
-        if (s.keys.right) s.carX = Math.min(1.4, s.carX + 0.05 * (s.speed / 100 + 0.3));
+        // Steering with momentum
+        var speedRatio = s.speed / s.maxSpeed;
+        var steerRate = 0.06 * (1.0 - speedRatio * 0.5); // less authority at high speed
+        var steerDamp = 0.88; // momentum — doesn't snap back instantly
 
-        // Grass drag
-        if (Math.abs(s.carX) > 0.9 && s.speed > 40) s.speed = Math.max(40, s.speed - 3);
+        if (s.keys.left) {
+          s.steerVel -= steerRate;
+        } else if (s.keys.right) {
+          s.steerVel += steerRate;
+        } else {
+          s.steerVel *= steerDamp; // drift back toward center
+        }
+        s.steerVel = Math.max(-0.12, Math.min(0.12, s.steerVel));
+        s.carX += s.steerVel;
+        s.carX = Math.max(-1.6, Math.min(1.6, s.carX));
+
+        // Grass drag — off-road penalty
+        if (Math.abs(s.carX) > 1.0) {
+          s.speed *= 0.95;
+        }
       }
 
-      s.distance += s.speed * 0.04;
+      var dt = s.speed * 0.04;
+      s.distance += dt;
+      s.lapDistance += dt;
       s.frameCount++;
+
+      // ── LAP CHECK ──
+      if (s.lapDistance >= LAP_DISTANCE) {
+        s.lap++;
+        s.lapDistance -= LAP_DISTANCE;
+        s.lapFlash = 90; // frames to show lap text
+        s.lapFlashText = "LAP " + s.lap;
+        s.curveIntensity += 0.1;
+        // Add traffic (max 6)
+        if (s.trafficCount < 6) {
+          s.trafficCount++;
+          var newZ = 700 + Math.random() * 500;
+          s.obstacles.push({
+            z: newZ,
+            x: (Math.random() - 0.5) * 1.4,
+            speed: 60 + Math.random() * 40,
+            color: TRAFFIC_COLORS[Math.floor(Math.random() * TRAFFIC_COLORS.length)]
+          });
+        }
+        setLap(s.lap);
+      }
+      if (s.lapFlash > 0) s.lapFlash--;
+      if (s.crashFlash > 0) s.crashFlash--;
 
       // Update React state sparingly (every 6 frames)
       if (s.frameCount % 6 === 0) {
-        const sv = Math.floor(s.speed);
-        const scv = Math.floor(s.distance / 10);
-        setSpeed(sv);
-        setScore(scv);
+        setSpeed(Math.floor(s.speed));
+        setScore(Math.floor(s.distance / 10));
       }
 
-      const segIdx = Math.floor(s.distance / 25) % s.roadSegments.length;
-      const seg = s.roadSegments[segIdx];
-      s.roadX += -s.carX * (s.speed / 600) + seg.curve * 0.012 * (s.speed / 80);
+      var segIdx = Math.floor(s.distance / 25) % s.roadSegments.length;
+      var seg = s.roadSegments[segIdx];
+      s.roadX += -s.carX * (s.speed / 600) + seg.curve * s.curveIntensity * 0.012 * (s.speed / 80);
 
-      // Obstacles
-      s.obstacles.forEach(o => {
-        o.z -= s.speed * 0.04;
-        if (o.z <= 0) {
-          o.z = 500 + Math.random() * 300;
+      // ── OBSTACLES UPDATE ──
+      var i, o;
+      for (i = 0; i < s.obstacles.length; i++) {
+        o = s.obstacles[i];
+        // Traffic moves forward at its own speed, player catches up
+        o.z -= (s.speed - o.speed) * 0.04;
+        if (o.z <= -50) {
+          // Respawn far ahead with minimum gap
+          o.z = 500 + Math.random() * 700;
           o.x = (Math.random() - 0.5) * 1.4;
-          o.color = ["#ff3333", "#ffff33", "#33ff33", "#ffffff", "#ff00ff"][Math.floor(Math.random() * 5)];
-        }
-        if (o.z > 5 && o.z < 25 && Math.abs(s.carX - o.x) < 0.3 && s.crashCooldown === 0) {
-          s.crashCooldown = 35;
-          setIsCrashed(true);
-          s.speed = 5;
-        }
-      });
-
-      // ── RENDER ──
-      // Sky
-      ctx.fillStyle = "#0a0e1a";
-      ctx.fillRect(0, 0, CW, CH);
-      ctx.fillStyle = "#121a30";
-      ctx.fillRect(0, 0, CW, CH * 0.4);
-
-      // Sunset line
-      const grad = ctx.createLinearGradient(0, CH * 0.36, 0, CH * 0.42);
-      grad.addColorStop(0, "#ff5500");
-      grad.addColorStop(1, "transparent");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, CH * 0.36, CW, CH * 0.06);
-
-      // Stars
-      ctx.fillStyle = "rgba(255,255,255,0.15)";
-      const skyOff = (s.roadX * 40) % CW;
-      for (let i = 0; i < 15; i++) {
-        const sx = ((i * 47 - skyOff) % CW + CW) % CW;
-        const sy = 5 + (i * 13) % (CH * 0.35);
-        ctx.fillRect(sx, sy, 1.5, 1.5);
-      }
-
-      // Road
-      const horizonY = CH * 0.4;
-      const groundH = CH - horizonY;
-      for (let row = 0; row < groundH; row += 3) {
-        const y = horizonY + row;
-        const perspT = row / groundH;
-        const z = 1 / (perspT + 0.001);
-        const roadW = (CW * 0.5) * perspT + 30;
-        const si = (segIdx + Math.floor(z * 2)) % s.roadSegments.length;
-        const cx = CW / 2 + (s.roadX * 200) * perspT - s.roadSegments[si].curve * 10 * perspT;
-        const stripe = Math.floor(s.distance / 12 + z) % 2 === 0;
-
-        // Grass
-        ctx.fillStyle = stripe ? "#0a2210" : "#061a0c";
-        ctx.fillRect(0, y, CW, 3);
-
-        // Rumble strips
-        ctx.fillStyle = stripe ? "#cc2222" : "#ffffff";
-        ctx.fillRect(cx - roadW / 2 - 4, y, roadW + 8, 3);
-
-        // Asphalt
-        ctx.fillStyle = "#1a1a2a";
-        ctx.fillRect(cx - roadW / 2, y, roadW, 3);
-
-        // Center dashes
-        if (Math.floor(s.distance / 18 + z) % 2 === 0) {
-          ctx.fillStyle = "#ee8800";
-          ctx.fillRect(cx - 1, y, 2, 3);
-        }
-      }
-
-      // Other cars
-      s.obstacles.forEach(o => {
-        if (o.z > 0 && o.z < 500) {
-          const perspT = 60 / o.z;
-          if (perspT > 0.01 && perspT < 1) {
-            const y = horizonY + groundH * perspT;
-            if (y >= horizonY && y <= CH) {
-              const size = Math.max(4, 120 / o.z);
-              const si = (segIdx + Math.floor((60 / o.z) * 2)) % s.roadSegments.length;
-              const cx = CW / 2 + (s.roadX * 200) * perspT - s.roadSegments[si].curve * 10 * perspT;
-              const ox = cx + (o.x - s.carX) * 120 * perspT;
-              
-              // Car body
-              ctx.fillStyle = o.color;
-              ctx.fillRect(ox - size / 2, y - size, size, size * 0.6);
-              // Wheels
-              ctx.fillStyle = "#000";
-              ctx.fillRect(ox - size / 2 - 1, y - size * 0.3, 2, size * 0.3);
-              ctx.fillRect(ox + size / 2 - 1, y - size * 0.3, 2, size * 0.3);
-              // Roof highlight
-              ctx.fillStyle = "#ff8800";
-              ctx.fillRect(ox - size / 2, y - size - 1, size, 1.5);
+          o.speed = 60 + Math.random() * 40;
+          o.color = TRAFFIC_COLORS[Math.floor(Math.random() * TRAFFIC_COLORS.length)];
+          // Ensure minimum gap from others
+          for (var j = 0; j < s.obstacles.length; j++) {
+            if (j !== i && Math.abs(s.obstacles[j].z - o.z) < 150) {
+              o.z += 150;
             }
           }
         }
-      });
+        // Collision detection — narrower hitbox 0.2
+        if (o.z > 5 && o.z < 30 && Math.abs(s.carX - o.x) < 0.2 && s.crashCooldown === 0) {
+          s.crashCooldown = 25;
+          s.crashFlash = 12;
+          s.speed *= 0.4; // drop to 40% speed, not near zero
+          setIsCrashed(true);
+        }
+      }
 
-      // Player car
-      const pW = 40;
-      const pH = 22;
-      const px = CW / 2;
-      const py = CH - 12;
+      // ══════════════ RENDER ══════════════
+
+      // ── SKY ──
+      ctx.fillStyle = "#0a0e1a";
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Sky gradient
+      var skyGrad = ctx.createLinearGradient(0, 0, 0, CH * 0.42);
+      skyGrad.addColorStop(0, "#0a0e1a");
+      skyGrad.addColorStop(0.6, "#121a30");
+      skyGrad.addColorStop(0.85, "#1a1030");
+      skyGrad.addColorStop(1, "#331a10");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, CW, CH * 0.42);
+
+      // Sunset band
+      var sunGrad = ctx.createLinearGradient(0, CH * 0.34, 0, CH * 0.43);
+      sunGrad.addColorStop(0, "rgba(255,120,0,0.0)");
+      sunGrad.addColorStop(0.3, "rgba(255,85,0,0.6)");
+      sunGrad.addColorStop(0.6, "rgba(255,40,0,0.4)");
+      sunGrad.addColorStop(1, "rgba(100,20,0,0.0)");
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(0, CH * 0.34, CW, CH * 0.09);
+
+      // ── STARS (parallax layer 1) ──
+      var skyOff = (s.roadX * 30) % CW;
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      for (i = 0; i < s.stars.length; i++) {
+        var star = s.stars[i];
+        var sx = ((star.x - skyOff * star.p) % CW + CW) % CW;
+        ctx.fillRect(sx, star.y, star.s, star.s);
+      }
+
+      // ── MOUNTAINS (parallax layer 2) ──
+      var mtnOff = (s.roadX * 60) % CW;
+      ctx.fillStyle = "#0d1520";
+      ctx.beginPath();
+      ctx.moveTo(0, CH * 0.42);
+      for (i = 0; i < s.mountains.length; i++) {
+        var mx = ((s.mountains[i].x - mtnOff) % (CW + 200) + (CW + 200)) % (CW + 200) - 100;
+        var my = CH * 0.42 - s.mountains[i].h;
+        if (i === 0) {
+          ctx.lineTo(mx - s.mountains[i].w / 2, CH * 0.42);
+        }
+        ctx.lineTo(mx, my);
+        ctx.lineTo(mx + s.mountains[i].w / 2, CH * 0.42);
+      }
+      ctx.lineTo(CW, CH * 0.42);
+      ctx.closePath();
+      ctx.fill();
+
+      // ── ROAD ──
+      var horizonY = CH * 0.42;
+      var groundH = CH - horizonY;
+      var row, y, perspT, z, roadW, si, cx, stripe;
+      var roadWidthBase = CW * 0.6; // 60% of canvas width at bottom
+
+      for (row = 0; row < groundH; row += 2) {
+        y = horizonY + row;
+        perspT = row / groundH;
+        z = 1 / (perspT + 0.001);
+        roadW = roadWidthBase * perspT + 20;
+        si = (segIdx + Math.floor(z * 2)) % s.roadSegments.length;
+        cx = CW / 2 + (s.roadX * 220) * perspT - s.roadSegments[si].curve * s.curveIntensity * 12 * perspT;
+        stripe = Math.floor(s.distance / 12 + z) % 2 === 0;
+
+        // Grass
+        ctx.fillStyle = stripe ? "#0a2210" : "#061a0c";
+        ctx.fillRect(0, y, CW, 2);
+
+        // Rumble strips (red/white alternating)
+        ctx.fillStyle = stripe ? "#cc2222" : "#ffffff";
+        ctx.fillRect(cx - roadW / 2 - 5, y, 5, 2);
+        ctx.fillRect(cx + roadW / 2, y, 5, 2);
+
+        // Asphalt
+        ctx.fillStyle = "#1a1a2a";
+        ctx.fillRect(cx - roadW / 2, y, roadW, 2);
+
+        // Lane dividers — left third and right third
+        var laneW = roadW / 3;
+        if (Math.floor(s.distance / 16 + z) % 2 === 0) {
+          // Left lane divider
+          ctx.fillStyle = "#cccccc";
+          ctx.fillRect(cx - laneW / 2 - laneW + 0.5, y, Math.max(1, perspT * 3), 2);
+          // Right lane divider
+          ctx.fillRect(cx + laneW / 2 + laneW - 1.5, y, Math.max(1, perspT * 3), 2);
+        }
+
+        // Center dashes (yellow)
+        if (Math.floor(s.distance / 14 + z) % 2 === 0) {
+          ctx.fillStyle = "#ee8800";
+          ctx.fillRect(cx - 1, y, Math.max(1.5, perspT * 3), 2);
+        }
+      }
+
+      // ── TRAFFIC CARS ──
+      // Sort by z descending so far cars render first
+      var sortedObs = s.obstacles.slice().sort(function(a, b) { return b.z - a.z; });
+      for (i = 0; i < sortedObs.length; i++) {
+        o = sortedObs[i];
+        if (o.z > 0 && o.z < 1200) {
+          perspT = 80 / o.z;
+          if (perspT > 0.005 && perspT < 1.2) {
+            y = horizonY + groundH * Math.min(perspT, 1.0);
+            if (y >= horizonY && y <= CH + 20) {
+              // Car size with MINIMUM 12px width
+              var carW = Math.max(12, 48 * perspT * 2.5);
+              var carH = carW * 0.55;
+              si = (segIdx + Math.floor((80 / o.z) * 2)) % s.roadSegments.length;
+              cx = CW / 2 + (s.roadX * 220) * perspT - s.roadSegments[si].curve * s.curveIntensity * 12 * perspT;
+              var ox = cx + (o.x - s.carX) * 160 * perspT;
+              drawCarSprite(ctx, ox, y - carH * 0.5, carW, carH, o.color, null, false);
+            }
+          }
+        }
+      }
+
+      // ── PLAYER CAR ──
+      var pW = 48;
+      var pH = 28;
+      var px = CW / 2 + s.carX * 10; // slight visual offset with steering
+      var py = CH - 20;
 
       ctx.save();
       if (s.crashCooldown > 0) {
-        ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 5);
+        ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6);
       }
-
-      // Shadow
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.fillRect(px - pW / 2 + 3, py - 4, pW, 6);
-
-      // Body
-      ctx.fillStyle = s.carColor;
-      ctx.fillRect(px - pW / 2, py - pH, pW, pH - 4);
-      // Windshield
-      ctx.fillStyle = "#88ccff";
-      ctx.fillRect(px - pW / 3, py - pH + 2, (pW * 2) / 3, 5);
-      // Spoiler
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(px - pW / 2 - 1, py - pH - 2, pW + 2, 2);
-      // Wheels
-      ctx.fillStyle = "#111";
-      ctx.fillRect(px - pW / 2 - 3, py - 8, 4, 7);
-      ctx.fillRect(px + pW / 2 - 1, py - 8, 4, 7);
-      ctx.fillRect(px - pW / 2 - 3, py - pH + 1, 4, 7);
-      ctx.fillRect(px + pW / 2 - 1, py - pH + 1, 4, 7);
-      // Number
-      ctx.fillStyle = "#ffcc00";
-      ctx.font = "bold 9px Courier";
-      ctx.textAlign = "center";
-      ctx.fillText(s.carNum, px, py - 10);
-
+      drawCarSprite(ctx, px, py - pH / 2, pW, pH, s.carColor, s.carNum, true);
       ctx.restore();
 
+      // ── VISUAL EFFECTS ──
+
+      // Crash red flash
+      if (s.crashFlash > 0) {
+        ctx.fillStyle = "rgba(255,0,0," + (s.crashFlash / 20) + ")";
+        ctx.fillRect(0, 0, CW, CH);
+      }
+
+      // Vignette at speed > 130
+      if (s.speed > 130) {
+        var vigAlpha = Math.min(0.5, (s.speed - 130) / 140);
+        var vigL = ctx.createLinearGradient(0, 0, CW * 0.15, 0);
+        vigL.addColorStop(0, "rgba(0,0,0," + vigAlpha + ")");
+        vigL.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = vigL;
+        ctx.fillRect(0, 0, CW * 0.15, CH);
+        var vigR = ctx.createLinearGradient(CW, 0, CW * 0.85, 0);
+        vigR.addColorStop(0, "rgba(0,0,0," + vigAlpha + ")");
+        vigR.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = vigR;
+        ctx.fillRect(CW * 0.85, 0, CW * 0.15, CH);
+      }
+
+      // Speed lines at speed > 160
+      if (s.speed > 160) {
+        var lineAlpha = Math.min(0.5, (s.speed - 160) / 80);
+        ctx.strokeStyle = "rgba(255,255,255," + lineAlpha + ")";
+        ctx.lineWidth = 1;
+        for (var sl = 0; sl < 8; sl++) {
+          var ly = ((s.frameCount * 7 + sl * 53) % CH);
+          // Left side lines
+          ctx.beginPath();
+          ctx.moveTo(0, ly);
+          ctx.lineTo(30 + Math.random() * 20, ly);
+          ctx.stroke();
+          // Right side lines
+          ctx.beginPath();
+          ctx.moveTo(CW, ly);
+          ctx.lineTo(CW - 30 - Math.random() * 20, ly);
+          ctx.stroke();
+        }
+      }
+
+      // ── HUD ON CANVAS ──
+      // Semi-transparent background boxes
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      // Top-left: Speed + Score
+      ctx.fillRect(4, 4, 110, 44);
+      // Top-right: Lap + High Score
+      ctx.fillRect(CW - 130, 4, 126, 44);
+
+      ctx.textBaseline = "top";
+
+      // Speed (MPH)
+      ctx.fillStyle = "#00ffaa";
+      ctx.font = "bold 16px Courier";
+      ctx.textAlign = "left";
+      ctx.fillText(Math.floor(s.speed) + " MPH", 10, 8);
+
+      // Score
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "bold 13px Courier";
+      ctx.fillText("SCR: " + Math.floor(s.distance / 10), 10, 30);
+
+      // Lap
+      ctx.fillStyle = "#ff8844";
+      ctx.font = "bold 14px Courier";
+      ctx.textAlign = "right";
+      ctx.fillText("LAP " + s.lap, CW - 10, 8);
+
+      // High Score
+      ctx.fillStyle = "#aaaacc";
+      ctx.font = "bold 12px Courier";
+      ctx.fillText("HI: " + (Math.floor(s.distance / 10) > parseInt(localStorage.getItem("racer_highscore") || "0", 10) ? Math.floor(s.distance / 10) : parseInt(localStorage.getItem("racer_highscore") || "0", 10)), CW - 10, 30);
+
+      // Lap flash text
+      if (s.lapFlash > 0) {
+        var flashAlpha = Math.min(1, s.lapFlash / 30);
+        ctx.fillStyle = "rgba(255,200,0," + flashAlpha + ")";
+        ctx.font = "bold 36px Courier";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(s.lapFlashText, CW / 2, CH / 2 - 30);
+      }
+
       // Continue loop
-      s.animationId = requestAnimationFrame(() => {
+      s.animationId = requestAnimationFrame(function() {
         if (gameLoopRef.current) gameLoopRef.current();
       });
     };
   });
 
   function startGame() {
-    const info = DRIVER_COLORS[driver] || DRIVER_COLORS["Dale Sr."];
-    const s = stateRef.current;
+    var info = DRIVER_COLORS[driver] || DRIVER_COLORS["Dale Sr."];
+    var s = stateRef.current;
     s.speed = 0;
+    s.maxSpeed = 200;
     s.distance = 0;
+    s.lapDistance = 0;
     s.carX = 0;
+    s.steerVel = 0;
     s.roadX = 0;
     s.crashCooldown = 0;
+    s.crashFlash = 0;
     s.frameCount = 0;
     s.carColor = info.color;
     s.carNum = info.num;
     s.running = true;
-    
+    s.lap = 1;
+    s.lapFlash = 0;
+    s.lapFlashText = "";
+    s.curveIntensity = 1.0;
+    s.trafficCount = 3;
+
+    // Generate road segments
     s.roadSegments = [];
-    for (let i = 0; i < 500; i++) {
+    for (var i = 0; i < 500; i++) {
       s.roadSegments.push({
-        curve: Math.sin(i / 30) * 1.5,
+        curve: Math.sin(i / 30) * 1.5 + Math.sin(i / 70) * 0.8,
         y: Math.sin(i / 10) * 10
       });
     }
 
-    s.obstacles = [
-      { z: 120, x: -0.5, speed: 2, color: "#ff3333" },
-      { z: 260, x: 0.4, speed: 1.5, color: "#ffff33" },
-      { z: 400, x: -0.2, speed: 3, color: "#33ff33" },
-      { z: 550, x: 0.3, speed: 2.5, color: "#ffffff" },
-    ];
+    // Generate stars
+    s.stars = [];
+    for (var i = 0; i < 40; i++) {
+      s.stars.push({
+        x: Math.random() * 640,
+        y: Math.random() * (400 * 0.38),
+        s: 0.8 + Math.random() * 1.5,
+        p: 0.3 + Math.random() * 0.7 // parallax depth
+      });
+    }
+
+    // Generate mountain silhouettes
+    s.mountains = [];
+    for (var i = 0; i < 12; i++) {
+      s.mountains.push({
+        x: i * 75 + Math.random() * 40,
+        h: 15 + Math.random() * 45,
+        w: 50 + Math.random() * 80
+      });
+    }
+
+    // Spawn obstacles far away (z: 500-1200) with minimum gap 150
+    s.obstacles = [];
+    var usedZ = [];
+    for (var i = 0; i < s.trafficCount; i++) {
+      var z = 500 + Math.random() * 700;
+      // Enforce gap
+      for (var j = 0; j < usedZ.length; j++) {
+        if (Math.abs(usedZ[j] - z) < 150) z = usedZ[j] + 150 + Math.random() * 100;
+      }
+      usedZ.push(z);
+      s.obstacles.push({
+        z: z,
+        x: (Math.random() - 0.5) * 1.4,
+        speed: 60 + Math.random() * 40, // traffic has its own speed
+        color: TRAFFIC_COLORS[i % TRAFFIC_COLORS.length]
+      });
+    }
 
     setIsPlaying(true);
     setIsCrashed(false);
     setScore(0);
     setSpeed(0);
+    setLap(1);
 
     if (s.animationId) cancelAnimationFrame(s.animationId);
-    s.animationId = requestAnimationFrame(() => {
+    s.animationId = requestAnimationFrame(function() {
       if (gameLoopRef.current) gameLoopRef.current();
     });
   }
 
   function stopGame() {
-    const s = stateRef.current;
+    var s = stateRef.current;
     s.running = false;
     if (s.animationId) {
       cancelAnimationFrame(s.animationId);
       s.animationId = null;
+    }
+    // Save high score
+    var finalScore = Math.floor(s.distance / 10);
+    var stored = parseInt(localStorage.getItem("racer_highscore") || "0", 10);
+    if (finalScore > stored) {
+      localStorage.setItem("racer_highscore", finalScore);
+      setHighScore(finalScore);
     }
     setIsPlaying(false);
   }
@@ -1126,15 +1704,16 @@ function ArcadeRacer() {
   return (
     <div className="arcade-racer-card">
       <p className="card-eye">The Pit Arcade</p>
-      
+
       <div className="ar-gameplay-container">
-        <canvas ref={canvasRef} className="ar-canvas" width="400" height="250" />
-        
+        <canvas ref={canvasRef} className="ar-canvas" width="640" height="400" />
+
         {!isPlaying && (
           <div className="ar-overlay">
             <div className="ar-setup">
-              <p className="ar-instructions">Controls: Arrow keys / WASD to Steer &amp; Drive. Dodge traffic!</p>
-              
+              <p className="ar-title">THE PIT</p>
+              <p className="ar-instructions">Arrow keys / WASD to drive. Dodge traffic. Complete laps.</p>
+
               <div className="driver-selector">
                 <span className="ds-label">Select Car:</span>
                 <select className="ds-select" value={driver} onChange={(e) => setDriver(e.target.value)}>
@@ -1143,6 +1722,7 @@ function ArcadeRacer() {
               </div>
 
               <button className="ar-start-btn" onClick={startGame}>Start Race 🏁</button>
+              {highScore > 0 && <p className="ar-high">High Score: {highScore}</p>}
             </div>
           </div>
         )}
@@ -1152,12 +1732,6 @@ function ArcadeRacer() {
             <span className="ar-crash-title">💥 CRASHED!</span>
           </div>
         )}
-
-        <div className="ar-instrumentation">
-          <div className="ar-gauge"><span className="arg-val">{speed}</span><span className="arg-lbl">MPH</span></div>
-          <div className="ar-gauge"><span className="arg-val">{score}</span><span className="arg-lbl">Score</span></div>
-          <div className="ar-gauge"><span className="arg-val">{highScore}</span><span className="arg-lbl">High</span></div>
-        </div>
       </div>
       {isPlaying && <button className="ar-stop-btn" onClick={stopGame}>Stop Race ⏹</button>}
     </div>
