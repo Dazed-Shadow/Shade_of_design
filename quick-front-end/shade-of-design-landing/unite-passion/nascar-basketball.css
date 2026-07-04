@@ -2894,6 +2894,21 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
   aspect-ratio: 1.6;
   background: #000;
 }
+.ar-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: #ff8800;
+  text-shadow: 0 0 20px rgba(255,136,0,0.5);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+.ar-high {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #ffcc00;
+  margin-top: 8px;
+}
 .ar-canvas {
   width: 100%;
   height: 100%;
@@ -2971,35 +2986,7 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
   transform: scale(1.05);
   background: #ff7722;
 }
-.ar-instrumentation {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-around;
-  background: rgba(0,0,0,0.65);
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.ar-gauge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.arg-val {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: #00ff66;
-}
-.arg-lbl {
-  font-family: var(--font-mono);
-  font-size: 7.5px;
-  color: var(--muted);
-  text-transform: uppercase;
-}
+/* HUD is now rendered on canvas — old DOM gauges removed */
 .ar-stop-btn {
   align-self: center;
   background: rgba(255,255,255,0.05);
@@ -3052,48 +3039,18 @@ html[data-style-preset="glass"] .countdown-dials .dial-sep {
   height: auto;
   display: block;
 }
-.cs-status {
-  text-align: center;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  color: #fff;
-  min-height: 20px;
-}
-.cs-scoreboard {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: rgba(255,255,255,0.02);
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.cs-score-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.css-val {
-  font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ocean);
-}
-.css-lbl {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  color: var(--muted);
-  text-transform: uppercase;
-}
+/* Scoreboard now rendered on canvas — old DOM elements removed */
 .cs-reset-btn {
+  align-self: center;
   background: transparent;
   border: 1px solid rgba(255,255,255,0.15);
   color: var(--muted);
-  padding: 4px 10px;
+  padding: 6px 14px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   border-radius: 4px;
   cursor: pointer;
+  margin-top: 8px;
 }
 .cs-reset-btn:hover {
   border-color: rgba(255,255,255,0.3);
