@@ -1,0 +1,20 @@
+{
+  "$schema_version": "1.0.0",
+  "owner": "LOFI_SANCT",
+  "consumers": ["sod-museum"],
+  "tracks": [
+    {
+      "id": "cat-walking-around-the-house",
+      "title": "cat walking around the house",
+      "artist": "Jahna",
+      "cleared_status": "owner-delivered",
+      "raw_source_path": "SOD MUSEUM/audio/jahna-cat-walking-around-the-house-RAW.wav",
+      "hosted_url_aac": null,
+      "hosted_url_opus": null,
+      "duration_seconds": null,
+      "loop_point_seconds": null,
+      "assigned_to_hall_ids": ["classics"],
+      "assigned_to_rotunda": true
+    }
+  ]
+}

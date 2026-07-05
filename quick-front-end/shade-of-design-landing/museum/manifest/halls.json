@@ -1,0 +1,75 @@
+{
+  "$schema_version": "1.0.0",
+  "halls": [
+    {
+      "id": "rotunda",
+      "name": "Rotunda",
+      "type": "hub",
+      "doorway_state": null,
+      "track_id": "cat-walking-around-the-house",
+      "cabinet_ids": [],
+      "waypoint_ids": ["rotunda-center", "rotunda-guest-book"],
+      "placard_narration_id": null,
+      "entry_narration_id": null
+    },
+    {
+      "id": "classics",
+      "name": "Classics",
+      "type": "hall",
+      "doorway_state": "open",
+      "track_id": "cat-walking-around-the-house",
+      "cabinet_ids": ["classics-mazechase", "classics-dk-tribute", "classics-mario-tribute"],
+      "waypoint_ids": ["classics-entry", "classics-mid", "classics-back"],
+      "placard_narration_id": null,
+      "entry_narration_id": "classics-entry-tour-guide-open"
+    },
+    {
+      "id": "racing",
+      "name": "Racing",
+      "type": "hall",
+      "doorway_state": "sealed",
+      "track_id": null,
+      "cabinet_ids": [],
+      "waypoint_ids": [],
+      "placard_narration_id": null,
+      "entry_narration_id": null,
+      "sealed_plaque_text": "In formation."
+    },
+    {
+      "id": "shooters",
+      "name": "Shooters",
+      "type": "hall",
+      "doorway_state": "sealed",
+      "track_id": null,
+      "cabinet_ids": [],
+      "waypoint_ids": [],
+      "placard_narration_id": null,
+      "entry_narration_id": null,
+      "sealed_plaque_text": "In formation."
+    },
+    {
+      "id": "fighting",
+      "name": "Fighting",
+      "type": "hall",
+      "doorway_state": "sealed",
+      "track_id": null,
+      "cabinet_ids": [],
+      "waypoint_ids": [],
+      "placard_narration_id": null,
+      "entry_narration_id": null,
+      "sealed_plaque_text": "In formation."
+    },
+    {
+      "id": "self-selected",
+      "name": "Self-Selected",
+      "type": "hall",
+      "doorway_state": "sealed",
+      "track_id": null,
+      "cabinet_ids": [],
+      "waypoint_ids": [],
+      "placard_narration_id": null,
+      "entry_narration_id": null,
+      "sealed_plaque_text": "In formation."
+    }
+  ]
+}

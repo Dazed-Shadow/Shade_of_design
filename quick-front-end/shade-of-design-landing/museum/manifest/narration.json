@@ -1,0 +1,60 @@
+{
+  "$schema_version": "1.0.0",
+  "narrations": {
+    "classics-entry-tour-guide-open": {
+      "text": "Welcome to Classics. The oldest games are the ones that taught the industry to imagine.",
+      "surface": "hall-entry",
+      "hall_id": "classics",
+      "cabinet_id": null,
+      "waypoint_id": "classics-entry",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    },
+    "classics-mazechase-placard": {
+      "text": "Maze Chase — a tribute to the maze-and-ghost format that defined an arcade generation. The route always closes; the only choice is whether you make it interesting.",
+      "surface": "cabinet-placard",
+      "hall_id": "classics",
+      "cabinet_id": "classics-mazechase",
+      "waypoint_id": "classics-mazechase-position",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    },
+    "classics-dk-tribute-placard": {
+      "text": "Ape Climb — the game that taught the industry a barrel could be a story beat.",
+      "surface": "cabinet-placard",
+      "hall_id": "classics",
+      "cabinet_id": "classics-dk-tribute",
+      "waypoint_id": "classics-dk-position",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    },
+    "classics-mario-tribute-placard": {
+      "text": "Plumber's Rise — a side-scroll grammar that outlived its own decade.",
+      "surface": "cabinet-placard",
+      "hall_id": "classics",
+      "cabinet_id": "classics-mario-tribute",
+      "waypoint_id": "classics-mario-position",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    },
+    "rotunda-guest-book-approach": {
+      "text": "A pedestal, a page. Sign the book if you like. Or don't. The museum stays.",
+      "surface": "rotunda-transition",
+      "hall_id": "rotunda",
+      "cabinet_id": null,
+      "waypoint_id": "rotunda-guest-book",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    }
+  }
+}

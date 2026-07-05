@@ -96,6 +96,17 @@ const PROJECTS = [
     status: "live",
     accent: "sport",
   },
+  {
+    n: "05",
+    kicker: "Experience · Museum",
+    title: "Shade of Direction",
+    // <<HELD FOR JR>> — Fable proposed "The doors are heavy. Come in anyway."
+    // Blurb copy is JR's call per DD-032 §Decisions that remain JR's, item 1.
+    blurb: "<<HELD FOR JR>>",
+    href: "museum/index.html",
+    status: "soon",
+    accent: "ink",
+  },
 ];
 
 function ProjectTile({ p }) {
@@ -212,6 +223,33 @@ function TileArt({ accent }) {
         <path d="M262 100 Q300 66 338 100" fill="none" stroke="rgba(0,0,0,0.20)" strokeWidth="2.5"/>
 
         <line x1="200" y1="0" x2="200" y2="200" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5"/>
+      </svg>
+    );
+  }
+  if (accent === "ink") {
+    // Ink field, Ember marquee-glow lines — the cabinet seen from across a dark room.
+    return (
+      <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" style={{width:"100%", height:"100%"}}>
+        <defs>
+          <linearGradient id="ink-bg" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#0B1726" />
+            <stop offset="100%" stopColor="#14202f" />
+          </linearGradient>
+          <radialGradient id="ink-glow" cx="50%" cy="55%" r="60%">
+            <stop offset="0%" stopColor="rgba(201,123,74,0.35)" />
+            <stop offset="100%" stopColor="rgba(201,123,74,0)" />
+          </radialGradient>
+        </defs>
+        <rect width="400" height="200" fill="url(#ink-bg)" />
+        <rect width="400" height="200" fill="url(#ink-glow)" />
+        {/* cabinet silhouette, seen from across a dark room */}
+        <rect x="168" y="70" width="64" height="100" rx="3" fill="rgba(0,0,0,0.35)" stroke="rgba(201,123,74,0.45)" strokeWidth="1.5" />
+        <rect x="178" y="80" width="44" height="26" rx="2" fill="rgba(201,123,74,0.28)" />
+        {/* marquee-glow lines */}
+        {[0,1,2,3].map((i) => (
+          <line key={i} x1="0" y1={40 + i*40} x2="400" y2={40 + i*40} stroke="rgba(201,123,74,0.10)" strokeWidth="1" />
+        ))}
+        <line x1="200" y1="0" x2="200" y2="200" stroke="rgba(93,128,157,0.14)" strokeWidth="1" />
       </svg>
     );
   }

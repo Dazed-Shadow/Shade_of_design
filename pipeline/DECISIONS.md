@@ -847,3 +847,248 @@ Per DD-021 Mr.C review pre-decision #6: any field that can't be populated from C
 Schema `{case_id, citation, court, date_filed, area_of_law, jurisdiction, opinion_text_md, summary_md, source_url}` is locked at this ship. Do not add, remove, or rename fields without a new D-NNN entry and Opus@CH review. DD-022's C-Build spawn must not start until DD-021 ships and the schema is confirmed in normalized output.
 
 **Trade-off accepted:** `citation`, `court`, `date_filed`, `jurisdiction` will be null in the initial 50-case MVP cache if CourtListener v4 does not inline cluster data in opinion responses (which is the typical v4 behavior). DD-022's landing zone handles null gracefully. A future enrichment pass (separate DD) can add a cluster-fetch step to backfill these fields without modifying the locked schema — new fields would be additive.
+
+---
+
+## D-027 · 2026-06-24 · CourtListener SEARCH API over OPINIONS endpoint
+
+**Decision:** The DD-026 auto-fetch routine (`legal_fetch_queries.py`) calls the CourtListener SEARCH API (`/api/rest/v4/search/?type=o&court=<slug>&stat_Published=on&order_by=dateFiled%20desc&filed_after=<M/D/YYYY>`) rather than the OPINIONS endpoint used in the parked DD-021 Sonnet A artifact.
+
+**Context:** DD-021's `legal_fetch.py` targeted `/api/rest/v4/opinions/?cluster__docket__court__pk__in=<slug>` and received 400 on every filter variant tested. The SEARCH API is the CourtListener-documented discovery path for filtering by court, status, date, and sort order.
+
+**Why SEARCH API:**
+- `/api/rest/v4/search/` is the documented way to query across the full CourtListener index with the `type=o`, `court=`, `stat_Published=on`, and `filed_after=` filters needed for the Phase 1 locked queries.
+- Returns a standard paginated JSON response with `results[]` containing opinion-level objects including `id`, `caseName`, `docketNumber`, `court`, `dateFiled`, `download_url`, and `absolute_url` — all fields needed for PDF download, fast-extract, and log entry.
+- The OPINIONS endpoint (`/api/rest/v4/opinions/`) is for retrieving a known opinion by ID. It is not designed for date-range or court-filtered discovery.
+
+**Trade-off accepted:** SEARCH API returns up to 20 results per page (v1 fetches one page per query). For daily cadence with a `filed_after` window, this is sufficient. Pagination is deferred to a future pass if high-volume courts require it.
+
+---
+
+## D-028 · 2026-06-24 · Plumbing-only fast-extract rule (no synthesis in C-Legal auto-fetch)
+
+**Decision:** `legal_fetch_queries.py`'s fast-extract pass is strictly deterministic pattern matching. Every extracted field uses regex against the PDF text. Any field that cannot be regex-matched is set to `[extraction failed]`. No inference, no LLM call, no judgment-shaped work is performed.
+
+**Context:** JR direction 2026-06-23: "This script does ONLY deterministic plumbing (HTTP, file I/O, deterministic PDF text extraction, SMTP). NO synthesis, NO LLM calls, NO judgment-shaped work. I would only want you to perform this summary and analysis." Synthesis is reserved for Mr.C in DD-029 (Skill 4 LR-CHAIN).
+
+**Fields extracted (deterministic regex, fail-soft per field):**
+- `parties` — regex on first v. caption block in PDF text
+- `court` — from CourtListener `result["court"]` field; fallback to regex header in PDF
+- `docket` — regex `Case No. NN-NNNN`; fallback to `result["docketNumber"]`
+- `document_id` — `result["id"]` (CourtListener opinion ID, integer)
+- `filing_date` — regex `Filed: <date>`; fallback to `result["dateFiled"]`
+- `decision_date` — regex `Decided: <date>`
+- `panel` — regex `Before <judge list>`
+- `disposition` — regex AFFIRMED / REVERSED / REMANDED / VACATED / DISMISSED keyword
+- `opening_holding` — first substantive paragraph after a section heading (regex)
+- `citations` (first 6-10) — federal case citations (`NN F.Nd NN`, `NN U.S. NN`, `NN S.Ct. NN`) and statutes (`NN U.S.C. SS NN`)
+
+**Why [extraction failed] and not null:**
+The email and summary-file consumers expect a renderable string per field (not a Python `None`). `[extraction failed]` is human-readable, clearly signals absence, and is grep-stable. The downstream contract (DD-029 synthesis, Skill 4) is Mr.C reading the summary file in a live session — `[extraction failed]` is more communicative than blank or null.
+
+**Trade-off accepted:** Regex-only extraction will miss fields in opinions with non-standard caption or disposition formats (e.g., per curiam orders, unusual docket numbering). This is an acceptable MVP limitation. Mr.C synthesis (Skill 4) is the authoritative read; fast-extract is JR's triaging signal, not the final record.
+
+---
+
+## D-029 · 2026-07-04 · SoD Museum manifest schemas + rendering split + `/museum` route wiring (DD-032 Checkpoint 1)
+
+**Decision:** Five manifest schemas locked at v1 (`halls.json`, `cabinets.json`, `greeting.json`, `audio.json`, `narration.json`) with `$schema_version` semver on every file. Rendering split confirmed: DOM/CSS threshold in initial payload (≤ 2.5 MB), Three.js scene as `React.lazy` chunk (≤ 8 MB) requested only after capability check + threshold action. Route wiring: `/museum` nested route inside the landing app, museum sub-router owns internal routes.
+
+**Context:** DD-032 SoD Museum architecture review, Checkpoint 1. Kickoff from Opus@COS 2026-07-04 (Chief of Staff Diary vault at `C Roles/Strategies/kickoffs/DD-032-Opus-CH-arch-review.md`). Full C1 artifact at `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-c1-arch.md`. Chief's Chain resolution 2026-07-04 pre-cleared two flagged ambiguities (`audio.json` `cleared_status` field + `narration.json`/`greeting.json` multi-voice shape).
+
+**Why the multi-voice shape (`greeting.json` + `narration.json`):**
+- `voice_id`-keyed dict (`"jr"`, `"mr-c"`, extensible) with per-voice `audioUrl: nullable` and `text: required` decouples voice arc progress from museum ship gate. DD-015a's Round-1 audition runs on its own timeline; museum ships silent-narrated (music yes, voice no) as fully valid v1 state; voice locks land later as data-only edits to the manifest (no code change, no rework, no checkpoint reopening).
+- No `register:` field at v1 per Opus@COS resolution — character metadata joins later when the voice-arc surface earns a formal registry, likely a future RM-002 amendment surface. Schema versioning preserves extensibility.
+
+**Why `audio.json` includes `cleared_status`:**
+- v1 entry is `"owner-delivered"` — Jahna's own composition, JR-delivered direct on 2026-07-03. No third-party rights clearance pending.
+- v2+ catalog governance: LOFI_SANCT owns the manifest; future entries route through `"cleared"` (LOFI_SANCT clearance metadata attached) or `"pending"` (in-flight). Museum consumer refuses to bind a `"pending"` track. Fable §1.5's LOFI_SANCT ownership model is preserved without blocking v1 on LOFI_SANCT project state.
+
+**Why lazy 3D chunk with pre-fetch capability check:**
+- Family-first accessibility floor (DD-032 constraint) requires 2D fallback content-parity same-day. If capability check fails (no WebGL, reduced-motion set, mobile viewport), the 3D chunk is never requested — visitor routes to 2D directly. This protects the ≤ 2.5 MB initial payload budget for the accessibility-floor user cohort.
+- Deferring the 3D chunk to post-threshold-action also lines up with the audio unlock gesture (Fable Dialogue 1 + 5 synthesis): browser autoplay policy requires an interaction; the same interaction gates the 3D chunk request.
+
+**Why `/museum` route inside the landing app (not sub-app):**
+- JR sign-off 2026-07-04 (DD-032 §Handoff decisions item 1): 3D chunk is lazy per this arch spec so it doesn't bloat the landing route; shared brand tokens automatically inherit; single React app to maintain; simpler CI/CD.
+
+**Cross-manifest referential integrity constraints (ship-gate lint, Sonnet enforces):**
+1. Every `halls[].cabinet_ids[]` resolves to a `cabinets[].id`.
+2. Every `cabinets[].hall_id` resolves to a `halls[].id`.
+3. Every `halls[].track_id` (non-null) resolves to a `tracks[].id` with `cleared_status ∈ {"owner-delivered", "cleared"}`.
+4. Every `*_narration_id` (non-null) resolves to a `narrations{}` key.
+5. Exactly one cabinet across `cabinets[]` has `playable: true` at v1 (Fable Dialogue 4 discipline).
+6. Every non-sealed hall has non-empty `waypoint_ids[]`.
+7. Every `narrations{}` entry has non-empty `text` regardless of any `audioUrl` state.
+
+**Trade-off accepted:**
+- `narration.json` carries placard *narration* text separately from `cabinets.json` `placard_copy_md` (the *visible* placard text). At v1 the two SHOULD match (Sonnet lint check); flexibility for narration prose vs. placard density is a v2+ pattern deferred here. Cost: one extra field per cabinet in narration.json.
+- No `register:` schema field means C-Build can't auto-derive voice tempo/pause behavior from the manifest. Acceptable at v1 because DD-015a's TTS candidate (when locked) handles register via voice_id → provider pairing outside the manifest. Museum stays a data consumer, not a voice-arc governance surface.
+
+**Sonnet unlocks at C1:**
+1. Landing tile 05 delta (one PROJECTS entry, one TileArt motif, one `.tile-ink` accent class — zero grid CSS change).
+2. Threshold DOM + CSS (Paper-dominant screen, two buttons, reduced-motion suppression).
+3. `/museum` route wiring in landing app router; museum sub-router shell.
+4. Manifest scaffolding — five JSON files at `<museum-root>/manifest/`.
+5. Capability check module (WebGL + reduced-motion + viewport).
+6. Cross-manifest ship-gate lint per constraints above.
+7. Brand-token lint scaffold.
+
+**Deferred to C2/C3:**
+- Three.js scene, dolly path, waypoints, GLB pipeline (C2)
+- 2D fallback renderer impl (C2)
+- Cabinet zoom, placards render, playable mini-game (C2)
+- Audio pipeline: transcode, hosting, Web Audio manager, `visibilitychange` pause (C3)
+- Guest book pedestal (C3)
+- Real placard copy per cabinet — JR content pass (C3)
+- JR sign-off gate (C3 terminal)
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-c1-arch.md` — full C1 artifact
+- `References/Designs/DD-032 SoD Museum — rotunda plus Classics hall.md` — Chain block updated with C1-landed marker
+- `C Roles/Strategies/kickoffs/DD-032-Opus-CH-arch-review.md` — Chain acknowledgment from Opus@CH
+- `Terminal/Central Hub/pipeline/DECISIONS.md` — this D-029 entry
+
+**Open follow-up:** Vault-mirror path discrepancy for `quick-front-end/shade-of-design-landing/` flagged to Opus@COS in kickoff Chain 2026-07-04. Non-blocking on C1 landing; blocking on Sonnet's first working-tree touch. Awaiting Chief resolution.
+
+---
+
+## D-030 · 2026-07-04 · SoD Museum runtime pattern — CDN UMD + Babel-standalone + hash sub-router + `--museum-*` palette namespace (DD-032 Checkpoint 1 close)
+
+**Decision:** The SoD Museum ships as a static entry page (`museum/index.html`) alongside the landing app, following the existing `weekly.html` + `unite-passion/nascar-basketball.html` precedent — not as a nested client route inside the landing app's SPA. Runtime is React 18 UMD + `@babel/standalone` in-browser JSX transpilation, matching the landing app's actual shipping mechanism (there is no `package.json`, no bundler, no ES module graph in this repo). Internal museum navigation uses an in-page hash sub-router (`#/rotunda`, `#/classics`, `#/classics/:cabinet-id`), not History-API paths. Museum CSS variables are namespaced as `--museum-ink`, `--museum-ember`, `--museum-ember-soft`, `--museum-slate`, `--museum-ocean`, `--museum-paper` — deliberately NOT reusing the site's `--ink`/`--ocean`/`--slate`/`--ember` variables.
+
+**Context:** DD-032 Checkpoint 1 close. Full impl and sign-off logs at `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-sonnet-c1-impl.md` and `session-log-2026-07-04-opus-c1-signoff.md`. C-Build surfaced five pattern-deviations from Fable's implementation strategy §2 and from Opus@CH's C1 artifact — all five confirmed by Opus@CH after live-repo verification.
+
+**Why CDN UMD + Babel-standalone (not React + Vite):**
+- Fable's implementation strategy §2 named "React + Vite" as the framework. The real repo does not have that — `index.html` loads React 18 + ReactDOM via UMD `<script>` CDN tags with `@babel/standalone` doing in-browser JSX transpilation of `.jsx` files loaded as `type="text/babel"` scripts. There is no `package.json` at the vault root or in the site directory, no Vite config, no ES module graph.
+- The museum matches this reality rather than introduce a bundler for one sub-page. Zero new tooling; identical shipping mechanism to `landing.jsx` + `weekly.jsx`.
+- **Ship-time payload note for C3:** the dev builds (`react.development.js`, `@babel/standalone/babel.min.js` ~700 KB) will need to swap to `.production.min.js` variants. A pre-transpile-at-ship-time approach would drop Babel-standalone entirely from the museum sub-page bundle; that pattern likely wants to spread to the main landing page later (Central Hub-wide payload win) but is out of DD-032 scope.
+
+**Why hash sub-router (not History-API paths):**
+- Hash routes always resolve to the same physical file regardless of hosting. No server rewrite config (`_redirects`, `netlify.toml`, `wrangler.toml`) exists anywhere in this repo to confirm path-based deep links would resolve correctly on a hard refresh.
+- The precedent — `weekly.html`, `unite-passion/nascar-basketball.html` — is exactly this pattern: separate static entry pages accessed by relative href from the landing app, with any internal navigation happening within that page.
+- Coordination question surfaced to Chief: which host serves shadeofdesign.net? Answer determines whether C2 can migrate to path-based routing safely.
+
+**Why `--museum-*` palette namespace (critical architectural upgrade):**
+- The landing site's `styles.css` defines `--ink`, `--ocean`, `--slate`, `--ember` as **theme-adaptive text-color tokens** — they flip value between light and dark themes (e.g. `--ink` becomes `#F3F4F6` in dark mode).
+- DD-032's palette is a **closed brand palette with fixed hex values** — Ink `#0B1726` is the obsidian wall mass and must never flip with theme. Naive variable-name reuse would silently break the museum's palette under any theme toggle.
+- Solution: museum-scoped variables (`--museum-ink` etc.) hold the fixed hex values from Fable §1.6 exactly. Brand-token lint enforces on **values**, not variable names — the `ALLOWED_HEX` set in `lint-brand-tokens.js` checks against `#0B1726 / #C97B4A / #E4A57E / #5D809D / #1A3E62 / #FAFAF7`, independent of any variable naming.
+- **Pattern generalized:** future museum extensions (v2+ halls, cabinets, mini-games) inherit `--museum-*` namespace. Any future Central Hub React surface that needs a fixed brand palette (as distinct from theme-adaptive tokens) follows the same namespacing rule. Reusing site-wide theme variables in a fixed-palette context is a bug.
+
+**Ship-gate lint scripts (Sonnet-owned, zero-dep Node):**
+- `museum/lint/lint-manifests.js` — enforces the seven cross-manifest referential-integrity constraints from D-029 §1.6 + one bonus playable/game_module pairing check. Exits non-zero on violation.
+- `museum/lint/lint-brand-tokens.js` — walks `museum/**/*.{css,jsx}`, flags any hex literal not in the six-value palette + one documented soft variant (`#E4A57E` — Ember-soft, precedent in landing.jsx TileArt). Scaffold mode at C1 (warn only); flips to enforce (exit non-zero) at C2/C3 per Opus@CH §6.
+- Both run manually today. No CI pipeline exists at the vault root (no `.github/workflows`, no git repo at vault root — `git rev-parse --is-inside-work-tree` fails). When CI is established, wire these on any commit touching `museum/manifest/*` or `museum/**/*.{css,jsx}`.
+
+**Font-loading scope discipline:**
+- Fable §2 claim that Marcellus/Inter are "already served by the brand system" does not hold — the real `index.html` loads Space Grotesk + JetBrains Mono only.
+- Marcellus is museum-only: added to `museum/index.html` via Google Fonts CDN link, not to the main landing page. This preserves the main landing's initial-payload budget while satisfying DD-032's "Marcellus greeting" spec. Payload impact ~30–50 KB on the museum sub-page.
+
+**Trade-off accepted:**
+- The runtime pattern (in-browser JSX transpilation via Babel-standalone) is not what a bundled React app would ship. Dev-build CDNs carry non-trivial payload. C3 swap-to-production + optional pre-transpile pattern are named risks, not yet resolved.
+- Hash routing means deep-link URLs look like `museum/#/classics/classics-mazechase` rather than `museum/classics/classics-mazechase`. Cosmetic difference; content-parity and cold-load behavior are identical.
+- Palette namespacing means museum CSS cannot benefit from any theme-token improvements the site makes later. Acceptable — the museum's palette IS the brand covenant here, not a themeable surface.
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/landing.jsx` — tile 05 PROJECTS entry + `TileArt` `ink` motif branch
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/index.html` — new static entry page
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/museum.jsx` — new: threshold + hash sub-router + capability check + manifest loader
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/museum.css` — new: `--museum-*` palette + threshold styles + stub styles
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/manifest/{halls,cabinets,greeting,audio,narration}.json` — five schemas per D-029
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/lint/lint-manifests.js` — new
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/lint/lint-brand-tokens.js` — new
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-sonnet-c1-impl.md` — C-Build impl log
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-opus-c1-signoff.md` — Opus@CH sign-off log
+- `References/Designs/DD-032 SoD Museum — rotunda plus Classics hall.md` — Chain block updated with C1-cleared marker
+
+**Open follow-ups (surfaced to Mr. C at COS via kickoff Chain 2026-07-04):**
+1. **Hosting-provider question** — which host serves shadeofdesign.net? Determines whether C2 can migrate to path-based routing.
+2. **CI wiring** — if/when git + CI land at vault root, wire both lint scripts on manifest/museum-code commits.
+3. **C3 payload-budget swap** — production React CDNs + optional pre-transpile-at-ship-time to drop Babel-standalone.
+
+**Related decisions:**
+- **D-029** — SoD Museum manifest schemas + rendering split + `/museum` route wiring (Checkpoint 1 planning artifact)
+- **D-024** — Unite Passion as a Central Hub landing component (precedent for the sub-page pattern: `unite-passion/nascar-basketball.html` linked from tile 04)
+- **D-025** — "Coming Soon" treatment for unbuilt landing surfaces (precedent for the sealed-hall "In formation" plaques)
+
+---
+
+## D-031 · 2026-07-04 · SoD Museum C2 close — Three.js r160 pin · plain-JS dynamic modules · Slate-on-Ink fail + fix · sealed-plaque static-DOM pattern (DD-032 Checkpoint 2)
+
+**Decision:** Locks four architectural sub-decisions surfaced at DD-032 Checkpoint 2 sign-off. Extends the D-030 runtime pattern with three new invariants: (1) three.js version pin at r160 for the classic UMD build, (2) any dynamically-injected script module must be plain JS (not JSX), (3) WCAG-AA contrast is verified by direct relative-luminance math when automated tooling is unavailable, and estimates without measurement are prohibited. Also captures the sealed-door static-DOM pattern as the reference implementation for future museum halls.
+
+**Context:** DD-032 Checkpoint 2 close. Full C2 arch artifact at `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-c2-scene.md`; C-Build impl log at `session-log-2026-07-04-sonnet-c2-impl.md`; Opus@CH sign-off at `session-log-2026-07-04-opus-c2-signoff.md`. Four pattern-deviations flagged by C-Build, all confirmed after live-reality verification; two are spec errors on Opus@CH's side (r170 UMD path never existed; Slate contrast was estimated instead of computed).
+
+**Sub-decision 1 — Three.js version pin at r160 (classic UMD boundary).**
+- Three.js stopped shipping classic UMD `build/three.min.js` at r161. r170 (Opus@CH's arch spec pin) publishes only ES modules + CJS + WebGPU variants.
+- The museum's runtime pattern (D-030: no bundler, no ES module graph, CDN `<script src>` injection with `window.THREE` global) requires the classic UMD build.
+- **Pin: `three@0.160.0`.** Rationale: last version publishing the classic UMD build. Bumping past r160 requires a runtime-pattern expansion — a new named decision, not a silent upgrade.
+- C3 forward risk: three.js loaders (`GLTFLoader`, `DRACOLoader`, `KTX2Loader`) live at `examples/jsm/loaders/*.js` — ES-module-only by folder convention across every three.js version. Loading real GLBs at C3 will require one of: (a) test whether `examples/js/loaders/*.js` (no "m") still ships at r160 or earlier; (b) expand D-030 runtime pattern to include `<script type="importmap">` + native ES-module scene entry (real architectural expansion, deserves its own D-NNN); (c) vendor a pre-bundled three-loaders build into `museum/assets/vendor/`. Opus@CH evaluates + names decision in C3 kickoff drafting.
+
+**Sub-decision 2 — Dynamically-injected script modules must be plain JS, not JSX (D-030 runtime amendment).**
+- Babel-standalone only auto-transforms `<script type="text/babel">` tags **present at initial page load**. A dynamically-injected `.jsx` module — which any lazy-loaded chunk necessarily is — never gets the Babel scan.
+- Workaround alternatives (`Babel.transform()` + `eval()` on fetched source, or pre-transpiling at ship time) are both riskier and both diverge from the D-030 script-loading discipline.
+- **Rule (extends D-030):** any script injected after initial page load — scene modules, game modules, future lazy-loaded features — must be plain JS with imperative code. JSX is available only for `.jsx` files present in `<script type="text/babel">` tags at initial HTML load.
+- Applied at C2: `museum/scene/scene.js` is plain JS. Applied prospectively at C3: any lazy-loaded audio manager, guest-book module, or future hall extensions inherit this rule.
+- Escape hatch: if a future feature requires JSX in a lazy-loaded module, the correct move is a D-NNN expansion of the runtime pattern (e.g., ship-time pre-transpile → drop Babel-standalone entirely) — not a per-file workaround.
+
+**Sub-decision 3 — WCAG-AA contrast verified by direct math when automated tooling unavailable; estimates without measurement are prohibited.**
+- C2 arch §4.2 estimated Slate-on-Ink (`#5D809D` on `#0B1726`) at "~4.6:1, borderline." Direct relative-luminance computation: **4.33:1 — an actual fail against the 4.5:1 body-text threshold.**
+- C-Build attempted axe-core CDN injection per C2 verification protocol; harness auto-mode correctly denied unilateral external-script injection. Substituted direct WCAG relative-luminance math for every foreground/background pair in `museum.css`.
+- **Rule:** for future museum contrast decisions (v2+ halls, C3 real-content pass), contrast is computed against the standard relative-luminance formula, not estimated. If estimate hedging appears in an arch spec (e.g., "borderline," "approximately"), it must be replaced with the computed number before the spec is dispatched to Sonnet.
+- Fixes ratified at C2 impl:
+  - `.threshold-btn-quiet:hover/:focus-visible` background: Slate → Paper (4.33:1 fail → 17.24:1 clear)
+  - `.sealed-plaque-name` foreground: Slate → Paper (also 4.33:1 fail; the arch's "large-text exemption" claim was doubly wrong — 15px/600 doesn't meet WCAG large-text bar of 18.66px+bold or 24px+regular)
+- **Slate retained only as decorative** — border colors, non-text glow — where WCAG's 3:1 non-text threshold applies (4.33:1 clears that comfortably).
+- **C3 pre-close audit:** full axe-core pass still required to catch non-contrast issues (ARIA labeling, focus traps, semantic HTML, form associations). Path: JR runs axe DevTools browser extension, OR user explicitly pre-approves scoped axe-core CDN injection at C3 opening.
+
+**Sub-decision 4 — Sealed-door plaques as static DOM row, not per-frame 3D-to-screen projection (arch §1.5 selection ratified).**
+- C2 arch §1.5 explicitly left this to Sonnet's judgment ("both are viable"). C-Build chose static row shown only at `waypointId === "rotunda-center"`, hidden otherwise.
+- Rationale: the camera only ever sees all four sealed doors from `rotunda-center` in v1 (sealed halls have empty `waypoint_ids[]` in `halls.json`, so no other camera position renders them in-frame). Per-frame `Vector3.project(camera)` recalculation would couple the DOM overlay layer to the render loop for zero visitor-observable benefit.
+- **Reference pattern for v2+ hall openings:** when Racing (or any future hall) opens, its own `waypoint_ids[]` populate; sealed doors of *newer* halls behind it are rendered by the same static-DOM row pattern at the rotunda entry — no per-hall projection code needed.
+- 2D fallback treatment: sealed hall cards render `sealed_plaque_text` directly (same content, container-appropriate rendering).
+
+**Threshold-skip dead-end bug (fixed at C2, retroactively applies to C1 code):**
+- Original: `showThreshold = !audioOptIn && (route === "/" || route === "")`
+- With stale `#/rotunda` hash + no `sod_audio_optin` → threshold never rendered → `renderMode` stayed `null` → permanent "Loading…" stub
+- Fix: `showThreshold = !audioOptIn` — gate on opt-in state alone
+- **Lesson for verification protocol:** stale-state stress pass (retained localStorage + retained URL fragments from prior session) becomes a standard step at C3 and onward.
+
+**Ship-gate lint additions locked:**
+- `lint-manifests.js` constraint 8: every `cabinets[]` entry with `playable: false` has non-null `placard_copy_md` and non-null `placeholder_alt`
+- `lint-manifests.js` constraint 9: every `cabinets[]` entry with `playable: true` has non-null `game_module` AND `museum/games/{game_module}.js` exists on disk
+- `lint-brand-tokens.js` enforcement flipped to blocking; scan extended to `.js` files + Three.js-style `0x`-prefixed hex literals (not only CSS `#hex` strings)
+
+**Trade-off accepted:**
+- Pinning to r160 means the museum is one major version behind current three.js. WebGPU features, latest loader improvements, and any post-r160 API changes are unavailable until D-NNN loader-path decision resolves. Acceptable for v1 static scene needs.
+- Plain-JS scene module means the imperative Three.js code doesn't benefit from React's declarative reconciliation. Acceptable — Three.js scene graph is imperative by nature; JSX earns nothing here.
+- Slate is now a decorative-only color in the museum palette (border, glow, non-text). If future halls need Slate-typed text on Ink, a different foreground or background must be selected (Paper on Ink; Slate on Paper is 5.86:1 which clears). Palette remains closed (D-030); usage discipline is a lint policy, not a token change.
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/museum.jsx` — dynamic 3D injection, route dispatch, waypoint overlay, sealed-door row, threshold-dead-end fix
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/museum.css` — scene mount, waypoint overlay, sealed plaques, cabinet detail, attract animation, gallery grids, game canvas, two WCAG contrast fixes
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/index.html` — script tags for `games/maze-chase.js`, `cabinets/zoom-overlay.jsx`, `fallback/gallery.jsx` (load order before `museum.jsx`)
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/scene/scene.js` — new, plain JS (not JSX per sub-decision 2)
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/fallback/gallery.jsx` — new
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/cabinets/zoom-overlay.jsx` — new
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/games/maze-chase.js` — new
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/lint/lint-manifests.js` — constraints 8+9
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/lint/lint-brand-tokens.js` — enforcement blocking, scan extended
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-sonnet-c2-impl.md` — C-Build impl log
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-04-opus-c2-signoff.md` — Opus@CH sign-off log
+- `References/Designs/DD-032 SoD Museum — rotunda plus Classics hall.md` — Chain block updated with C2-cleared marker
+
+**Open follow-ups (surfaced to Mr. C at COS via kickoff Chain 2026-07-04):**
+1. **Loader-path decision needs its own D-NNN before C3 execution** (three options above)
+2. **Full axe-core pass** — JR runs DevTools extension OR user pre-approves scoped CDN injection at C3
+3. **Exhaustive Tab-order fuzz** — extend C2 verification protocol at C3 close
+4. **Stale-state stress pass** — standard step at C3
+5. **3D chunk re-measurement** with real GLBs + Draco/KTX2 decoders (estimated ~230 KB + ~750 KB overhead + GLB assets)
+6. **Production-CDN swap + optional pre-transpile** (unchanged from C1)
+7. **Hosting provider question** (unchanged from C1)
+8. **Git + CI wiring** (unchanged from C1)
+
+**Related decisions:**
+- **D-030** — SoD Museum runtime pattern (this decision extends it with three new invariants)
+- **D-029** — SoD Museum manifest schemas (unchanged; C2 consumes without modifying)
+- **D-024** — Unite Passion as Central Hub landing component (sub-page precedent for `museum/index.html`)
+- **D-025** — "Coming Soon" pattern for unbuilt landing surfaces (precedent for sealed-hall "In formation" plaques)
