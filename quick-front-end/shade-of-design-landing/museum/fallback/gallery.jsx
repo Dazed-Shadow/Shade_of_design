@@ -32,16 +32,23 @@ function HallCard({ hall }) {
   );
 }
 
-function GuestBookCard() {
+function GuestBookCard({ onOpenGuestBook }) {
   return (
-    <div className="hall-card hall-card-sealed" tabIndex={0} aria-label="Guest book pedestal — arrives at Checkpoint 3">
+    <button
+      type="button"
+      className="hall-card hall-card-open guest-book-card"
+      onClick={onOpenGuestBook}
+      aria-label="Open the guest book"
+    >
       <p className="hall-card-name">Guest book</p>
-      <p className="hall-card-plaque">Arrives with the full experience.</p>
-    </div>
+      {/* JetBrains Mono kicker + Marcellus title per arch §2.1; invitation
+          prose itself is JR-held, ships inside the modal, not this card. */}
+      <p className="hall-card-plaque">Sign the book</p>
+    </button>
   );
 }
 
-function RotundaGrid({ halls }) {
+function RotundaGrid({ halls, onOpenGuestBook }) {
   // Rotunda itself is the hub you're standing in, not one of its five
   // doorways — exclude it from the doorway grid (type: "hub" vs "hall").
   const doorways = halls.filter((hall) => hall.type !== "hub");
@@ -53,7 +60,7 @@ function RotundaGrid({ halls }) {
         {doorways.map((hall) => (
           <HallCard hall={hall} key={hall.id} />
         ))}
-        <GuestBookCard />
+        <GuestBookCard onOpenGuestBook={onOpenGuestBook} />
       </div>
     </div>
   );

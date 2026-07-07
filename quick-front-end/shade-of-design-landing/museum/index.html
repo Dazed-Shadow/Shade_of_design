@@ -17,13 +17,23 @@
 <body>
   <div id="root"></div>
 
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-
+  <!-- Production builds (C3 Item 10): dev builds measured ~1.19 MB combined;
+       production measured ~143 KB combined (see C3 impl log). SRI hashes
+       computed directly via `curl | openssl dgst -sha384`, not copy-pasted
+       from memory. -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+  <!-- @babel/standalone removed (C3 addendum §A.2, JR-authorized transpile
+       pass): it measured ~3.14 MB and alone blew the 2.5 MB payload ceiling.
+       The four museum .jsx files are now pre-transpiled offline to plain
+       .js (classic React.createElement runtime, matching this page's
+       global-React/no-bundler pattern) via `npx @babel/cli` +
+       `@babel/preset-react` (runtime: classic). Re-run that pass after
+       editing any of the four source .jsx files below. -->
   <script src="games/maze-chase.js"></script>
-  <script type="text/babel" src="cabinets/zoom-overlay.jsx"></script>
-  <script type="text/babel" src="fallback/gallery.jsx"></script>
-  <script type="text/babel" src="museum.jsx"></script>
+  <script src="cabinets/zoom-overlay.js"></script>
+  <script src="fallback/gallery.js"></script>
+  <script src="rotunda/guest-book-modal.js"></script>
+  <script src="museum.js"></script>
 </body>
 </html>

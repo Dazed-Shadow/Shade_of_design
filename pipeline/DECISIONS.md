@@ -1092,3 +1092,185 @@ The email and summary-file consumers expect a renderable string per field (not a
 - **D-029** — SoD Museum manifest schemas (unchanged; C2 consumes without modifying)
 - **D-024** — Unite Passion as Central Hub landing component (sub-page precedent for `museum/index.html`)
 - **D-025** — "Coming Soon" pattern for unbuilt landing surfaces (precedent for sealed-hall "In formation" plaques)
+
+---
+
+## D-033 · 2026-07-05 · SoD Museum three.js loader-path = vendored pre-bundled build (DD-032 Checkpoint 3 planning)
+
+**Decision:** Ship `museum/assets/vendor/three-with-loaders-r160.min.js` — a one-time offline `esbuild` pass bundles `three@0.160.0` + `GLTFLoader` + `DRACOLoader` + `KTX2Loader` into a single IIFE that exposes `window.THREE` and its loader properties. C-Build's C3 impl first step: reality-check r160's `examples/js/loaders/*.js` availability against unpkg; adopt Option 1 (three CDN script tags) if all three URLs return 200 classic JS, else adopt this vendored pattern.
+
+**Context:** DD-032 Checkpoint 3 planning. Full C3 arch artifact at `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-c3-arch.md` §4. Chief C3 pre-lift-off (`kickoffs/DD-032-Opus-CH-c3-arch.md` §PD-C) delegated the loader-path evaluation to Opus@CH with a reality-check-first requirement. Three options were on the table:
+
+1. Legacy `examples/js/loaders/*.js` at r160 (classic script build, no ES modules)
+2. Import maps + native ES modules (real D-030 runtime pattern expansion)
+3. Vendored pre-bundled build via offline `esbuild` pass
+
+**Why Option 3 as the locked default:**
+- **Lowest risk against Opus@CH's calibration record on CDN paths.** C2 PD1 caught the r170 UMD path never existing; C2 PD1 second flag confirmed `examples/jsm/` are ES-module-only across every three.js version. A vendored bundle removes CDN paths from the equation entirely for the 3D chunk.
+- **Consistent with the offline-pipeline discipline.** GLB compression (`gltf-transform`) already runs offline in Central Hub's museum pipeline (per C2 arch §2.1). Adding a one-time `esbuild` pass for the three.js stack matches that pattern — same category of tooling, same "commit the compressed artifact, not the toolchain" discipline.
+- **Bit-perfect version pin.** The bundle contains exactly what was tested against — no CDN drift, no unpkg outage risk during ship verification.
+- **Same-origin loading via Netlify** (per D-032). No third-party CDN latency on the 3D-chunk critical path.
+
+**Why Option 1 stays as a fallback (not the default):**
+Opus@CH's C3 arch (§4.4) named this as C-Build's first C3 impl action. If `curl` against `https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js` (and the DRACO + KTX2 sibling paths) returns 200 with `Content-Type: application/javascript` for all three, C-Build adopts Option 1 — three CDN script tags in sequence, matching D-030's existing pattern with no offline bundler step. Historical note: three.js deprecated the `examples/js/` classic-loader tree around r148 (2023), so reality expectation is 404 across all three URLs — but the reality-check runs regardless per Opus@CH's own meta-honesty rule from C2 signoff (CDN paths get live-verified before the pattern is locked).
+
+**Why not Option 2 (import maps + native ES modules):**
+- Would require D-030 runtime pattern expansion — a new D-NNN in its own right (import maps + ES-module script types + JSX-to-plain-JS boundary redefined).
+- Scene.js becomes an ES module, which changes the Babel-standalone interaction shape from D-031 (currently plain JS, imperative). Manageable but non-trivial to test.
+- No decisive advantage over Option 3 for the museum's single-page-of-content use case. Import maps shine when many modules need coordinated version resolution — museum has one three.js stack, one scene.
+
+**Bundler command (Sonnet runs at C3 impl start, if Option 3 lands):**
+
+```
+# entry file at museum/assets/vendor/bundle-entry.js
+# imports three@0.160.0 + GLTFLoader + DRACOLoader + KTX2Loader
+# re-exports as window.THREE.* globals
+
+npx esbuild \
+  --bundle \
+  --minify \
+  --format=iife \
+  --global-name=THREE_BUNDLE \
+  --outfile=museum/assets/vendor/three-with-loaders-r160.min.js \
+  museum/assets/vendor/bundle-entry.js
+```
+
+The `THREE_BUNDLE` IIFE global is unwrapped inside `bundle-entry.js` to expose the more idiomatic `window.THREE` + loader properties, matching the API shape scene.js already consumes.
+
+**Payload impact estimate:**
+Vendored bundle: ~1.8-2.2 MB (three.js core ~640 KB + GLTFLoader ~90 KB + DRACOLoader ~230 KB + KTX2Loader ~750 KB, minified + dedup'd). Well under the 8 MB 3D-chunk ceiling; leaves comfortable headroom for real rotunda + Classics GLBs at ~1.8-2.5 MB each.
+
+**Runtime pattern impact (extends D-030):**
+- Runtime pattern **unchanged.** Museum still runs CDN UMD + Babel-standalone for React + landing scripts.
+- Offline-pipeline discipline **extended.** The pipeline now bundles the 3D-chunk vendor artifact in addition to compressing GLBs. Both are one-time offline steps, both produce committed static assets, neither requires a runtime bundler dependency.
+- Version-bump discipline: any future three.js version change re-runs `esbuild` against the updated pin, re-tests, re-commits the vendored artifact. Deliberate, auditable, version-controlled.
+
+**Trade-off accepted:**
+- One-time `esbuild` toolchain requirement at C3 impl start. Node CLI invoked via `npx` — no `package.json`, no local `node_modules` retained (npx caches globally). Consistent with the `gltf-transform` CLI pattern already in the museum pipeline.
+- Bundle size (~2 MB) is fixed even if a future feature only needs three.js core without loaders. Acceptable at v1 given the 8 MB chunk ceiling has ~6 MB headroom.
+- If reality-check shows Option 1 works, this D-033 records the fallback landing as authoritative — the option matrix stays on the record as the reasoning archive, even though only one branch ships.
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-c3-arch.md` — C3 arch artifact §4 (loader-path analysis + Option 3 lock + Option 1 fallback protocol)
+- `Terminal/Central Hub/pipeline/DECISIONS.md` — this entry
+- (C3 impl-side; not yet touched at planning stage): `museum/assets/vendor/bundle-entry.js`, `museum/assets/vendor/three-with-loaders-r160.min.js`, `museum/index.html` (script tag for vendored bundle in place of any three CDN references), `museum/scene/scene.js` (unchanged; still consumes `window.THREE.*` API)
+
+**Open follow-up:** C-Build's C3 impl first step is the reality-check + Option 1-vs-Option 3 branch resolution. Outcome logged in C-Build's C3 impl session log; if Option 1 unexpectedly wins, D-033 gets a follow-up entry noting the branch selection (no reversal of this decision — just documentation of the fallback landing).
+
+**Related decisions:**
+- **D-032** — Hosting on Netlify (2026-07-05); enables same-origin loading of the vendored bundle
+- **D-031** — Dynamically-injected modules must be plain JS (2026-07-04); scene.js unchanged by this decision
+- **D-030** — SoD Museum runtime pattern (2026-07-04); offline-pipeline discipline extended by this decision; runtime pattern unchanged
+- **D-029** — SoD Museum manifest schemas (2026-07-04); unchanged
+
+---
+
+## D-034 · 2026-07-05 · SoD Museum C3 impl-review resolutions — programmatic scene as v1 real content · Babel pre-transpile via JR authorization · vendored bundle deferred to v2 · audio codec + duration corrections (DD-032)
+
+**Decision:** Five resolutions from the C3 impl review (C-Build's log at `SOD MUSEUM/session-logs/session-log-2026-07-05-sonnet-c3-impl.md`, Opus@CH + C-Prime review, JR direction 2026-07-05):
+
+**1. Programmatic scene expansion ships v1; authored GLBs move to v2+.**
+JR's intro file names the vision as a "crystalized structure of Obsidian" — faceted, flat-shaded procedural geometry IS that vision, not an approximation of it. `scene.js` v1 geometry is reclassified as authored procedural art held to the real-content bar (authorship is what the doll-without-a-soul rule gates on, not asset provenance). Full composition spec at `SOD MUSEUM/session-logs/session-log-2026-07-05-c3-arch-addendum-scene.md` §A.1: faceted rotunda drum with Ember vein seams, Ocean-darkened height, five doorway arches (Classics open with light spill, four sealed with perimeter glow), faceted Classics gallery with depth fog and three cabinet silhouettes (emissive marquee + flickering screen planes, playable cabinet findable by brighter light). No textures introduced → no GLTFLoader/DRACOLoader/KTX2Loader needed at v1. Authored GLBs land at v2+ as data-only asset swap.
+
+**2. Babel pre-transpile resolves via JR in-session authorization, not a local toolchain run.**
+C-Build's C3 session measured `@babel/standalone` at 3.14 MB (his own C2 estimate of ~700 KB was 4.5× low — flagged by C-Build against himself, same discipline as flagging Opus errors) — alone exceeding the entire 2.5 MB initial-payload ceiling. Harness policy correctly denied unilateral transpile-tool execution. Resolution: JR pastes a verbatim scoped authorization at C-Build's next session start (text in addendum §A.2) covering `npx` + @babel/cli/@babel/core/@babel/preset-react for the four museum `.jsx` files + the `index.html` script-tag swap. Projected payload after: ≈ 0.2 MB (from 3.19 MB). **Ripple to D-031:** once museum `.jsx` are pre-transpiled, the "dynamically-injected modules must be plain JS" rule is moot for the museum but stays authoritative for Babel-standalone surfaces (landing page). Transpile joins the museum offline pipeline: edit `.jsx` → re-transpile → commit both.
+
+**3. Vendored Three.js bundle (D-033) deferred to v2 — dissolved, not blocked.**
+The bundle's only job is carrying GLB loaders; resolution 1 means v1 has no GLBs and no textures. Three.js r160 core continues via the existing CDN UMD path. At v2 GLB arrival, JR grants a scoped esbuild authorization (same sentence pattern as resolution 2) and D-033's Option 3 builds then. **D-033 follow-up recorded here:** C-Build's reality-check confirmed Option 1 dead — `three@0.160.0/examples/js/loaders/{GLTFLoader,DRACOLoader,KTX2Loader}.js` all 404. Option 3 is the only path when the moment comes.
+
+**4. Audio codec-sniff MIME corrected: `audio/ogg; codecs="opus"`, not `audio/webm; codecs=opus`.**
+Opus@CH's C3 arch §1.5 specified the WebM probe; `ffmpeg -c:a libopus` with `.opus` extension produces an **Ogg** container (verified via `ffprobe format_name`). The WebM probe checks the wrong container entirely. C-Build corrected and live-verified (browser chose + fetched `.opus` via network log). **Opus@CH calibration record: fifth spec error, new category — external-tool output formats assumed instead of verified.** Pre-publish reality-check rule now covers three categories: CDN paths · contrast math · tool output formats.
+
+**5. Duration reads from decoded `AudioBuffer.duration` at runtime, never the manifest field.**
+AAC encoder priming-sample padding inflates `ffprobe` duration on the `.aac` (140.45s vs. the true 137.84s on source WAV + `.opus`). C-Build's audio manager reads `buffer.duration` from the actually-decoded buffer for crossfade scheduling — structurally sidestepping the encoder-discrepancy class rather than trusting either encoder's number. `audio.json.duration_seconds` carries the true source value as documentation, not as a scheduling input. **Pattern generalizable:** runtime-decoded truth over static manifest metadata wherever both exist.
+
+**Bugs fixed at C3 impl (recorded for the verification-protocol archive):**
+- Missing `<script>` tag for `guest-book-modal.jsx` crashed the app on first "Enter with sound" (React error #130). Caught live, fixed, re-verified. Lesson: new-file checklist includes the HTML wiring, not just the file.
+- Volume-control mute toggle mishandled the "stale sound opt-in, no live AudioContext" state (would have tried to mute a nonexistent session). Fixed: toggle checks `window.AudioManager` existence before state logic, lazy-starts if absent. Found by the PD-E stale-state stress pass — the protocol adopted at C2 close caught a real bug in its first standing run.
+
+**Ship-gate trajectory after these resolutions:** initial payload clears at C-Build's next session (§A.2 transpile); real-content ship bar clears on geometry (§A.1) with only the always-planned JR content pass remaining (placards, guest-book wording, tile blurb); axe DevTools + Tab-fuzz remain JR's pre-close pass (PD-D). **No tool blockers remain in the ship path.**
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-c3-arch-addendum-scene.md` — scene spec + blocker resolutions (new)
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-sonnet-c3-impl.md` — C-Build impl log (referenced)
+- `C Roles/Strategies/kickoffs/DD-032-C-Build-c3-shipbar.md` — Chain entry staging C-Build's next session
+- `Terminal/Central Hub/pipeline/DECISIONS.md` — this entry
+
+**Related decisions:**
+- **D-033** — loader-path (Option 1 confirmed dead here; Option 3 deferred to v2)
+- **D-032** — Netlify hosting (unchanged)
+- **D-031** — plain-JS rule (scoped down to Babel-standalone surfaces once museum transpiles)
+- **D-030** — runtime pattern (offline pipeline gains the transpile step)
+
+---
+
+## D-035 · 2026-07-05 · SoD Museum C3 terminal close — obsidian material spec + IIFE-wrap rule for pre-transpiled modules (DD-032)
+
+**Decision:** Two live-verification discoveries from C-Build's C3 amended pass are captured as forward-facing patterns for future museum work and any Central Hub React surface that follows the museum's runtime path:
+
+**1. Obsidian material spec — roughness 0.35, metalness 0.2, plus a HemisphereLight legibility floor — is the correct material vocabulary for faceted-obsidian rendering under sparse-PointLight budgets.**
+D-034 addendum §A.1 named "facet seams are the crystal structure" but did not specify the material response that lets sparse point lighting *reveal* those seams. C-Build's first pass used matte `roughness: 0.9`; result was a formless soft glow that contradicted the crystal reading. Root cause: obsidian is volcanic *glass*, not matte stone; a highly diffuse material cannot carry specular facet-edge contrast under sparse point lighting no matter how the geometry is built.
+
+**Locked material spec for future museum halls using the faceted-obsidian language:**
+- Wall + ceiling `MeshStandardMaterial` with `flatShading: true`, `roughness: 0.35`, `metalness: 0.2`
+- One `THREE.HemisphereLight` intensity 0.5 as a legibility floor (does NOT count against the PointLight budget — HemisphereLight is a separate light type)
+- PointLight budget from D-034 addendum §A.1 (≤ 6) remains authoritative
+- Ambient intensity stays low; **do not brighten the room to solve legibility.** Palette-albedo ceiling is the moody register; C-Build's interim ambient-2.2 test confirmed this and was reverted before ship. Future work inherits: legibility issues are material-response problems first, lighting-budget problems second, ambient-brightness problems never.
+
+**2. IIFE-wrap rule — any pre-transpiled museum module (post-JSX `.js`) must be wrapped in an IIFE to preserve top-level scope isolation.**
+Under `<script type="text/babel">` + Babel-standalone (C1/C2 pattern), each script gets its own evaluation wrapper — top-level `const { useState, useEffect } = React;` destructures across multiple files never collide. Under classic `<script src>` tags (C3 post-transpile pattern), all files share the single global lexical scope per HTML spec — second and third files' `const useState` redeclare the first's, producing a parse-time `SyntaxError` that aborts the entire script (mimicking C2's Bug 1 symptom shape, with a completely different root cause).
+
+**Locked rule:** every `.js` file emitted from the museum's Babel pre-transpile pass is post-processed to wrap the entire body in `(function () { "use strict"; ...; })();`. Explicit `window.X = ...` global exports each file already performs at its top level continue to work; only closure-scoped declarations (`const`/`let`/`function`) are isolated. Applies to all four current museum `.js` files (`museum.js`, `fallback/gallery.js`, `cabinets/zoom-overlay.js`, `rotunda/guest-book-modal.js`) and any future museum surface that adds a new `.jsx` source consuming top-level React destructures.
+
+**Extends D-031:** D-031 said "dynamically-injected modules must be plain JS, not JSX." D-035 says "*initial-load* modules that were transpiled from JSX must also be IIFE-wrapped when they share a page." Combined: the museum runtime pattern now has two shape-preservation rules for React-destructured code, both in the same spirit — don't let two different loading mechanisms collide at the global scope layer.
+
+**Transpile config (also locked):**
+- `babel.config.json` uses `{"runtime": "classic"}` — automatic runtime defaults to `import ... from "react/jsx-dev-runtime"` which is incompatible with the no-bundler + global-`React` CDN pattern
+- Config file is created for the transpile pass and deleted after — not committed to the museum tree (tooling config stays out of the shipped codebase per D-030 discipline)
+- `NODE_PATH` may need to point at the npx cache's `node_modules` under Node 24 to resolve preset/CLI packages — mechanical resolution fix, not a scope change
+
+**Additional C3 close observations (non-decisional, recorded for the archive):**
+- Sealed-doorway `angleDeg` values re-spaced to true 72° even (72/144/216/288) from prior uneven cluster (90/162/198/270). Internal-only; no external contract reads these angles. Confirms `manifest/halls.json` remains the sole external contract for hall identity/state.
+- Preview-tooling degradation across long-lived preview tab recommended a fresh-session re-verification before JR's walk. Not a ship-gate blocker; carried forward as the first item in JR's pre-close corridor.
+
+**Calibration record final state (across DD-032 C1–C3):**
+Five spec errors on Opus@CH's side, all in the "external-tool-or-format-behavior assumed instead of verified" category (CDN paths · contrast math · tool output formats). Pre-publish reality-check discipline is a standing rule from C3 close onward. C-Build's calibration was equally honest — his own C2 Babel-standalone size estimate (~700 KB) was 4.5× low; he flagged that on the C3 impl log with the same discipline he flagged Opus errors. Pattern-deviation rule earned its keep at every checkpoint of this DD.
+
+**Files touched (this D-NNN):**
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-sonnet-c3-impl-amended.md` — C-Build amended impl log (referenced)
+- `Terminal/Central Hub/SOD MUSEUM/session-logs/session-log-2026-07-05-opus-c3-signoff.md` — Opus@CH terminal sign-off (this D-NNN's context)
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/scene/scene.js` — geometry pass + material tuning
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/*.js` — 4 IIFE-wrapped transpiled outputs (from `museum.jsx`, `fallback/gallery.jsx`, `cabinets/zoom-overlay.jsx`, `rotunda/guest-book-modal.jsx`)
+- `Terminal/Central Hub/quick-front-end/shade-of-design-landing/museum/index.html` — script tag swap: 4 `.jsx` + Babel-standalone → 4 `.js`
+- `Terminal/Central Hub/pipeline/DECISIONS.md` — this entry
+
+**Related decisions:**
+- **D-034** — C3 impl-review resolutions (programmatic scene decision this D-035 completes)
+- **D-031** — Plain-JS rule (extended by D-035's IIFE-wrap rule)
+- **D-030** — Runtime pattern (offline pipeline now includes transpile + IIFE-wrap steps)
+- **D-029** — Manifest schemas (unchanged)
+
+**Future asset-library DD (JR note 2026-07-05):** JR has flagged exploration of a curated or authored asset library (potentially GLB, potentially other formats) as a separate DD to open post-merge. Not scoped in DD-032; the programmatic-scene v1 posture from D-034 is the ship posture. Authored GLBs remain the v2+ upgrade path through the same data-only asset-swap seam if that future exploration lands them.
+
+---
+
+## D-032 · 2026-07-05 · SoD hosting provider — Netlify for `shadeofdesign.net` (DD-032 pre-C3, resolves C1 signoff follow-up #7)
+
+**Decision:** `shadeofdesign.net` hosts on **Netlify**. Museum route (`/museum`) ships as a sub-path of the landing app on the same domain, no separate deploy target. JR direction 2026-07-05.
+
+**Context:** Hosting provider was named as an open Chief-side follow-up in Opus@CH's C1 signoff (item #7) and re-flagged in the C2 signoff carry-forward. Blocking-adjacent for C3 audio pipeline work — real `audio.json` URLs need a resolved host to point at (transcoded AAC/Opus files served from the same origin as the site, or from a Netlify-hosted asset path).
+
+**Implications for C3:**
+- **Audio hosting path:** transcoded audio files (Jahna WAV → AAC + Opus per C3 audio pipeline unlock) land under `quick-front-end/shade-of-design-landing/museum/audio/` (or a Netlify-configured asset path) and are served same-origin. No third-party CDN dependency for audio at v1. Same-origin also sidesteps CORS friction for the Web Audio manager.
+- **Deploy target:** Netlify auto-deploy from `main` branch (per JR's earlier landing-site convention). No changes to CI wiring required for the museum route itself — it's part of the same Vite/HTML bundle the rest of the landing already ships.
+- **Merge posture unchanged:** museum stays on `claude/dark-pivot` until C3 close + JR sign-off. Netlify only sees `main`; no accidental preview exposure of C2 placeholder state.
+- **Loader-path decision (open D-NNN):** unchanged by hosting choice. `three@0.160.0` still injected from `unpkg` CDN per D-030 runtime pattern; hosting decision is orthogonal to that D-NNN.
+
+**Open follow-ups closed by this decision:**
+- ✅ C1 signoff follow-up #7 — "Hosting provider for `shadeofdesign.net`" — resolved
+- ✅ C2 signoff carry-forward — hosting-provider unblocker for C3 audio pipeline — resolved
+
+**Related decisions:**
+- **D-030** — SoD Museum runtime pattern (Netlify hosts the same static assets D-030 describes)
+- **D-029** — SoD Museum manifest schemas (audio.json.tracks[].url now has a real host to point at)
+- **D-024** — Unite Passion as Central Hub landing component (same landing app, same deploy target)

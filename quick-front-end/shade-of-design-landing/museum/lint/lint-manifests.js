@@ -147,6 +147,51 @@ function main() {
     }
   });
 
+  // 10. (C3, arch §3.3) audio.json.tracks[] has >= 1 entry with
+  //     cleared_status in {"owner-delivered","cleared"} AND non-null
+  //     urls.aac AND non-null urls.opus.
+  const shippableTrack = tracks.find((t) =>
+    (t.cleared_status === "owner-delivered" || t.cleared_status === "cleared") &&
+    t.urls && t.urls.aac && t.urls.opus
+  );
+  if (!shippableTrack) {
+    violations.push("[10] audio.json has no track with a cleared_status + non-null urls.aac + urls.opus (audio ship-bar)");
+  }
+
+  // <<HELD scan (C3, arch §3.4): walks museum/**/*.{json,jsx,js,css}
+  // (excluding manifest/ and lint/ self) for any "<<HELD" marker. Scope is
+  // museum/** only — the tile 05 blurb in landing.jsx is landing-scope, not
+  // museum-scope, and stays JR-held independently.
+  const MUSEUM_ROOT = path.join(__dirname, "..");
+  const HELD_SKIP_DIRS = new Set(["manifest", "lint"]);
+  const HELD_EXTENSIONS = new Set([".json", ".jsx", ".js", ".css"]);
+
+  function walkForHeld(dir, files) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+      if (entry.isDirectory()) {
+        if (HELD_SKIP_DIRS.has(entry.name)) return;
+        walkForHeld(path.join(dir, entry.name), files);
+        return;
+      }
+      if (HELD_EXTENSIONS.has(path.extname(entry.name))) {
+        files.push(path.join(dir, entry.name));
+      }
+    });
+    return files;
+  }
+
+  walkForHeld(MUSEUM_ROOT, []).forEach((filePath) => {
+    const content = fs.readFileSync(filePath, "utf8");
+    const lines = content.split("\n");
+    lines.forEach((line, idx) => {
+      if (line.indexOf("<<HELD") !== -1) {
+        violations.push(
+          "[<<HELD] " + path.relative(MUSEUM_ROOT, filePath) + ":" + (idx + 1) + ": " + line.trim()
+        );
+      }
+    });
+  });
+
   if (violations.length === 0) {
     console.log("Manifest ship-gate lint: CLEAN (" + halls.length + " halls, " + cabinets.length + " cabinets, " + Object.keys(narrations).length + " narrations)");
     process.exit(0);

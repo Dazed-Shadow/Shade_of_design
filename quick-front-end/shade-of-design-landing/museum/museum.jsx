@@ -1,18 +1,21 @@
 /* global React, ReactDOM */
 /*
  * SoD Museum — app shell: threshold, hash sub-router, capability check,
- * 3D scene mount, 2D fallback dispatch, waypoint accessibility overlay.
+ * 3D scene mount, 2D fallback dispatch, waypoint accessibility overlay,
+ * audio manager wiring, guest book modal, volume control.
  *
  * Runtime pattern locked at D-030 (see pipeline/DECISIONS.md): CDN UMD +
  * Babel-standalone, no bundler, no ES modules, no React Router. Full
- * rationale for every deviation from the original C1/C2 arch specs lives in
- * the session logs at Terminal/Central Hub/SOD MUSEUM/session-logs/.
+ * rationale for every deviation from the original C1/C2/C3 arch specs
+ * lives in the session logs at Terminal/Central Hub/SOD MUSEUM/session-logs/.
  *
- * C2 addition: Three.js is injected via dynamic <script src> at the
- * threshold action (not React.lazy — no module graph exists to hang it
- * off). scene/scene.js is plain JS (not JSX) for the same reason: Babel-
- * standalone only auto-transforms <script type="text/babel"> tags present
- * at initial page load, never ones injected later.
+ * C2: Three.js injected via dynamic <script src> at the threshold action.
+ * scene/scene.js is plain JS, not JSX, per D-031 (dynamically-injected
+ * modules cannot use JSX — Babel-standalone never sees them).
+ *
+ * C3: audio-manager.js is injected the same way, same reason. Guest book
+ * modal and cabinet detail are initial-load JSX (fine — not dynamically
+ * injected).
  */
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -126,10 +129,7 @@ function injectScript(src) {
 }
 // Version pin: 0.160.0, NOT the C2 arch's stated 0.170.0. Verified live
 // (unpkg meta API) that three.js stopped publishing a classic global/UMD
-// build/three.min.js after r160 — 0.170.0/build/three.min.js does not
-// exist (only ES-module/CJS builds from r161 on). 0.160.0 is the last
-// version with the classic-script build this runtime pattern (D-030)
-// requires. Flagged for Opus@CH; full detail in the C2 impl log.
+// build/three.min.js after r160. See C2 impl log for full detail.
 const THREE_VERSION = "0.160.0";
 function ensureThreeLoaded() {
   if (window.THREE) return Promise.resolve();
@@ -138,6 +138,10 @@ function ensureThreeLoaded() {
 function ensureSceneModuleLoaded() {
   if (window.MuseumScene) return Promise.resolve();
   return injectScript("scene/scene.js");
+}
+function ensureAudioManagerLoaded() {
+  if (window.AudioManager) return Promise.resolve();
+  return injectScript("audio/audio-manager.js");
 }
 
 /* ---- Threshold (C1, Item 2 — unchanged) ---- */
@@ -209,6 +213,81 @@ function ManifestErrorScreen({ error }) {
   );
 }
 
+/* ---- Diegetic volume control (C3 Item 5) ---- */
+function SpeakerGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 6v4h2.5L8 12.5v-9L4.5 6H2Z" fill="currentColor" />
+      <path d="M10.2 5.2a3.2 3.2 0 0 1 0 5.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+function MutedGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 6v4h2.5L8 12.5v-9L4.5 6H2Z" fill="currentColor" />
+      <path d="M10.5 6.5 13.5 9.5M13.5 6.5 10.5 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function VolumeControl({ onEnsureAudio }) {
+  const [volume, setVolumeState] = useState(() => {
+    const raw = safeGetItem("sod_audio_volume");
+    const parsed = raw === null ? NaN : parseFloat(raw);
+    return isNaN(parsed) ? 0.65 : parsed;
+  });
+  const [muted, setMutedState] = useState(() => safeGetItem("sod_audio_muted") === "true");
+
+  const handleVolumeChange = (e) => {
+    const v = parseFloat(e.target.value);
+    setVolumeState(v);
+    if (window.AudioManager) window.AudioManager.setVolume(v);
+  };
+
+  const toggleMute = () => {
+    if (!window.AudioManager) {
+      // No audio session exists — either "Enter quietly" was chosen, or a
+      // deep-link cold reload after a prior "sound" visit left the control's
+      // local `muted` snapshot stale (AudioContext needs a fresh gesture to
+      // start, so it wasn't auto-restarted on reload — see C3 impl log,
+      // stale-state pass). Either way the local `muted` value can't be
+      // trusted as truth about whether audio is actually playing; any click
+      // here should start it, not just the "was muted" transition.
+      setMutedState(false);
+      onEnsureAudio();
+      return;
+    }
+    const next = !muted;
+    setMutedState(next);
+    window.AudioManager.setMuted(next);
+  };
+
+  return (
+    <div className="museum-volume-control">
+      <button
+        type="button"
+        className="volume-mute-btn"
+        onClick={toggleMute}
+        aria-label={muted ? "Unmute ambient audio" : "Mute ambient audio"}
+        aria-pressed={muted}
+      >
+        {muted ? <MutedGlyph /> : <SpeakerGlyph />}
+      </button>
+      <input
+        type="range"
+        className="volume-slider"
+        min="0"
+        max="1"
+        step="0.01"
+        value={volume}
+        onChange={handleVolumeChange}
+        aria-label="Ambient volume"
+      />
+    </div>
+  );
+}
+
 /* ---- 3D path: waypoint context + accessibility overlay (C2 Items 2,4,7,8) ---- */
 function waypointContext(waypointId, cabinets) {
   const cabinet = cabinets.find((c) => c.waypoint_id === waypointId);
@@ -219,6 +298,9 @@ function waypointContext(waypointId, cabinets) {
       cabinet,
     };
   }
+  if (waypointId === "rotunda-guest-book") {
+    return { announce: "Moving to the guest book pedestal.", cabinet: null };
+  }
   if (waypointId.indexOf("classics") === 0) {
     return { announce: "Moving to Classics hall.", cabinet: null };
   }
@@ -226,12 +308,10 @@ function waypointContext(waypointId, cabinets) {
 }
 
 // Static waypoint copy per Opus@CH's C2 arch §1.3 table (quoted text used
-// verbatim; classics-mid had no quoted copy in the table — an Opus stage
-// direction, not visitor copy — so it renders no placard text, consistent
-// with the "do not invent copy" discipline established at C1).
+// verbatim; classics-mid had no quoted copy — an Opus stage direction, not
+// visitor copy — so it renders no placard text).
 const WAYPOINT_STATIC_TEXT = {
   "rotunda-center": "You stand at the center of an obsidian rotunda. Five doorways ring you. Four are sealed.",
-  "rotunda-guest-book": "<<HELD FOR C3 — guest book>>",
   "classics-back": "The far wall pulses with a warmth you have to walk closer to feel.",
 };
 
@@ -254,7 +334,7 @@ function SceneView({ prefersReducedMotion, onWaypointChange, sceneHandleRef }) {
   return <div className="museum-scene-container" ref={containerRef} />;
 }
 
-function WaypointOverlay({ waypointIndex, waypointCount, waypointLabel, placardText, hasZoom, onContinue, onBack, onLookCloser }) {
+function WaypointOverlay({ waypointIndex, waypointCount, waypointLabel, placardText, hasZoom, hasGuestBook, onContinue, onBack, onLookCloser, onSignBook }) {
   return (
     <div className="waypoint-overlay" aria-label={waypointLabel}>
       {placardText && <p className="waypoint-placard">{placardText}</p>}
@@ -270,6 +350,11 @@ function WaypointOverlay({ waypointIndex, waypointCount, waypointLabel, placardT
         {hasZoom && (
           <button type="button" className="threshold-btn" onClick={onLookCloser}>
             Look closer
+          </button>
+        )}
+        {hasGuestBook && (
+          <button type="button" className="threshold-btn" onClick={onSignBook}>
+            Sign the book
           </button>
         )}
         <button
@@ -312,8 +397,9 @@ function SealedDoorRow({ halls }) {
   );
 }
 
-function ThreeDApp({ manifests }) {
+function ThreeDApp({ manifests, activeModal, onOpenModal, onCloseModal }) {
   const CabinetDetail = window.MuseumCabinetDetail;
+  const GuestBookModal = window.MuseumGuestBookModal;
   const sceneHandleRef = useRef(null);
   const [prefersReducedMotion] = useState(() => checkCapabilities().prefersReducedMotion);
   const [waypointId, setWaypointId] = useState("rotunda-center");
@@ -322,7 +408,6 @@ function ThreeDApp({ manifests }) {
     (window.MuseumScene && window.MuseumScene.WAYPOINT_ORDER.length) || 1
   );
   const [announcement, setAnnouncement] = useState("");
-  const [zoomCabinetId, setZoomCabinetId] = useState(null);
 
   const cabinets = manifests.cabinets.cabinets;
   const halls = manifests.halls.halls;
@@ -337,16 +422,19 @@ function ThreeDApp({ manifests }) {
 
   useEffect(() => {
     function onKeyDown(e) {
-      if (zoomCabinetId) return; // CabinetDetail owns Escape while zoomed
+      if (activeModal) return; // modal owns Escape while open
       if (e.key === "ArrowRight") sceneHandleRef.current && sceneHandleRef.current.advance();
       if (e.key === "ArrowLeft") sceneHandleRef.current && sceneHandleRef.current.retreat();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [zoomCabinetId]);
+  }, [activeModal]);
 
   const activeCabinet = cabinets.find((c) => c.waypoint_id === waypointId) || null;
-  const zoomCabinet = zoomCabinetId ? cabinets.find((c) => c.id === zoomCabinetId) : null;
+  const zoomCabinet = (activeModal && activeModal !== "guestbook")
+    ? cabinets.find((c) => c.id === activeModal)
+    : null;
+  const guestBookOpen = activeModal === "guestbook";
 
   let placardText = "";
   if (activeCabinet && narrations[activeCabinet.placard_narration_id]) {
@@ -360,9 +448,11 @@ function ThreeDApp({ manifests }) {
     placardText = WAYPOINT_STATIC_TEXT[waypointId];
   }
 
+  const modalOpen = !!zoomCabinet || guestBookOpen;
+
   return (
     <div className="museum-3d-root">
-      <div className={"museum-scene-wrap" + (zoomCabinet ? " museum-scene-dimmed" : "")}>
+      <div className={"museum-scene-wrap" + (modalOpen ? " museum-scene-dimmed" : "")}>
         <SceneView
           prefersReducedMotion={prefersReducedMotion}
           onWaypointChange={onWaypointChange}
@@ -372,45 +462,59 @@ function ThreeDApp({ manifests }) {
 
       <div aria-live="polite" className="sr-only">{announcement}</div>
 
-      {!zoomCabinet && (
+      {!modalOpen && (
         <WaypointOverlay
           waypointIndex={waypointIndex}
           waypointCount={waypointCount}
           waypointLabel={"Waypoint " + (waypointIndex + 1) + " of " + waypointCount + ": " + waypointId}
           placardText={placardText}
           hasZoom={!!activeCabinet}
+          hasGuestBook={waypointId === "rotunda-guest-book"}
           onContinue={() => sceneHandleRef.current && sceneHandleRef.current.advance()}
           onBack={() => sceneHandleRef.current && sceneHandleRef.current.retreat()}
-          onLookCloser={() => activeCabinet && setZoomCabinetId(activeCabinet.id)}
+          onLookCloser={() => activeCabinet && onOpenModal(activeCabinet.id)}
+          onSignBook={() => onOpenModal("guestbook")}
         />
       )}
 
-      {waypointId === "rotunda-center" && !zoomCabinet && <SealedDoorRow halls={halls} />}
+      {waypointId === "rotunda-center" && !modalOpen && <SealedDoorRow halls={halls} />}
 
       {zoomCabinet && (
         <div className="cabinet-zoom-modal">
-          <CabinetDetail cabinet={zoomCabinet} isOverlay={true} onBack={() => setZoomCabinetId(null)} />
+          <CabinetDetail cabinet={zoomCabinet} isOverlay={true} onBack={onCloseModal} />
         </div>
       )}
+
+      {guestBookOpen && <GuestBookModal onClose={onCloseModal} />}
     </div>
   );
 }
 
-/* ---- 2D fallback dispatch (C2 Item 3, real replacement for C1 stub) ---- */
-function TwoDApp({ manifests, route, navigate }) {
+/* ---- 2D fallback dispatch (C2 Item 3 / C3 Item 7, real replacement for C1 stub) ---- */
+function TwoDApp({ manifests, route, navigate, activeModal, onOpenModal, onCloseModal }) {
   const { RotundaGrid, ClassicsGrid } = window.MuseumGallery;
   const CabinetDetail = window.MuseumCabinetDetail;
+  const GuestBookModal = window.MuseumGuestBookModal;
+  const guestBookOpen = activeModal === "guestbook";
 
+  let page;
   if (route === "/classics") {
     const entryNarration = manifests.narration.narrations["classics-entry-tour-guide-open"];
-    return <ClassicsGrid cabinets={manifests.cabinets.cabinets} entryNarration={entryNarration} />;
-  }
-  if (route.indexOf("/classics/") === 0) {
+    page = <ClassicsGrid cabinets={manifests.cabinets.cabinets} entryNarration={entryNarration} />;
+  } else if (route.indexOf("/classics/") === 0) {
     const cabinetId = route.slice("/classics/".length);
     const cabinet = manifests.cabinets.cabinets.find((c) => c.id === cabinetId) || null;
-    return <CabinetDetail cabinet={cabinet} isOverlay={false} onBack={() => navigate("/classics")} />;
+    page = <CabinetDetail cabinet={cabinet} isOverlay={false} onBack={() => navigate("/classics")} />;
+  } else {
+    page = <RotundaGrid halls={manifests.halls.halls} onOpenGuestBook={() => onOpenModal("guestbook")} />;
   }
-  return <RotundaGrid halls={manifests.halls.halls} />;
+
+  return (
+    <React.Fragment>
+      {page}
+      {guestBookOpen && <GuestBookModal onClose={onCloseModal} />}
+    </React.Fragment>
+  );
 }
 
 /* ---- App shell ---- */
@@ -420,8 +524,19 @@ function MuseumApp() {
   const [audioOptIn, setAudioOptIn] = useState(() => safeGetItem("sod_audio_optin"));
   const [renderMode, setRenderMode] = useState(null); // "3d" | "2d"
   const [threeDPhase, setThreeDPhase] = useState(null); // null | "loading" | "ready"
+  const [activeModal, setActiveModal] = useState(null); // null | "guestbook" | cabinetId
 
-  const enterExperience = useCallback(() => {
+  const startAudio = useCallback((track) => {
+    ensureAudioManagerLoaded()
+      .then(() => window.AudioManager.init(track))
+      .then(() => window.AudioManager.play())
+      .catch((err) => console.error("[museum] audio init failed:", err));
+  }, []);
+
+  // Resolves 3D vs 2D and loads the corresponding chunk. Shared by the
+  // threshold action and the deep-link cold-load path — audio init is
+  // deliberately NOT part of this (see handleEnter comment below).
+  const resolveRenderMode = useCallback(() => {
     const caps = checkCapabilities();
     if (caps.use3D) {
       setRenderMode("3d");
@@ -440,19 +555,46 @@ function MuseumApp() {
   }, []);
 
   // Deep-link cold load: audio opt-in already set -> auto-pass threshold and
-  // run the capability check now (same behavior verified at C1).
+  // resolve 3D/2D now. Deliberately does NOT start audio here — creating an
+  // AudioContext needs a fresh user gesture (a bare page reload has none, and
+  // browsers block autoplay without one), so re-starting playback on every
+  // cold reload would silently fail anyway. The volume control's lazy-start
+  // path (see VolumeControl/handleEnsureAudioFromControl) covers a visitor
+  // who wants sound after a quiet cold load — that path fires from a real click.
   useEffect(() => {
     if (audioOptIn && renderMode === null) {
-      enterExperience();
+      resolveRenderMode();
     }
-  }, [audioOptIn, renderMode, enterExperience]);
+  }, [audioOptIn, renderMode, resolveRenderMode]);
 
   const handleEnter = (mode) => {
     safeSetItem("sod_audio_optin", mode);
     setAudioOptIn(mode);
-    enterExperience();
+    if (mode === "sound") {
+      // The threshold click IS the autoplay-unlock gesture (Fable Dialogue 1) —
+      // audio only ever starts from here, never from a deep-link reload.
+      const track = manifests && manifests.audio.tracks[0];
+      if (track) startAudio(track);
+    } else {
+      safeSetItem("sod_audio_muted", "true");
+    }
+    resolveRenderMode();
     navigate("/rotunda");
   };
+
+  const handleEnsureAudioFromControl = useCallback(() => {
+    if (!manifests) return;
+    safeSetItem("sod_audio_optin", "sound");
+    safeSetItem("sod_audio_muted", "false");
+    startAudio(manifests.audio.tracks[0]);
+  }, [manifests, startAudio]);
+
+  // Volume control hides during any modal (cabinet zoom or guest book) via a
+  // body data-attribute — simplest cross-branch (3D/2D) toggle per arch §1.6.
+  useEffect(() => {
+    document.body.setAttribute("data-museum-mode", activeModal ? "zoom" : "");
+    return () => document.body.removeAttribute("data-museum-mode");
+  }, [activeModal]);
 
   if (error) {
     return <ManifestErrorScreen error={error} />;
@@ -465,29 +607,51 @@ function MuseumApp() {
     );
   }
 
-  // Gate on audioOptIn alone, not route: a stale/shared deep-link hash
-  // (e.g. "#/rotunda") with no opt-in yet must still show the threshold,
-  // not fall through every renderMode branch into a silent dead-end. Bug
-  // found live during C2 verification — see impl log.
+  // Gate on audioOptIn alone, not route: a stale/shared deep-link hash with
+  // no opt-in yet must still show the threshold (bug found + fixed at C2).
   const showThreshold = !audioOptIn;
   if (showThreshold) {
     return <Threshold greeting={manifests.greeting} onEnter={handleEnter} />;
   }
 
+  let body;
   if (renderMode === "2d") {
-    return <TwoDApp manifests={manifests} route={route} navigate={navigate} />;
-  }
-  if (renderMode === "3d") {
-    if (threeDPhase === "ready") {
-      return <ThreeDApp manifests={manifests} />;
-    }
-    return <Preparing3D />;
+    body = (
+      <TwoDApp
+        manifests={manifests}
+        route={route}
+        navigate={navigate}
+        activeModal={activeModal}
+        onOpenModal={setActiveModal}
+        onCloseModal={() => setActiveModal(null)}
+      />
+    );
+  } else if (renderMode === "3d") {
+    body = threeDPhase === "ready"
+      ? (
+        <ThreeDApp
+          manifests={manifests}
+          activeModal={activeModal}
+          onOpenModal={setActiveModal}
+          onCloseModal={() => setActiveModal(null)}
+        />
+      )
+      : <Preparing3D />;
+  } else {
+    body = (
+      <div className="museum-stub" aria-busy="true">
+        <p className="museum-stub-label">Loading&hellip;</p>
+      </div>
+    );
   }
 
   return (
-    <div className="museum-stub" aria-busy="true">
-      <p className="museum-stub-label">Loading&hellip;</p>
-    </div>
+    <React.Fragment>
+      {body}
+      {(renderMode === "2d" || (renderMode === "3d" && threeDPhase === "ready")) && (
+        <VolumeControl onEnsureAudio={handleEnsureAudioFromControl} />
+      )}
+    </React.Fragment>
   );
 }
 

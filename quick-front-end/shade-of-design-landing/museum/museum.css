@@ -535,3 +535,107 @@ body {
   padding: 3px 8px;
   border-radius: 3px;
 }
+
+/* ---- Diegetic volume control (C3 Item 5) ---- */
+.museum-volume-control {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(11, 23, 38, 0.75);
+  border: 1px solid var(--museum-slate);
+  border-radius: 20px;
+}
+/* Hidden while any modal (cabinet zoom or guest book) is open. */
+body[data-museum-mode="zoom"] .museum-volume-control {
+  display: none;
+}
+.volume-mute-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--museum-paper);
+  cursor: pointer;
+  padding: 2px;
+}
+.volume-mute-btn:hover,
+.volume-mute-btn:focus-visible {
+  color: var(--museum-ember);
+}
+.volume-slider {
+  width: 90px;
+  accent-color: var(--museum-ember);
+}
+.volume-slider:focus-visible {
+  outline: 2px solid var(--museum-ember);
+  outline-offset: 2px;
+}
+
+/* ---- Guest book modal (C3 Item 8) ---- */
+.guest-book-modal-backdrop {
+  z-index: 6; /* above the volume control */
+}
+.guest-book-invitation {
+  font-family: "Marcellus", serif;
+  font-size: 18px;
+  color: var(--museum-paper);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.guest-book-signed-name {
+  font-family: "Marcellus", serif;
+  font-size: 20px;
+  color: var(--museum-paper);
+  margin: 0 0 16px;
+}
+.guest-book-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.guest-book-input {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--museum-slate);
+  background: transparent;
+  color: var(--museum-paper);
+}
+.guest-book-input:focus-visible {
+  outline: 2px solid var(--museum-ember);
+  outline-offset: 2px;
+}
+.guest-book-confirm {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--museum-ember);
+  border-radius: 4px;
+}
+.guest-book-confirm-text {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--museum-paper);
+  margin: 0 0 12px;
+}
+.guest-book-plaque {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  /* Decorative only — non-text WCAG 3:1 threshold, Slate-on-Ink clears at
+     4.33:1 (computed directly, see C2 impl log). Never body-text-sized. */
+  color: var(--museum-slate);
+  margin: 16px 0 0;
+}
+.guest-book-card {
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+}
