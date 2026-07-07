@@ -1,0 +1,62 @@
+{
+  "$schema_version": "1.0.0",
+  "cabinets": [
+    {
+      "id": "classics-mazechase",
+      "hall_id": "classics",
+      "title": "Maze Chase",
+      "era": "1980s",
+      "influences": ["Pac-Man", "Ms. Pac-Man"],
+      "design_notes": "Original characters, tribute aesthetics. Canvas 2D. Keyboard + touch.",
+      "art": {
+        "attract_loop_url": null,
+        "marquee_url": null,
+        "cabinet_render_url": null,
+        "placeholder_alt": "Maze-chase cabinet with ember marquee glow"
+      },
+      "placard_copy_md": "**Maze Chase** — a tribute to the maze-and-ghost format that defined an arcade generation. The route always closes; the only choice is whether you make it interesting.",
+      "placard_narration_id": "classics-mazechase-placard",
+      "playable": true,
+      "game_module": "maze-chase",
+      "waypoint_id": "classics-mazechase-position"
+    },
+    {
+      "id": "classics-dk-tribute",
+      "hall_id": "classics",
+      "title": "Ape Climb",
+      "era": "1980s",
+      "influences": ["Donkey Kong"],
+      "design_notes": "Attract loop only in v1. Playable slot reserved for v2+.",
+      "art": {
+        "attract_loop_url": null,
+        "marquee_url": null,
+        "cabinet_render_url": null,
+        "placeholder_alt": "Ape-climb cabinet, attract mode"
+      },
+      "placard_copy_md": "**Ape Climb** — the game that taught the industry a barrel could be a story beat.",
+      "placard_narration_id": "classics-dk-tribute-placard",
+      "playable": false,
+      "game_module": null,
+      "waypoint_id": "classics-dk-position"
+    },
+    {
+      "id": "classics-mario-tribute",
+      "hall_id": "classics",
+      "title": "Plumber's Rise",
+      "era": "1980s",
+      "influences": ["Mario Bros.", "Super Mario Bros."],
+      "design_notes": "Attract loop only in v1.",
+      "art": {
+        "attract_loop_url": null,
+        "marquee_url": null,
+        "cabinet_render_url": null,
+        "placeholder_alt": "Plumber's-rise cabinet, attract mode"
+      },
+      "placard_copy_md": "**Plumber's Rise** — a side-scroll grammar that outlived its own decade.",
+      "placard_narration_id": "classics-mario-tribute-placard",
+      "playable": false,
+      "game_module": null,
+      "waypoint_id": "classics-mario-position"
+    }
+  ]
+}

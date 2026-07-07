@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shade of Direction — Museum</title>
+  <meta name="description" content="A first-person museum of arcade tributes and lo-fi ambient. Shade of Design, tile 05." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Marcellus is museum-only: not loaded by the main landing page (see C1 session log,
+       Pattern-deviation 5 — Fable's "already served by the brand system" claim does not
+       hold against the real index.html, which loads Space Grotesk + JetBrains Mono only). -->
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="museum.css" />
+  <link rel="icon" type="image/png" href="../assets/logo-mark.png" />
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Production builds (C3 Item 10): dev builds measured ~1.19 MB combined;
+       production measured ~143 KB combined (see C3 impl log). SRI hashes
+       computed directly via `curl | openssl dgst -sha384`, not copy-pasted
+       from memory. -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+  <!-- @babel/standalone removed (C3 addendum §A.2, JR-authorized transpile
+       pass): it measured ~3.14 MB and alone blew the 2.5 MB payload ceiling.
+       The four museum .jsx files are now pre-transpiled offline to plain
+       .js (classic React.createElement runtime, matching this page's
+       global-React/no-bundler pattern) via `npx @babel/cli` +
+       `@babel/preset-react` (runtime: classic). Re-run that pass after
+       editing any of the four source .jsx files below. -->
+  <script src="games/maze-chase.js"></script>
+  <script src="cabinets/zoom-overlay.js"></script>
+  <script src="fallback/gallery.js"></script>
+  <script src="rotunda/guest-book-modal.js"></script>
+  <script src="museum.js"></script>
+</body>
+</html>

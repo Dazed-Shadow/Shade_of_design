@@ -1,0 +1,641 @@
+/* Museum tokens — fixed palette values, deliberately NOT reusing the landing
+   site's --ink/--ocean/--slate/--ember variables (see C1 session log,
+   Pattern-deviation 3: those tokens are theme-adaptive text colors that flip
+   between light/dark themes; DD-032's palette is a fixed brand palette that
+   must not flip). Values match Fable §1.6 closed palette exactly. */
+:root {
+  --museum-ink: #0B1726;
+  --museum-ember: #C97B4A;
+  --museum-ember-soft: #E4A57E;
+  --museum-slate: #5D809D;
+  --museum-ocean: #1A3E62;
+  --museum-paper: #FAFAF7;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ---- Threshold (Item 2) ---- */
+.threshold {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--museum-ink);
+  overflow: hidden;
+}
+
+.threshold-doors {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+.threshold-door {
+  flex: 1;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 100%),
+    var(--museum-ink);
+  transition: transform 650ms ease;
+}
+.threshold-door-left { border-right: 1px solid rgba(201, 123, 74, 0.25); }
+.threshold-door-right { border-left: 1px solid rgba(201, 123, 74, 0.25); }
+
+/* Paper light leaking through the door seam — Paper is scarce (Fable §1.4);
+   this is one of its two appearances in the whole experience. */
+.threshold-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 46px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    var(--museum-paper) 0%,
+    var(--museum-ember-soft) 35%,
+    rgba(201, 123, 74, 0) 75%
+  );
+  opacity: 0.55;
+  filter: blur(2px);
+  transition: opacity 650ms ease;
+  pointer-events: none;
+}
+
+.threshold-open .threshold-door-left { transform: translateX(-100%); }
+.threshold-open .threshold-door-right { transform: translateX(100%); }
+.threshold-open .threshold-seam { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .threshold-door,
+  .threshold-seam {
+    transition: none;
+  }
+}
+
+.threshold-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 480px;
+  padding: 0 24px;
+}
+
+.threshold-greeting {
+  font-family: "Marcellus", serif;
+  font-size: clamp(26px, 5vw, 42px);
+  color: var(--museum-paper);
+  margin: 0 0 40px;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 24px rgba(250, 250, 247, 0.25);
+}
+
+.threshold-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.threshold-btn {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  border-radius: 4px;
+  border: 1px solid var(--museum-ember);
+  background: transparent;
+  color: var(--museum-paper);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.threshold-btn:hover,
+.threshold-btn:focus-visible {
+  background: var(--museum-ember);
+  color: var(--museum-ink);
+}
+.threshold-btn-quiet {
+  /* Slate as a border only (decorative, WCAG non-text 3:1 threshold — passes
+     at 4.33:1). Computed directly (see C2 impl log): Slate-on-Ink text fails
+     the 4.5:1 body-text threshold at 4.33:1, worse than the arch's own
+     "borderline ~4.6:1" estimate, so Slate never appears as small-text
+     foreground or as a small-text hover background anywhere in this file. */
+  border-color: var(--museum-slate);
+}
+.threshold-btn-quiet:hover,
+.threshold-btn-quiet:focus-visible {
+  background: var(--museum-paper);
+  color: var(--museum-ink);
+}
+
+/* ---- C1 stub surfaces (rotunda/classics/cabinet routes are C2 unlocks) ---- */
+.museum-stub {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--museum-ink);
+  color: var(--museum-paper);
+  font-family: "JetBrains Mono", monospace;
+  text-align: center;
+  padding: 0 24px;
+}
+.museum-stub-label {
+  font-size: 18px;
+  margin: 0;
+}
+.museum-stub-note {
+  font-size: 13px;
+  /* Paper, not Slate, for body-weight secondary text — Slate-on-Ink is the
+     WCAG-AA risk edge named in the C2 arch §4.2; reserving Slate for large
+     text / decorative use only keeps small text safely above 4.5:1. */
+  color: var(--museum-paper);
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* Visually hidden but screen-reader-accessible (ARIA live regions, C2 Item 7) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.preparing-label {
+  font-family: "Marcellus", serif;
+  font-size: clamp(20px, 4vw, 30px);
+}
+
+/* ---- 3D scene mount (C2 Item 1-2) ---- */
+.museum-3d-root {
+  position: fixed;
+  inset: 0;
+  background: var(--museum-ink);
+  overflow: hidden;
+}
+.museum-scene-wrap {
+  position: absolute;
+  inset: 0;
+  transition: opacity 220ms ease;
+}
+.museum-scene-dimmed {
+  opacity: 0.3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .museum-scene-wrap { transition: none; }
+}
+.museum-scene-container {
+  position: absolute;
+  inset: 0;
+}
+.museum-scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Waypoint DOM overlay (C2 Item 7 — the accessibility path) ---- */
+.waypoint-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 32px;
+  background: linear-gradient(180deg, rgba(11, 23, 38, 0) 0%, rgba(11, 23, 38, 0.92) 40%);
+  pointer-events: none;
+}
+.waypoint-overlay > * {
+  pointer-events: auto;
+}
+.waypoint-placard {
+  font-family: "Marcellus", serif;
+  font-size: clamp(16px, 2.6vw, 22px);
+  color: var(--museum-paper);
+  text-align: center;
+  max-width: 640px;
+  margin: 0;
+}
+.waypoint-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.waypoint-actions .threshold-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.waypoint-actions .threshold-btn:disabled:hover {
+  background: transparent;
+  color: var(--museum-paper);
+}
+
+/* ---- Sealed-door plaques (C2 Item 8) ---- */
+.sealed-door-row {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 16px;
+}
+.sealed-plaque {
+  font-family: "JetBrains Mono", monospace;
+  background: rgba(11, 23, 38, 0.75);
+  border: 1px solid rgba(228, 165, 126, 0.35);
+  border-radius: 4px;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.sealed-plaque-name {
+  font-size: 15px;
+  font-weight: 600;
+  /* Paper, not Slate: 15px/600 doesn't clear WCAG's large-text bar (needs
+     18.66px+bold or 24px+regular), and direct computation shows Slate-on-Ink
+     fails 4.5:1 at 4.33:1 regardless (see C2 impl log) — corrected from an
+     earlier draft that assumed this qualified as "large text." */
+  color: var(--museum-paper);
+}
+.sealed-plaque-text {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--museum-paper);
+  opacity: 0.65;
+}
+.sealed-plaque:focus-visible {
+  outline: 2px solid var(--museum-ember);
+  outline-offset: 2px;
+}
+
+/* ---- Cabinet zoom overlay (3D path) / cabinet detail (2D path) — C2 Item 4 ---- */
+.cabinet-zoom-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(11, 23, 38, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.cabinet-detail {
+  display: grid;
+  gap: 24px;
+  max-width: 720px;
+  width: 100%;
+}
+.cabinet-detail-overlay {
+  background: var(--museum-ink);
+  border: 1px solid rgba(201, 123, 74, 0.35);
+  border-radius: 8px;
+  padding: 24px;
+  max-height: 85vh;
+  overflow: auto;
+}
+.cabinet-detail-art {
+  min-height: 160px;
+}
+.cabinet-detail-era {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--museum-paper);
+  opacity: 0.65;
+  margin: 0 0 12px;
+}
+.cabinet-detail-placard {
+  font-family: "Marcellus", serif;
+  font-size: 18px;
+  color: var(--museum-paper);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.cabinet-detail-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- Attract-mode CSS animation, non-playable cabinets (C2 Item 6) ---- */
+.attract-css {
+  position: relative;
+  min-height: 160px;
+  background: var(--museum-ink);
+  border: 1px solid rgba(201, 123, 74, 0.2);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  overflow: hidden;
+}
+.attract-css-small {
+  min-height: 100px;
+}
+.attract-css-marquee {
+  display: flex;
+  gap: 8px;
+}
+.attract-css-marquee span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--museum-ember);
+  animation: attract-glow 1.6s ease-in-out infinite;
+}
+.attract-css-marquee span:nth-child(2) { animation-delay: 0.2s; }
+.attract-css-marquee span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes attract-glow {
+  0%, 100% { opacity: 0.3; box-shadow: 0 0 0 rgba(201, 123, 74, 0); }
+  50% { opacity: 1; box-shadow: 0 0 10px rgba(201, 123, 74, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attract-css-marquee span { animation-play-state: paused; }
+}
+.attract-css-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--museum-paper);
+  opacity: 0.6;
+  text-align: center;
+  padding: 0 12px;
+  margin: 0;
+}
+.attract-art {
+  width: 100%;
+  border-radius: 4px;
+}
+
+/* ---- Maze-chase game (C2 Item 5) ---- */
+.game-mount {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.maze-status {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--museum-paper);
+  margin: 0;
+}
+.maze-canvas {
+  border: 1px solid rgba(201, 123, 74, 0.35);
+  border-radius: 4px;
+  max-width: 100%;
+}
+.maze-hint {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  color: var(--museum-paper);
+  opacity: 0.55;
+  margin: 0;
+}
+
+/* ---- 2D fallback gallery (C2 Item 3) ---- */
+.museum-page {
+  min-height: 100vh;
+  background: var(--museum-ink);
+  padding: 48px 24px;
+  box-sizing: border-box;
+}
+.museum-page-title {
+  font-family: "Marcellus", serif;
+  font-size: clamp(28px, 5vw, 40px);
+  color: var(--museum-paper);
+  margin: 0 0 8px;
+  text-align: center;
+}
+.museum-page-sub {
+  font-family: "Marcellus", serif;
+  font-size: 16px;
+  color: var(--museum-paper);
+  opacity: 0.75;
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto 32px;
+}
+
+.hall-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.hall-card {
+  display: block;
+  text-decoration: none;
+  border: 1px solid rgba(201, 123, 74, 0.25);
+  border-radius: 6px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.hall-card-open {
+  border-color: var(--museum-ember);
+  cursor: pointer;
+}
+.hall-card-open:hover,
+.hall-card-open:focus-visible {
+  background: rgba(201, 123, 74, 0.1);
+}
+.hall-card-sealed {
+  opacity: 0.7;
+}
+.hall-card-name {
+  font-family: "Marcellus", serif;
+  font-size: 18px;
+  color: var(--museum-paper);
+  margin: 0 0 6px;
+}
+.hall-card-plaque {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--museum-paper);
+  opacity: 0.6;
+  margin: 0;
+}
+
+.cabinet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.cabinet-card {
+  display: block;
+  text-decoration: none;
+  border: 1px solid rgba(201, 123, 74, 0.25);
+  border-radius: 6px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.cabinet-card:hover,
+.cabinet-card:focus-visible {
+  background: rgba(201, 123, 74, 0.1);
+}
+.cabinet-card-art {
+  margin-bottom: 12px;
+}
+.cabinet-card-title {
+  font-family: "Marcellus", serif;
+  font-size: 18px;
+  color: var(--museum-paper);
+  margin: 0 0 4px;
+}
+.cabinet-card-era {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--museum-paper);
+  opacity: 0.6;
+  margin: 0 0 8px;
+}
+.cabinet-card-playable {
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--museum-ink);
+  background: var(--museum-ember);
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+/* ---- Diegetic volume control (C3 Item 5) ---- */
+.museum-volume-control {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(11, 23, 38, 0.75);
+  border: 1px solid var(--museum-slate);
+  border-radius: 20px;
+}
+/* Hidden while any modal (cabinet zoom or guest book) is open. */
+body[data-museum-mode="zoom"] .museum-volume-control {
+  display: none;
+}
+.volume-mute-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--museum-paper);
+  cursor: pointer;
+  padding: 2px;
+}
+.volume-mute-btn:hover,
+.volume-mute-btn:focus-visible {
+  color: var(--museum-ember);
+}
+.volume-slider {
+  width: 90px;
+  accent-color: var(--museum-ember);
+}
+.volume-slider:focus-visible {
+  outline: 2px solid var(--museum-ember);
+  outline-offset: 2px;
+}
+
+/* ---- Guest book modal (C3 Item 8) ---- */
+.guest-book-modal-backdrop {
+  z-index: 6; /* above the volume control */
+}
+.guest-book-invitation {
+  font-family: "Marcellus", serif;
+  font-size: 18px;
+  color: var(--museum-paper);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.guest-book-signed-name {
+  font-family: "Marcellus", serif;
+  font-size: 20px;
+  color: var(--museum-paper);
+  margin: 0 0 16px;
+}
+.guest-book-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.guest-book-input {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--museum-slate);
+  background: transparent;
+  color: var(--museum-paper);
+}
+.guest-book-input:focus-visible {
+  outline: 2px solid var(--museum-ember);
+  outline-offset: 2px;
+}
+.guest-book-confirm {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--museum-ember);
+  border-radius: 4px;
+}
+.guest-book-confirm-text {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--museum-paper);
+  margin: 0 0 12px;
+}
+.guest-book-plaque {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  /* Decorative only — non-text WCAG 3:1 threshold, Slate-on-Ink clears at
+     4.33:1 (computed directly, see C2 impl log). Never body-text-sized. */
+  color: var(--museum-slate);
+  margin: 16px 0 0;
+}
+.guest-book-card {
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+}

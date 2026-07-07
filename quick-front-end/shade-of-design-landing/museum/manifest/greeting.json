@@ -1,0 +1,19 @@
+{
+  "$schema_version": "1.0.0",
+  "greeting_variants": {
+    "first_visit": {
+      "text": "Welcome, traveler.",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    },
+    "returning": {
+      "text": "Welcome home, {name}.",
+      "voices": {
+        "jr": { "audioUrl": null },
+        "mr-c": { "audioUrl": null }
+      }
+    }
+  }
+}
