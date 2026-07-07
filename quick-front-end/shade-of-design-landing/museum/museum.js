@@ -205,7 +205,7 @@ function Preparing3D() {
     "aria-busy": "true"
   }, /*#__PURE__*/React.createElement("p", {
     className: "museum-stub-label preparing-label"
-  }, "Preparing museum…"));
+  }, "Preparing museum\u2026"));
 }
 function ManifestErrorScreen({
   error
@@ -387,7 +387,7 @@ function WaypointOverlay({
     className: "threshold-btn threshold-btn-quiet",
     onClick: onBack,
     disabled: waypointIndex === 0
-  }, "← Step back"), hasZoom && /*#__PURE__*/React.createElement("button", {
+  }, "\u2190 Step back"), hasZoom && /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "threshold-btn",
     onClick: onLookCloser
@@ -400,7 +400,7 @@ function WaypointOverlay({
     className: "threshold-btn",
     onClick: onContinue,
     disabled: waypointIndex === waypointCount - 1
-  }, "Continue →")));
+  }, "Continue \u2192")));
 }
 function SealedDoorRow({
   halls
@@ -533,11 +533,22 @@ function TwoDApp({
   } else if (route.indexOf("/classics/") === 0) {
     const cabinetId = route.slice("/classics/".length);
     const cabinet = manifests.cabinets.cabinets.find(c => c.id === cabinetId) || null;
-    page = /*#__PURE__*/React.createElement(CabinetDetail, {
+    // Bug 3 fix (DD-032 C3.5): CabinetDetail's own `.cabinet-detail` class
+    // carries no background — the dark surface only comes from
+    // `.cabinet-detail-overlay` (the 3D modal's isOverlay=true path) or,
+    // for the other two 2D routes, the `.museum-page` wrapper they render
+    // inside. This route rendered CabinetDetail bare with neither, so it
+    // sat on the page's unstyled (white) background with Paper-colored
+    // (near-white) text and buttons on top — unreadable. Wrapping in the
+    // same `.museum-page` the sibling 2D routes use fixes it at the root,
+    // matching the pattern instead of patching individual button colors.
+    page = /*#__PURE__*/React.createElement("div", {
+      className: "museum-page"
+    }, /*#__PURE__*/React.createElement(CabinetDetail, {
       cabinet: cabinet,
       isOverlay: false,
       onBack: () => navigate("/classics")
-    });
+    }));
   } else {
     page = /*#__PURE__*/React.createElement(RotundaGrid, {
       halls: manifests.halls.halls,
@@ -633,7 +644,7 @@ function MuseumApp() {
       "aria-busy": "true"
     }, /*#__PURE__*/React.createElement("p", {
       className: "museum-stub-label"
-    }, "Loading…"));
+    }, "Loading\u2026"));
   }
 
   // Gate on audioOptIn alone, not route: a stale/shared deep-link hash with
@@ -668,7 +679,7 @@ function MuseumApp() {
       "aria-busy": "true"
     }, /*#__PURE__*/React.createElement("p", {
       className: "museum-stub-label"
-    }, "Loading…"));
+    }, "Loading\u2026"));
   }
   return /*#__PURE__*/React.createElement(React.Fragment, null, body, (renderMode === "2d" || renderMode === "3d" && threeDPhase === "ready") && /*#__PURE__*/React.createElement(VolumeControl, {
     onEnsureAudio: handleEnsureAudioFromControl

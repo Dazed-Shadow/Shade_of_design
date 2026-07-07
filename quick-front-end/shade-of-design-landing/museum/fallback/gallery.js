@@ -91,13 +91,19 @@ function CabinetCard({
     className: "cabinet-card-playable"
   }, "Playable"));
 }
+function BackToRotunda() {
+  return /*#__PURE__*/React.createElement("a", {
+    className: "museum-breadcrumb",
+    href: "#/"
+  }, "\u2190 Back to rotunda");
+}
 function ClassicsGrid({
   cabinets,
   entryNarration
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "museum-page"
-  }, /*#__PURE__*/React.createElement("h1", {
+  }, /*#__PURE__*/React.createElement(BackToRotunda, null), /*#__PURE__*/React.createElement("h1", {
     className: "museum-page-title"
   }, "Classics"), entryNarration && /*#__PURE__*/React.createElement("p", {
     className: "museum-page-sub"

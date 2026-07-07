@@ -504,7 +504,20 @@ function TwoDApp({ manifests, route, navigate, activeModal, onOpenModal, onClose
   } else if (route.indexOf("/classics/") === 0) {
     const cabinetId = route.slice("/classics/".length);
     const cabinet = manifests.cabinets.cabinets.find((c) => c.id === cabinetId) || null;
-    page = <CabinetDetail cabinet={cabinet} isOverlay={false} onBack={() => navigate("/classics")} />;
+    // Bug 3 fix (DD-032 C3.5): CabinetDetail's own `.cabinet-detail` class
+    // carries no background — the dark surface only comes from
+    // `.cabinet-detail-overlay` (the 3D modal's isOverlay=true path) or,
+    // for the other two 2D routes, the `.museum-page` wrapper they render
+    // inside. This route rendered CabinetDetail bare with neither, so it
+    // sat on the page's unstyled (white) background with Paper-colored
+    // (near-white) text and buttons on top — unreadable. Wrapping in the
+    // same `.museum-page` the sibling 2D routes use fixes it at the root,
+    // matching the pattern instead of patching individual button colors.
+    page = (
+      <div className="museum-page">
+        <CabinetDetail cabinet={cabinet} isOverlay={false} onBack={() => navigate("/classics")} />
+      </div>
+    );
   } else {
     page = <RotundaGrid halls={manifests.halls.halls} onOpenGuestBook={() => onOpenModal("guestbook")} />;
   }
