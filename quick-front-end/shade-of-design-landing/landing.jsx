@@ -100,9 +100,9 @@ const PROJECTS = [
     n: "05",
     kicker: "Experience · Museum",
     title: "Shade of Direction",
-    // <<HELD FOR JR>> — Fable proposed "The doors are heavy. Come in anyway."
-    // Blurb copy is JR's call per DD-032 §Decisions that remain JR's, item 1.
-    blurb: "<<HELD FOR JR>>",
+    // v1 blurb accepted by JR at DD-032 close (2026-07-05).
+    // Message, not etching — extend or reframe as the site evolves.
+    blurb: "Come home to a place carved from pressure. The doors know you.",
     href: "museum/index.html",
     status: "soon",
     accent: "ink",

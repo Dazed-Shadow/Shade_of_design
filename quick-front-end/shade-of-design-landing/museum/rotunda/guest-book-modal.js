@@ -87,7 +87,7 @@ function GuestBookModal({
     "aria-modal": "true"
   }, /*#__PURE__*/React.createElement("p", {
     className: "guest-book-invitation"
-  }, "<<HELD FOR JR — Fable proposed \"Sign the book if you like. Or don't. The museum stays.\">>"), isSigned ? /*#__PURE__*/React.createElement("div", {
+  }, "Leave your name if you want a marker. The obsidian remembers either way."), isSigned ? /*#__PURE__*/React.createElement("div", {
     className: "guest-book-signed-state"
   }, /*#__PURE__*/React.createElement("p", {
     className: "guest-book-signed-name"

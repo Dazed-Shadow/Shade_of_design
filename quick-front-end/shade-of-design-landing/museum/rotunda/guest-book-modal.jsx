@@ -74,9 +74,9 @@ function GuestBookModal({ onClose }) {
     <div className="cabinet-zoom-modal guest-book-modal-backdrop">
       <div className="cabinet-detail cabinet-detail-overlay guest-book-modal" role="dialog" aria-label="Guest book" aria-modal="true">
         <p className="guest-book-invitation">
-          {/* Held for JR per DD-032 Handoff decisions item 2 — Fable proposed:
-              "Sign the book if you like. Or don't. The museum stays." */}
-          {"<<HELD FOR JR — Fable proposed \"Sign the book if you like. Or don't. The museum stays.\">>"}
+          {/* v1 invitation accepted by JR at DD-032 close (2026-07-05).
+              Message, not etching — extend or reframe as the museum evolves. */}
+          {"Leave your name if you want a marker. The obsidian remembers either way."}
         </p>
 
         {isSigned ? (
