@@ -419,9 +419,18 @@
         return;
       }
 
-      tween = { from, to, start: performance.now(), duration: 1400, targetIndex: index };
+      // Bug 1 fix (DD-032 C3.5): announce() used to fire here, at tween
+      // *start* — the placard + ARIA live overlay would flip to the
+      // destination waypoint's content instantly, while the camera was
+      // still 1.4s into its glide toward it. Visitor-visible desync between
+      // "what the overlay says" and "where the camera visibly is" for the
+      // full tween duration on every single transition. Deferred to the
+      // render loop's tween-completion branch below so the overlay updates
+      // when the camera actually arrives. currentIndex still updates
+      // immediately (unrelated to the overlay) so rapid repeated
+      // advance()/retreat() calls keep targeting the correct next waypoint.
+      tween = { from, to, start: performance.now(), duration: 1400, targetIndex: index, notify: notify !== false };
       currentIndex = index;
-      if (notify !== false) announce(index);
     }
 
     function announce(index) {
@@ -447,7 +456,17 @@
         const eased = easeInOutCubic(t);
         camera.position.lerpVectors(tween.from, tween.to, eased);
         camera.lookAt(lookAheadTarget(tween.targetIndex));
-        if (t >= 1) tween = null;
+        if (t >= 1) {
+          const finished = tween;
+          tween = null;
+          // Bug 1 fix: announce only on arrival, not on tween start (see
+          // goTo() comment above). If a second advance()/retreat() lands
+          // mid-tween, this branch is skipped entirely for the superseded
+          // tween (goTo() already overwrote `tween` before it could reach
+          // t>=1) — only the final resting waypoint announces, matching
+          // what the visitor actually sees settle.
+          if (finished.notify) announce(finished.targetIndex);
+        }
       }
 
       // Cabinet screen flicker — subtle ~0.5Hz sine, small amplitude, fully

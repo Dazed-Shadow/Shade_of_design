@@ -83,9 +83,18 @@ function CabinetCard({ cabinet }) {
   );
 }
 
+function BackToRotunda() {
+  return (
+    <a className="museum-breadcrumb" href="#/">
+      &larr; Back to rotunda
+    </a>
+  );
+}
+
 function ClassicsGrid({ cabinets, entryNarration }) {
   return (
     <div className="museum-page">
+      <BackToRotunda />
       <h1 className="museum-page-title">Classics</h1>
       {entryNarration && <p className="museum-page-sub">{entryNarration.text}</p>}
       <div className="cabinet-grid">
