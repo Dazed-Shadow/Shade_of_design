@@ -65,7 +65,7 @@ Rotate monthly until traction is locked. C-MainLiner and C-SPOTTER both read thi
 ## V1 guardrails
 
 - **No autonomous posting.** All publishing is manual after JR review.
-- **One Notion review queue.** C-Comms writes there; JR approves there.
+- **One review queue in the vault.** C-Comms writes review packets to the vault; JR approves there. (Notion retired portfolio-wide per DD-033, 2026-07-04.)
 - **Tokens in `.env` per project**, not shared. Mirrors HZ + LOFI canonical pattern.
 - **Scripts over MCPs** for every platform integration — see PLATFORMS.md for why.
 

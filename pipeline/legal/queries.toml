@@ -1,0 +1,27 @@
+# CourtListener search query registry for the Legal Research Archive
+# (DD-026 auto-fetch routine). Locked Phase 1 queries: CAFC + SCOTUS + CADC.
+# To add a query: append a new [[query]] block. Defaults apply to all.
+
+[[query]]
+id = "cafc-recent-published"
+court = "cafc"
+description = "Federal Circuit -- published opinions, newest first"
+
+[[query]]
+id = "scotus-recent-published"
+court = "scotus"
+description = "Supreme Court -- published opinions, newest first"
+
+[[query]]
+id = "cadc-admin-law"
+court = "cadc"
+description = "D.C. Circuit -- published opinions (admin-law heavy)"
+
+[defaults]
+type = "o"                                     # opinions
+stat_Published = "on"
+order_by = "dateFiled desc"
+q = ""
+filed_after_strategy = "last_fetched_or_30d"   # use last successful fetch date for query; fallback to 30d ago
+filed_after=06%2F01%2F2026&                    #JR - We should probably make sure to bump this to last 60 days instead -- wanted to at least anchor here
+base_url = "https://www.courtlistener.com/"
