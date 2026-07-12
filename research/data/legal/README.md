@@ -1,4 +1,15 @@
+---
+cssclasses:
+  - sod-room
+  - sod-records
+---
+
+> [!nav] [[_Lobby|Lobby]] [[_Dashboard|Command Deck]] [[References/ShadingDesigns|War Room]] [[Shade of Design/Central Hub|Gallery]] [[Terminal/Central Hub/research/data/legal/README|Records]] [[Diary Reports/_Diary Index|Study]]
+
 # Legal Research Archive — Format & Layout
+
+![[logo-lockup-light.png]]
+==ARCHIVED== · **Record L-001** — the light-era lockup, filed when DD-011 made dark canonical. Kept as record, not current brand.
 
 This directory is the Central Hub-side landing zone for JR's legal research corpus. PDFs originate at vault root (`ResearchForced/LegalOpinions/PDFS/`), curated by hand from CourtListener. Per-case synthesis and structured extraction live here.
 
@@ -9,16 +20,23 @@ Origin DD: [[../../../../../References/Designs/DD-025 Legal Research Archive man
 ```
 Terminal/Central Hub/research/data/legal/
   cases/<docket>.md          # TA — per-case full synthesis + structured frontmatter
+  field-clerks/<docket>.md   # DD-031 — SR-training doctrinal isolates paired to case files (LIVE convention)
+  JR Digests/                # DD-027 — LRD-NNN learning-loop digests + Content refs/ (audio/image)
+  _fetch_summaries/          # DD-026 — per-fetch fast-extract summaries from the auto-fetch routine
   index.csv                  # TA master tabular index (pipe-delimited)
   relations/                 # TB per-case citation listings (placeholder — Phase 2)
   relations.csv              # TB master citation graph (pipe-delimited)
   authorities/               # TC per-case table-of-authorities (placeholder — Phase 2)
   authorities.csv            # TC master authority graph (pipe-delimited)
-  field-clerk-drafts/        # DD-022 staging — Field Clerk Session drafts pending SR cross-vault move
+  field-clerk-drafts/        # LEGACY — DD-022 staging (DD-022 parked 2026-07-11; field-clerks/ is canonical)
   cache/, normalized/        # legacy from parked DD-021 live-API approach; preserved but unused
 ```
 
 Source PDFs stay at vault root (`ResearchForced/LegalOpinions/PDFS/`) — JR's manual curation area. CH processes references the source path via the `pdf_path` frontmatter field in each `cases/<docket>.md`.
+
+## Visibility boundary — load-bearing privacy rule (DD-037 Standing Rule #6)
+
+Every `cases/`, `field-clerks/`, and `JR Digests/` file may carry a `visibility: Private | Public` frontmatter field. **A missing or absent field means Private.** The DD-037 manifest exporter (`pipeline/legal/export_manifests.py`) publishes to the public play-space manifests **only** files explicitly marked `visibility: Public` — JR opts each file in by hand. JR Digests and personal war-chest annotations stay Private by default; court opinions and case syntheses may be marked Public (public-domain-derived) after review. **Never mark a file Public on someone else's behalf.**
 
 ## TA — per-case file structure (`cases/<docket>.md`)
 
@@ -95,12 +113,13 @@ Phase 2 candidate: link `citation` values to canonical references where availabl
 
 In Phase 1, this CSV captures only the authorities visible IN the opinion text itself (cited cases, statutes), with limited metadata.
 
-## Intake workflow (manual, Phase 1)
+## Intake workflow (current — DD-026 shipped 2026-07-11)
 
-1. **JR pulls PDFs from CourtListener** using search URL pattern (or browsing). Example query for Federal Circuit (CAFC) recent opinions: `https://www.courtlistener.com/?type=o&q=&type=o&order_by=dateFiled%20desc&stat_Published=on&filed_after=06%2F01%2F2026&court=cafc`. Downloads land at `ResearchForced/LegalOpinions/PDFS/`.
-2. **Mr.C synthesis pass:** read PDF; produce `cases/<docket>.md` with full Field Clerk-aligned synthesis; append rows to `index.csv` / `relations.csv` / `authorities.csv`.
-3. **Optional: DD-022 Field Clerk Session draft** for selected cases — staged at `field-clerk-drafts/<docket>-field-clerk-session.md`, moved to SR vault (`Sharpen Reason/Legal/`) by JR after review.
+1. **`FETCH LEGAL`** (Skill 3 / DD-026 — live-verified 2026-07-11): the auto-fetch routine pulls new opinions across the three locked queries (CAFC + SCOTUS + CADC), dedupes against `_fetch_log.csv`, fast-extracts, writes a summary to `_fetch_summaries/`, and emails JR. Manual CourtListener pulls remain the fallback for out-of-query cases.
+2. **Mr.C synthesis pass** — `LR Chain [dockets]` (Skill 4/DD-029): read PDF; produce `cases/<docket>.md`; append index/relations/authorities rows as needed.
+3. **Field Clerk pass** — `FC [dockets]` (Skill 7) or `LR Chain +FC` (Skill 6): paired SR-training doctrinal isolate at `field-clerks/<docket>.md` per DD-031.
 4. **JR review:** synthesis tone, inference accuracy, follow-up relevance. Calibration feedback shapes future passes.
+5. **Publish (optional):** JR marks reviewed files `visibility: Public`; `python pipeline/legal/export_manifests.py` compiles the play-space manifests (DD-037 seam).
 
 ## JR Digests — learning loop (DD-027)
 
@@ -176,21 +195,19 @@ Six sections + footnotes. Preserved from JR's source spec at `Shade of Design/JR
 4. `## Ms. G Section (Post SR Review)` — next-direction + related cases
 5. `## Footnotes` — uses `=+=` separators (JR personal convention) for Further Research / Global / Views groups
 
-## Phase 2+ enhancements (out of scope for Phase 1)
+## Future enhancements (refreshed 2026-07-12)
 
-Tracked in DD-025 + DD-027 bodies:
-- **`_LR-ARCHIVE` Obsidian dataviewjs view** — vault-native browseable surface with case-cards, court-grouping, area-of-law filtering, TA↔TB↔TC navigation, and digest cross-stitch. NOT Notion (JR phasing away from Notion).
-- **Batch processing remaining 5 PDFs** in storage (24-1730, 24-1759, 24-1990, 24-2044, 24-2242).
-- **DD-026 Auto-fetch routine** — three locked queries (CAFC + SCOTUS + CADC); reads `pipeline/legal/queries.toml`; dedupes against `_fetch_log.csv`.
+Shipped and struck from this list: ~~DD-026 auto-fetch~~ (live 2026-07-11) · ~~batch processing the backlog PDFs~~ (done) · ~~Ms.G inverse-comms~~ (DD-030 shipped). Still ahead:
+- **DD-037 Phases 2–5** — the SR play-space consumes this corpus via the manifest seam: reading room (full corpus render) → regal register → browse chrome (war-chest drawer, shelf, gallery) → sync cadence + vault-native variant. Phase 1 (walking skeleton) shipped 2026-07-12.
 - **Authorities-URL enrichment script** — populate TC metadata fields from CourtListener's authorities page.
-- **Cross-court expansion** beyond Federal Circuit (driven by locked-queries set).
-- **DD-028 `_order-template.md`** — parked. Designed for procedural ORDERs (per curiam, costs, en banc grants). Held until ORDER intakes become a real need.
-- **JR_DD004 LIFT (Ms.G inverse-comms)** — soft prerequisite for clean Ms.G touchpoints in the JR Digest workflow.
-- **Ms.G cross-stitch** — brand-aware presentation templates for the LR-ARCHIVE visual layer + digest image pairing.
+- **Cross-court expansion** beyond the three locked queries.
+- **DD-028 `_order-template.md`** — parked. For procedural ORDERs; held until ORDER intakes become a real need.
+- **Skill 8 candidate** — Ledgers worth-evaluating filter (shallow-read triage of the pulled-case backlog; see Skill 7 spec §10).
+- **PDF storage subdivision** — `Court/Year_Quarter/` reorganization (DD-026.1 candidate; likely folds into the DD-037 data layer).
 
 ## Format reference
 
 - Origin DD: [[../../../../../References/Designs/DD-025 Legal Research Archive manual PDF pipeline]]
-- Downstream consumer: [[../../../../../References/Designs/DD-022 SR legal research landing zone]]
+- Downstream consumer: [[../../../../../References/Designs/DD-037 SR legal play-space and manifest seam|DD-037]] (supersedes parked DD-022's landing-zone intent; Field Clerk half lives in DD-031)
 - JR's high-level plan: `Shade of Design/JR Extension/LR_alt_pipeline_HighLevel.md`
-- Parked DD (live-API approach): [[../../../../../References/Designs/DD-021 Legal data pipeline CourtListener]]
+- Parked DDs: [[../../../../../References/Designs/DD-021 Legal data pipeline CourtListener]] (live-API approach) · [[../../../../../References/Designs/DD-022 SR legal research landing zone]] (intent distributed to DD-031 + DD-037)

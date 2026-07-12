@@ -23,5 +23,8 @@ stat_Published = "on"
 order_by = "dateFiled desc"
 q = ""
 filed_after_strategy = "last_fetched_or_30d"   # use last successful fetch date for query; fallback to 30d ago
-filed_after=06%2F01%2F2026&                    #JR - We should probably make sure to bump this to last 60 days instead -- wanted to at least anchor here
+# JR note 2026-07-11: wants the fallback window bumped 30d -> 60d. NOTE: "last_fetched_or_30d" is hardcoded
+# in legal_fetch_queries.py, so widening the window is a script edit, not a TOML value (flagged to Chief).
+# A prior inline scratch line ("filed_after=06%2F01%2F2026&") was removed here — it was invalid TOML and
+# silently blocked every fetch run. Left as a comment so the intent survives; behavior change tracked separately.
 base_url = "https://www.courtlistener.com/"

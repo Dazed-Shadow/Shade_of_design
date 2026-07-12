@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SR Reading Room</title>
+  <meta name="description" content="Shade of Design SR play-space, reading room. Austere document render of the public legal-research corpus: Field Clerks and case syntheses." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="playspace.css" />
+  <link rel="icon" type="image/png" href="../assets/logo-mark.png" />
+</head>
+<body>
+  <main id="root" aria-live="polite">
+    <p class="pw-loading">Loading —</p>
+  </main>
+
+  <!-- file:// fallback: script tags load where fetch() is origin-blocked.
+       On http this is a small duplicate read; playspace.js prefers fetch. -->
+  <script src="data/cases.js"></script>
+  <script src="data/field-clerks.js"></script>
+  <script src="playspace.js"></script>
+</body>
+</html>

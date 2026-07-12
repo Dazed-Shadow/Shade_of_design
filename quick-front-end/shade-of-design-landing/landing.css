@@ -168,6 +168,7 @@
   box-shadow: 0 0 0 3px rgba(47,125,91,0.18);
 }
 .tile-status.soon .dot { background: var(--ember); box-shadow: 0 0 0 3px rgba(201,123,74,0.18); }
+.tile-status.offline .dot { background: var(--muted); box-shadow: 0 0 0 3px rgba(93,128,157,0.15); }
 
 .tile-art {
   width: 100%;

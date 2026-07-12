@@ -140,7 +140,7 @@ function ProjectTile({ p }) {
         <h3 className="tile-title">{p.title}</h3>
         <p className="tile-blurb">{p.blurb}</p>
         <span className="tile-arrow">
-          {isSoon ? "Coming soon" : "Visit"}
+          {arrowLabel}
           <Arrow />
         </span>
       </div>

@@ -1,4 +1,7 @@
 ---
+cssclasses:
+  - sod-room
+  - sod-records
 docket_number: 25-332
 document_id: null
 filing_date: 2025/09
@@ -19,6 +22,7 @@ source_url: https://www.supremecourt.gov/opinions/25pdf/25-332_gfbh.pdf
 authorities_url: null
 pdf_path: ResearchForced/LegalOpinions/PDFS/Self Split/SCOTUS/trump_v._slaughter.pdf
 document_type: OPINION (Companion to Trump v. Cook)
+visibility: Public
 ---
 
 # Trump v. Slaughter, No. 25-332 (U.S. June 29, 2026)

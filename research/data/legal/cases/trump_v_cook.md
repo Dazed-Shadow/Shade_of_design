@@ -1,4 +1,7 @@
 ---
+cssclasses:
+  - sod-room
+  - sod-records
 docket_number: 25A312
 document_id: null
 filing_date: 2025/08/28
@@ -19,6 +22,7 @@ source_url: https://www.supremecourt.gov/opinions/25pdf/25a312_new_a4v0.pdf
 authorities_url: null
 pdf_path: ResearchForced/LegalOpinions/PDFS/Self Split/SCOTUS/trump_v._cook.pdf
 document_type: OPINION (Companion to Trump v. Slaughter)
+visibility: Public
 ---
 
 # Trump v. Cook, No. 25A312 (U.S. June 29, 2026)

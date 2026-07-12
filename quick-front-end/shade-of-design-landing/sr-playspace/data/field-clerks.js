@@ -1,0 +1,287 @@
+window.SOD_MANIFEST_FIELD_CLERKS = {
+  "$schema_version": "1.0.0",
+  "field_clerks": [
+    {
+      "id": "21-1729",
+      "docket_number": "21-1729",
+      "title": "Field Clerk Draft \u2014 21-1729 (AstraZeneca v. Mylan)",
+      "court": null,
+      "decision_date": null,
+      "tags": [
+        "field-clerk",
+        "sr-context",
+        "dd-031-first-use",
+        "LRD-003",
+        "claim-construction",
+        "taranto-two-sided-P13"
+      ],
+      "visibility": "Public",
+      "cross_refs": [
+        "P13",
+        "24-2242",
+        "24-2369",
+        "P1"
+      ],
+      "sections": [
+        {
+          "heading": "SR framing \u2014 the doctrinal punchline",
+          "content_markdown": "This is the richest SR case in LRD-003, and I want you to sit with it. The whole opinion is a two-sided [[P13]] dispute *between the same judge across the corpus*. Read it and the moves in [[24-2242]] together \u2014 Taranto writes for the majority in Erdemir (function beats label) and dissents in AstraZeneca (label defended against a functional rewrite). Same judge, same discipline, opposite direction.\n\nThe rule that emerges \u2014 I want you to internalize this: **function overrides label when the label was drafted before the function was understood; label overrides function when the label was drafted deliberately with knowledge of the function.**\n\nApply that rule to AstraZeneca. The claim term \"0.001%\" was drafted with the significant-figure convention as background knowledge; the prosecution history shows the inventors actively chose against \"about\" language; the label was deliberate. Under the rule, label should override function. Taranto's dissent is doctrinally right."
+        },
+        {
+          "heading": "The move worth learning \u2014 Takeda canon = Russello canon transplanted",
+          "content_markdown": "Recognize the shape. In [[24-2369]] (Chafin v. OPM, from LRD-002), we saw *Russello v. United States* deployed: **\"where Congress includes particular language in one section of a statute but omits it in another . . . it is generally presumed that Congress acts intentionally.\"** Selective inclusion implies deliberate choice.\n\nHere, the *Takeda* canon does the same work at the claim-construction level: **\"the inventors knew how to use 'about' in claim language to allow for margin of error but chose not to use 'about' in the disputed claim term.\"** Selective inclusion in some claims + omission in others implies deliberate choice of narrow scope.\n\n**Same reasoning shape, different doctrinal domain.** Recognizing that shape means recognizing that *any* selective-use argument is a Sufficient Assumption exercise: the missing premise is \"selective use implies deliberate choice implies specific-scope intent.\" Plug it in; conclusion follows. The plug-in canon is doing the load-bearing work.\n\n**Practice the exercise:** the same facts (selective use of qualifier) can be used to argue for a *broader* construction too. Try it. The inventors used \"about\" where they knew of specific variability concerns and dropped it where they trusted the ordinary meaning to convey the appropriate precision. Now the missing premise is different: \"selective use implies context-sensitive discipline, not narrow-scope intent.\" Same facts, opposite conclusion. **The plug-in canon is where the argument actually lives.**"
+        },
+        {
+          "heading": "The denominator-choice trap ([[P1]] topical vs. logical)",
+          "content_markdown": "The majority frames AstraZeneca's construction as allowing \"up to a 50% variation\" and their own as allowing \"a 5% variation.\" Framed that way, AstraZeneca's construction sounds absurdly broad. But notice: the framing works only because the majority is expressing *variation as a percentage of the target value*. In *absolute* terms, both constructions operate at the fourth-fifth decimal place.\n\n**The frame does not match the analytical question.** The doctrinal question is what precision the invention actually operates at \u2014 an absolute-scale question. The rhetorical framing is a percentage-of-target-value question \u2014 a topically-adjacent but logically-different question.\n\nThis is a classic [[P1]] failure mode. When you see a persuasive percentage-based argument, ask: **percentage of what? Does the denominator match the analytical question?**"
+        },
+        {
+          "heading": "Two flavors of H3 (resolution-without-choosing)",
+          "content_markdown": "25-1807's majority explicitly deferred: \"we need not decide even under the more demanding *Merck* standard.\" That's the *explicit* flavor.\n\n21-1729's majority does the *implicit* flavor: it uses \"minor variations\" as the construction, without directly saying how much variation is \"minor\" enough. The rule is operationalized only via a secondary equivalence move (rewriting as \"0.0010%\"). Taranto's dissent nails this \u2014 \"without further construction to identify how much variation is too large to be 'minor,' [the construction] effectively reinstates the 'about' language that AstraZeneca used in its original claim 1 but removed in favor of the more precise '0.001%.'\"\n\n**Two flavors of the same H3 pattern.** Explicit deferral (25-1807) vs. under-specified construction (21-1729). Track this \u2014 when you see either, ask what the court is preserving room for."
+        },
+        {
+          "heading": "Play Set \u2014 21-1729",
+          "content_markdown": "- [x] **P13 \u2014 map by function, not label** (both directions). Majority reads function (stability sensitivity); dissent defends label (significant-figure convention). Doctrinally two-sided \u2014 first time we see [[P13]] pulled both ways in a single opinion.\n- [x] **P1 \u2014 topical relevance vs. logical relevance.** Majority's 5%/50% framing is topical (percentage-of-value) when the analytical question is logical (absolute precision).\n- [x] **L6 \u2014 when mixed, split.** The 2-1 split IS L6 in operation \u2014 panel disagreement on the claim-construction principle forces two opinions.\n- [x] **Sufficient_Assumption_anchor.** *Takeda* canon works as a Sufficient Assumption: selective use of \"about\" implies deliberate choice implies narrow scope. Named plug-in canon.\n- [ ] L4 \u2014 not central."
+        },
+        {
+          "heading": "Hypothesis touches",
+          "content_markdown": "- **H1** (court reasoning maps to LR Gate I/O/D): **confirmed.** Identify the disputed term (Lane I); operate the *Phillips* framework on specification + prosecution history (Lane O); derive the \"minor variations\" construction (Lane D). Taranto's dissent does the same lane structure with opposite conclusions at each lane.\n- **H3** (court \"we need not decide\" mirrors \"too simple to be right\"): **confirmed in a new implicit flavor** (see above).\n- **H4** (function-first / name-light reverses in legal domains): **tentatively confirmed.** JR \u2014 this case surfaces two named canons via the case itself (Takeda canon, Phillips framework). You met the names via the doctrine, not via me. Third-ish data point on H4.\n- **H2** \u2014 not directly tested (conditional-direction structures not central to this claim-construction dispute)."
+        },
+        {
+          "heading": "Candidate war-chest additions (from this pass)",
+          "content_markdown": "1. **Takeda canon (selective-use inference)** \u2014 Russello canon transplanted to claim construction. Recognizing selective-use arguments as Sufficient Assumption exercises is the master move.\n2. **Denominator-choice as rhetorical move** \u2014 always ask \"percentage of what\" when you see a percentage-based framing. [[P1]] family.\n3. **\"Rewrite as red flag\" (Taranto restraint principle)** \u2014 when a construction requires adding significant figures, words, or precision the drafter did not use, the construction is rewriting the claim. See *Vivid Techs.* (\"construe only to the extent necessary\") + *U.S. Surgical* (\"clarify, not modify\").\n4. **\"Overlap does not imply identity\"** \u2014 two ranges that overlap can still be distinct in coverage. Taranto's mathematical point at the claim-construction level; applies wherever two doctrinal categories share boundary regions.\n5. **\"Function overrides label when the label was drafted before the function was understood; label overrides function when the label was drafted deliberately with knowledge of the function\"** \u2014 the [[P13]] direction-determining rule surfaced from the same-judge Taranto contrast across 21-1729 and 24-2242. **Candidate for immediate war-chest promotion** \u2014 this is the highest-leverage single item to come out of LRD-003."
+        },
+        {
+          "heading": "Carry this forward",
+          "content_markdown": "> The same reasoning shape can be pulled two directions. Recognizing the shape (Sufficient Assumption, selective-use inference, presumption-plus-rebuttal, function-vs-label) is the first move. Deciding which direction to pull it is where doctrinal judgment lives. Taranto disciplining that direction across two of his own opinions is the SR gift of this case."
+        },
+        {
+          "heading": "Cross-references",
+          "content_markdown": "- **`Terminal/Central Hub/research/data/legal/cases/21-1729.md`** \u2014 full synthesis\n- **`Terminal/Central Hub/research/data/legal/field-clerks/24-2242.md`** \u2014 Erdemir v. ITC (same-judge Taranto contrast, opposite [[P13]] direction)\n- **`Terminal/Central Hub/research/data/legal/cases/24-2369.md`** \u2014 Chafin v. OPM (Russello canon, LRD-002 corpus link)\n- **`Terminal/SHARPEN REASON/Connection/Legal_Digest_Bridge.md`** \u2014 cross-digest hypothesis tracking"
+        }
+      ]
+    },
+    {
+      "id": "24-1990",
+      "docket_number": "24-1990",
+      "title": "Field Clerk Draft \u2014 24-1990 (Jacobson v. US)",
+      "court": null,
+      "decision_date": null,
+      "tags": [
+        "field-clerk",
+        "sr-context",
+        "dd-031-first-use",
+        "LRD-003",
+        "jurisdiction-stripping",
+        "FIAFEA"
+      ],
+      "visibility": "Public",
+      "cross_refs": [
+        "24-2242"
+      ],
+      "sections": [
+        {
+          "heading": "SR framing \u2014 the doctrinal punchline",
+          "content_markdown": "Jacobson is the tightest presumption-plus-rebuttal case in the cohort. Two Supreme Court moves anchor the whole opinion:\n\n1. *Cuozzo* / *Block* \u2014 there is a **strong presumption of judicial review**; Congress can rebut it, but only with a **clear and convincing** indication of intent to bar review.\n2. *Ruhrgas* / *Sinochem* \u2014 courts face **no unyielding jurisdictional hierarchy**; a court can pick which threshold ground to reach for \"denying audience,\" so long as it doesn't reach merits without jurisdiction.\n\nThe Federal Circuit takes those two rules and does one clean move: FIAFEA \u00a7 4208 (\"notwithstanding any other law, no court shall have jurisdiction\") clears the *Cuozzo* clear-and-convincing bar; that bar means the CFC does not need to first perform the *Fisher* money-mandating analysis (which is what Jacobson wanted, because it would have forced merits-adjacent inquiry as a stepping-stone).\n\nTwo paragraphs, one holding, no dissent. Clean."
+        },
+        {
+          "heading": "The move worth learning \u2014 the Sufficient Assumption structure of a rebuttable presumption",
+          "content_markdown": "Every rebuttable-presumption doctrine is a **Sufficient Assumption exercise**. The stimulus contains a general rule + a rebuttal condition. The rebuttal condition specifies what strength of signal is needed to overcome the presumption. If the signal meets the threshold, the presumption falls; if it doesn't, the presumption stands.\n\nHere:\n- **Stimulus:** courts presume judicial review is available.\n- **Rebuttal condition:** clear and convincing indication of congressional intent to bar review.\n- **Facts:** \u00a7 4208 says \"notwithstanding any other law, no court shall have jurisdiction,\" with a single narrow enumerated exception.\n- **Missing premise (the plug-in):** language of this strength IS clear and convincing.\n- **Conclusion:** the presumption falls; jurisdiction is barred.\n\n**Practice the exercise:** find three other rebuttable presumptions in the LSAT / legal-reasoning space. Each has the same shape. What differs is the strength-of-signal threshold. \"Clear and convincing\" (Jacobson) vs. \"clear statement\" (federalism cases) vs. \"beyond a reasonable doubt\" (criminal) vs. \"preponderance\" (civil). **Calibrating the threshold to the domain is the master skill.**"
+        },
+        {
+          "heading": "The Fisher-distinguishing as I-lane discipline",
+          "content_markdown": "The move I want you to notice is small but load-bearing. Jacobson wanted the CFC to first analyze whether FIAFEA is *money-mandating* (per *Fisher v. United States*) before dismissing on jurisdiction. The panel's response: *Fisher*'s rule addresses cases where jurisdiction and merits *blend* \u2014 where the money-mandating question IS the merits question. In this case, an independent statute has already stripped jurisdiction. *Fisher*'s ordering rule does not reach here.\n\n**This is Lane I work at its purest.** Identifying what a rule is FOR \u2014 the underlying doctrinal problem it addresses \u2014 is often more important than knowing the rule verbatim. *Fisher* is for jurisdiction-merits-blend cases. When there is no blend, *Fisher* has nothing to sequence."
+        },
+        {
+          "heading": "Play Set \u2014 24-1990",
+          "content_markdown": "- [x] **P13 \u2014 map by function, not label.** *Fisher*'s \"money-mandating first\" *label* covers many Tucker Act cases; the *function* is narrower (only when jurisdiction blends with merits). Panel maps by function.\n- [x] **L6 \u2014 when mixed, split.** The panel splits the money-mandating question (which *Fisher* claims) from the jurisdiction-stripping question (which \u00a7 4208 controls). Different rules, different domains, cleanly separated.\n- [x] **Sufficient_Assumption_anchor.** Presumption-plus-rebuttal doctrine IS a Sufficient Assumption structure at the doctrinal level.\n- [ ] L4 \u2014 not central.\n- [ ] P1 \u2014 not central."
+        },
+        {
+          "heading": "Hypothesis touches",
+          "content_markdown": "- **H1** (court reasoning maps to LR Gate I/O/D): **confirmed.** Identify what \u00a7 4208 says (Lane I); operate the *Cuozzo* clear-and-convincing test on that language (Lane O); derive that *Fisher* sequencing is not required in jurisdiction-strip contexts (Lane D). Three lane characters visible in a single ten-page opinion.\n- **H2** (Sufficient-Assumption conditional-direction appears in standing/limitations): **not directly tested** \u2014 the analysis is presumption-and-rebuttal, not conditional-direction proper.\n- **H3** (court \"we need not decide\" mirrors \"too simple to be right\"): **confirmed.** The panel resolves *Fisher*'s applicability narrowly (\"*Fisher* did not involve a statute that strips jurisdiction\") without deciding *Fisher*'s outer bounds. Smallest-claim-that-entails move preserved.\n- **H4** (function-first / name-light reverses in legal domains): **inconclusive** on this case."
+        },
+        {
+          "heading": "Candidate war-chest additions (from this pass)",
+          "content_markdown": "1. **Presumption-plus-clear-and-convincing-rebuttal** \u2014 canonical Sufficient Assumption structure; calibrating the threshold to the doctrinal domain is the master skill.\n2. **Illegal-exaction gateway (Tucker Act Due Process)** \u2014 very narrow doctrinal door (*Casa de Cambio*); may effectively immunize non-reviewability statutes from constitutional attack in the CFC forum. Worth noting as a structural constraint.\n3. **\"No unyielding jurisdictional hierarchy\"** \u2014 *Ruhrgas* / *Sinochem* principle. Also appears in [[24-2242]]. Cross-case pattern: the Federal Circuit invokes this doctrine to justify skipping jurisdictional questions when a different threshold ground disposes of the case."
+        },
+        {
+          "heading": "Carry this forward",
+          "content_markdown": "> Rebuttable presumptions are Sufficient Assumption structures. The doctrinal domain sets the rebuttal threshold. When you see a presumption-plus-rebuttal doctrine, ask: what strength of signal is required, and why did the doctrine choose that strength?"
+        },
+        {
+          "heading": "Cross-references",
+          "content_markdown": "- **`Terminal/Central Hub/research/data/legal/cases/24-1990.md`** \u2014 full synthesis\n- **`Terminal/Central Hub/research/data/legal/field-clerks/24-2242.md`** \u2014 Erdemir v. ITC (shared *Ruhrgas*/*Sinochem* invocation)\n- **`Terminal/SHARPEN REASON/Connection/Legal_Digest_Bridge.md`** \u2014 cross-digest hypothesis tracking"
+        }
+      ]
+    },
+    {
+      "id": "24-2242",
+      "docket_number": "24-2242",
+      "title": "Field Clerk Draft \u2014 24-2242 (Erdemir v. ITC)",
+      "court": null,
+      "decision_date": null,
+      "tags": [
+        "field-clerk",
+        "sr-context",
+        "dd-031-first-use",
+        "LRD-003",
+        "jurisdictional-boundaries"
+      ],
+      "visibility": "Public",
+      "cross_refs": [
+        "P13",
+        "21-1729",
+        "25-1807"
+      ],
+      "sections": [
+        {
+          "heading": "SR framing \u2014 the doctrinal punchline",
+          "content_markdown": "Read past the antidumping-duty machinery. What Erdemir gives us \u2014 for SR practice \u2014 is **one principle wearing three different opinions**: once Congress sets a timing framework, litigants cannot escape it by (a) reframing the challenge, (b) invoking residual jurisdiction, or (c) seeking backward-looking reassessment through a forward-looking review mechanism.\n\nThree procedural attempts, one substantive answer. That symmetry is the SR gold."
+        },
+        {
+          "heading": "The move worth learning \u2014 \"true nature\" as P13 at doctrinal scale",
+          "content_markdown": "Erdemir framed his third-appeal challenge as a challenge to the ITC's *denial of reconsideration*. That framing had a purpose: it kept the challenge inside \u00a7 1581(i)'s residual jurisdiction (which had no 30-day timing bar), instead of inside \u00a7 1581(c) (which did).\n\nTaranto's move, joined unanimously by Cunningham and Stark: **look past the pleading label to what the challenge is actually doing.** In its \"true nature,\" Erdemir's challenge was to the 2016 material-injury determination itself \u2014 the thing that could have been challenged in a 30-day \u00a7 1581(c) filing. The re-labeling did not change what the challenge was.\n\n**This is [[P13]] at doctrinal scale.** The label (\"challenging the reconsideration denial\") named one thing; the function (\"undo the 2016 determination retroactively\") was another. When they diverge, function wins.\n\nCross-stitch: In [[21-1729]], Taranto *dissents* to defend a label (significant-figure convention) against a functionally-motivated rewrite. Same judge, same discipline of scope-drawing, opposite direction \u2014 because there, the label was drafted deliberately with knowledge of the function, so it was doing real work. **The rule that emerges: function overrides label when the label was drafted before the function was understood; label overrides function when the label was drafted deliberately with knowledge of the function.** JR \u2014 practice this test on any P13 dispute you encounter."
+        },
+        {
+          "heading": "The candidate war-chest name \u2014 \"the clock starts when you can see the shape, not when you can prove the substance\"",
+          "content_markdown": "This is the procedural mirror of [[25-1807]]'s inquiry-notice rule. In Insulet, smoke starts the DTSA statute of limitations \u2014 a plaintiff who *could reasonably have suspected* misappropriation cannot wait for proof. Here, in Erdemir, the same epistemic threshold appears at the procedural-timing level: a plaintiff who *knew of the conditional basis* for a future challenge (\u00c7olako\u011flu's parallel case) cannot wait for the ripening; the 30-day \u00a7 1581(c) window starts when the shape is visible, even if the substance isn't yet provable.\n\n**Same suspicion \u2192 same clock** across substantive law (25-1807) and procedural law (24-2242). Candidate for war-chest promotion once we see it fire in a third case."
+        },
+        {
+          "heading": "Play Set \u2014 24-2242",
+          "content_markdown": "- [x] **P13 \u2014 map by function, not label.** \"True nature\" doctrine collapses the pleading label; function of the challenge is what routes it to the correct jurisdictional subsection.\n- [x] **L6 \u2014 when mixed, split.** The panel splits sunset review, CCR, and reconsideration into three separate holdings even though they share one principle. Splitting the doctrinal moves lets each affirmance carry its own reasoning surface without contaminating the others.\n- [x] **L4 \u2014 hexis, not situation.** Erdemir's failure is *hexis*-shaped \u2014 the habitual pattern of \"wait for the parallel case to resolve\" is what the ruling refuses. Timing rules test disposition, not one-time judgment.\n- [x] **Sufficient_Assumption_anchor.** The \"true nature\" analysis works as a Sufficient Assumption: assume that pleading-label does not control jurisdictional routing \u2192 the \u00a7 1581(i) escape hatch closes. Plug it in; the ruling follows.\n- [ ] P1 \u2014 present but not central."
+        },
+        {
+          "heading": "Hypothesis touches",
+          "content_markdown": "- **H1** (court reasoning maps to LR Gate I/O/D): **confirmed.** \u00a7 1581(c) vs. (i) analysis is Lane I (identifying which jurisdictional subsection the challenge belongs to); *ARP Materials* protective-filing precedent is Lane O (operating the rule on facts); the \"no unyielding jurisdictional hierarchy\" *Ruhrgas* invocation is Lane D (deriving that sequencing is not required).\n- **H2** (Sufficient-Assumption conditional-direction appears in standing/limitations): **confirmed.** Multiple conditional-direction moves \u2014 if reframing controls jurisdiction, then \u00a71581(i) applies; if function controls, then \u00a71581(c) applies. The court's choice of conditional-direction is the ruling.\n- **H3** (court \"we need not decide\" mirrors \"too simple to be right\"): **confirmed.** The \"may (perhaps must)\" reservation in the sunset review holding is exact \u2014 panel resolves the case without committing to the fuller doctrinal move. Third data point on H3 after 25-1807's three declinations."
+        },
+        {
+          "heading": "Candidate war-chest additions (from this pass)",
+          "content_markdown": "1. **\"True nature\" doctrine** \u2014 pleading-label does not control jurisdictional routing; function does.\n2. **Protective filing + stay rule** \u2014 even conditional/contingent challenges must be timely filed to preserve the challenge; ripeness is assessed at adjudication, not at filing.\n3. **\"Clock starts when you can see the shape, not when you can prove the substance\"** \u2014 cross-doctrinal principle uniting inquiry notice (25-1807) with \u00a71581(c) timing (24-2242).\n4. **Best-reading construction (post-Loper Bright)** \u2014 Federal Circuit doing its own statutory interpretation on trade-remedy statutes rather than deferring; SAA (\u00a7 3512(d)) retains authoritative-canon weight."
+        },
+        {
+          "heading": "Carry this forward",
+          "content_markdown": "> When you see a case with three procedural paths and one substantive answer, notice what the court is teaching about timing frameworks generally. The specific doctrine (\u00a7 1581(c) 30-day window) is fungible; the principle (Congress's timing choice cannot be escaped by re-labeling) travels."
+        },
+        {
+          "heading": "Cross-references",
+          "content_markdown": "- **`Terminal/Central Hub/research/data/legal/cases/24-2242.md`** \u2014 full synthesis\n- **`Terminal/Central Hub/research/data/legal/cases/25-1807.md`** \u2014 Insulet v. EOFlow (inquiry-notice mirror)\n- **`Terminal/Central Hub/research/data/legal/field-clerks/21-1729.md`** \u2014 AstraZeneca v. Mylan (same-judge Taranto contrast)\n- **`Terminal/SHARPEN REASON/Connection/Legal_Digest_Bridge.md`** \u2014 cross-digest hypothesis tracking"
+        }
+      ]
+    },
+    {
+      "id": "25-332",
+      "docket_number": "25-332",
+      "title": "Field Clerk Draft \u2014 25-332 (Trump v. Slaughter)",
+      "court": null,
+      "decision_date": null,
+      "tags": [
+        "field-clerk",
+        "sr-context",
+        "LRD-004",
+        "dd-031",
+        "removal-doctrine",
+        "stare-decisis",
+        "Article-II",
+        "Humphreys-overruled"
+      ],
+      "visibility": "Public",
+      "cross_refs": [
+        "25A312"
+      ],
+      "sections": [
+        {
+          "heading": "SR framing \u2014 the doctrinal punchline",
+          "content_markdown": "Slaughter overrules a 91-year-old landmark (*Humphrey's Executor*, 1935). The substantive holding matters \u2014 but the **portable technique** that lets it work is the load-bearing thing to learn.\n\nThe technique: **reliance-reframing**. When a majority wants to overrule a precedent that has generated massive institutional reliance, it does not deny the reliance. It *recategorizes* it \u2014 the reliance was illegitimate (\"no branch may rely on adverse possession to claim power the Constitution vests elsewhere\"), while a *different* reliance interest (the American people's reliance on constitutionally-promised liberties) is invented as the true controlling reliance.\n\nOnce you see this move, you see it everywhere.\n\n**The lesson worth naming:** stare-decisis \"reliance\" is not a fact-question \u2014 it is a *category-selection* question. Different reliance categories can be constructed for the same precedent. The majority chooses which category counts. This is the same interpretive freedom that makes P13 (function-vs-label) load-bearing at the ordinary-doctrine level, now operating at the meta-doctrinal level of *when precedents themselves can be overturned*."
+        },
+        {
+          "heading": "The move worth learning \u2014 the Knick framework is malleable",
+          "content_markdown": "*Knick v. Township of Scott*, 588 U.S. 180 (2019) named a four-factor framework for stare decisis: quality of reasoning, consistency with other cases, workability, reliance. Different overrulings emphasize different factors:\n\n- **Slaughter** runs all four; finds each cuts against *Humphrey's*. Maximalist posture.\n- **Dobbs** emphasized quality + workability.\n- **Loper Bright** emphasized quality + reliance-recast.\n\n**Same four-factor scaffolding; radically different applications.** This is P13-adjacent: the *labels* (four factors) stay constant; the *function* (whether the majority wants to overrule) determines which factor gets the analytical weight. When you read an overruling opinion, the first thing to identify is *which factor is doing the actual work*. That factor is where the argument is; the others are scaffolding.\n\n**Practice discipline:** find any overruling from 2020\u20132026. Identify the load-bearing factor. Compare to the other factors' treatment. The disproportion between what's argued heavily and what's argued cursorily is where the rhetorical weight lives."
+        },
+        {
+          "heading": "The move to name as paired-with-Cook doctrine \u2014 general-rule + historical-tradition-carveout",
+          "content_markdown": "Slaughter announces the general rule (Article II \u2192 at-will removal of principal executive officers). [[25A312|Cook]] activates the specific carveout (Federal Reserve preserved via historical tradition of First/Second Banks). Read the two cases as a **paired doctrinal unit** \u2014 neither survives the other's absence:\n\n- Without Slaughter, Cook has no rule to carve out of.\n- Without Cook, Slaughter's carveout is theoretical.\n\nThe doctrinal shape \u2014 *rigid modern rule + flexible historical safe harbor* \u2014 is doing recurring work across the Court's structural jurisprudence. Second Amendment: *Rahimi*'s \"consistent with the principles that underpin the historical tradition.\" Removal: Slaughter/Cook. Watch for it wherever originalism meets long-practice-based reliance."
+        },
+        {
+          "heading": "The move worth flagging \u2014 \"quasi\" as name-light rejection",
+          "content_markdown": "Justice Jackson's *FTC v. Ruberoid Co.* line (\"quasi\" as \"counterpane to conceal a disordered bed\") is deployed by the majority to mock *Humphrey's* framework. But administrative law has long treated agency functions as hybrid \u2014 that's the whole edifice of *Chevron*, agency adjudication, APA \u00a7 706 review.\n\n**Overruling *Humphrey's* does not resolve the underlying categorization problem.** It declares by fiat that all agency functions are \"executive.\" That declaration produces line-drawing work the majority doesn't address \u2014 inferior officers, civil service, adjudicative-body independence, MSPB status. The dissent flags: \"no ifs, ands, or quasis about it\" is a rhetorical closure, not an analytical one.\n\n**Discipline:** when a majority mocks a doctrinal term (\"quasi\") without offering a functional replacement, that mock is doing rhetorical work but leaving analytical work undone. Watch for the line-drawing to reappear in downstream cases within a term or two."
+        },
+        {
+          "heading": "Play Set \u2014 25-332",
+          "content_markdown": "- [x] **P13 \u2014 map by function, not label.** *Humphrey's* labeled FTC functions \"quasi-legislative/quasi-judicial\"; majority reads their function and calls them executive. Function overrides label. But also: the majority *itself* uses the \"executive\" label to sweep in agency work whose function is hybrid \u2014 a P13 move against P13 requires a functional replacement, which is not offered. **Watch this tension.**\n- [x] **L6 \u2014 when mixed, split.** Majority splits into text+history+structure (Part II-A), precedent (Part II-B), stare decisis (Part II-B(2)(c)), historical-tradition carveout (Part III-B). Four separate doctrinal moves rather than one collapsed argument. Each carries its own reasoning surface.\n- [x] **Sufficient_Assumption_anchor.** The overruling is a Sufficient Assumption: assume Knick factors run against retention \u2192 precedent falls. But the plug-in is not the *factors themselves* \u2014 it is the *reliance recategorization* (see: Reliance_Reframe below). The real Sufficient Assumption is the category the majority chooses for reliance.\n- [x] **Reliance_Reframe (candidate new principle).** Reliance is a category-selection question, not a fact-question. When a majority selects the reliance category that runs against retention, the precedent falls under Knick even where substantive reliance is massive. **Candidate for P-code promotion if the move fires in a third overruling within the corpus.**\n- [ ] L4 \u2014 not central.\n- [ ] P1 \u2014 not central."
+        },
+        {
+          "heading": "Hypothesis touches",
+          "content_markdown": "- **H1** (court reasoning maps to LR Gate I/O/D): **confirmed.** Text+history+structure identify what \"executive power\" means (Lane I); Knick factors operate the stare-decisis test on *Humphrey's* (Lane O); the overruling + carveout together derive the applied rule (Lane D). All three lanes visible.\n- **H2** (Sufficient-Assumption conditional-direction appears): **partial.** The stare-decisis analysis is conditional-direction (if factors cut against retention, then overrule), but the load-bearing move is the *selection* of the category on each side of the conditional (the reliance-reframe). The Sufficient Assumption is not the conditional \u2014 it is the assumed category selection.\n- **H3** (court \"we need not decide\" mirrors \"too simple to be right\"): **partial.** Majority decides the big issue (overrule *Humphrey's*) \u2014 no \"need not decide\" on the central move. BUT reserves narrower questions: non-Article III courts, inferior officers, civil service. The reservation is at a *different altitude* than in Jacobson/Erdemir/Cook \u2014 it protects downstream doctrine rather than the immediate holding. Worth naming as a distinct H3 sub-type: **downstream-altitude reservation** vs. immediate-altitude reservation.\n- **H4** (function-first / name-light in legal domains): **confirmed at inversion.** Majority uses \"executive\" as the operative label; refuses \"quasi\" as a name-hiding function. But the majority's own use of \"executive\" is name-first (the label sweeps in the hybrid functions) \u2014 H4 fires in *both directions* across the majority and dissent, which is worth naming as its own SR-training observation."
+        },
+        {
+          "heading": "Candidate war-chest additions (from this pass)",
+          "content_markdown": "1. **Reliance-reframing move \u2014 HIGH PRIORITY, likely promotion candidate.** Portable stare-decisis technique: recategorize reliance rather than dispute it. Applies wherever a majority wants to overrule a precedent with entrenched institutional reliance. Watch for it in *Loper Bright*'s treatment of *Chevron* reliance and in *Dobbs*'s treatment of *Roe/Casey* reliance \u2014 same technique, different substantive fields.\n2. **Knick four-factor malleability** \u2014 same four-factor scaffolding, radically different applications across overrulings. Identifying the load-bearing factor is the reader's job.\n3. **General-rule + historical-tradition-carveout** \u2014 paired with [[25A312|Cook]] as the activation case. Analog: *Rahimi*'s Second-Amendment test. Structural doctrinal shape recurring across originalism-meets-practice cases.\n4. **Decision of 1789 as constitutional-liquidation** \u2014 post-ratification founding-era practice becomes controlling constitutional interpretation. Methodological move; likely to recur wherever founding-era consensus is available. Sotomayor's dissent contests both the historical record AND the interpretive theory \u2014 watch for the methodological dispute in future cases.\n5. **\"Quasi\" as name-light rejection without functional replacement** \u2014 rhetorical closure that leaves line-drawing undone. Downstream line-drawing cases inevitable within a term or two."
+        },
+        {
+          "heading": "Carry this forward",
+          "content_markdown": "> Stare-decisis \"reliance\" is a category-selection question, not a fact-question. When you read an overruling, identify (a) which Knick factor is load-bearing, (b) which reliance category the majority selects, and (c) which reliance category the dissent selects. The gap between those categories is where the argument lives. The four-factor scaffolding is stable; the analytical weight moves."
+        },
+        {
+          "heading": "Cross-references",
+          "content_markdown": "- **`Terminal/Central Hub/research/data/legal/cases/trump_v_slaughter.md`** \u2014 full synthesis\n- **`Terminal/Central Hub/research/data/legal/cases/trump_v_cook.md`** \u2014 companion case; activates the historical-tradition carveout\n- **`Terminal/Central Hub/research/data/legal/field-clerks/25A312.md`** \u2014 Cook FC (paired doctrinal unit)\n- **`Terminal/SHARPEN REASON/Connection/Legal_Digest_Bridge.md`** \u2014 cross-digest hypothesis tracking"
+        }
+      ]
+    },
+    {
+      "id": "25A312",
+      "docket_number": "25A312",
+      "title": "Field Clerk Draft \u2014 25A312 (Trump v. Cook)",
+      "court": null,
+      "decision_date": null,
+      "tags": [
+        "field-clerk",
+        "sr-context",
+        "LRD-004",
+        "dd-031",
+        "removal-doctrine",
+        "backdrop-presumption",
+        "historical-tradition"
+      ],
+      "visibility": "Public",
+      "cross_refs": [
+        "24-1990",
+        "24-2242",
+        "25-332"
+      ],
+      "sections": [
+        {
+          "heading": "SR framing \u2014 the doctrinal punchline",
+          "content_markdown": "Cook is Jacobson's shape at constitutional altitude. Same structural move:\n\n**Congress legislates against a settled backdrop \u2192 the backdrop terms carry their common-law weight \u2192 the presumption controls unless a clear-and-convincing signal displaces it.**\n\nIn Jacobson (LRD-003, [[24-1990]]), the backdrop was *judicial review is presumed available*; \u00a7 4208's \"notwithstanding any other law, no court shall have jurisdiction\" was the clear-and-convincing displacer. In Cook, the backdrop is *fixed-term + for-cause statutes require pre-termination notice and hearing* (Reagan/Shurtleff); nothing in \u00a7 242 comes close to displacing it. The presumption stands; Cook wins on the narrowest available ground.\n\n**This is the third case in the cohort where a rebuttable-presumption-plus-backdrop analysis is the load-bearing move.** With Erdemir's \"true nature\" doctrine as a functional cousin (label-vs-function is a presumption too), we now have enough datapoints to promote the category from \"candidate\" to **named war-chest doctrine**: *backdrop rebuttable presumption*."
+        },
+        {
+          "heading": "The move worth learning \u2014 \"cause\" as centuries-loaded phrase",
+          "content_markdown": "Two words. Two centuries of common-law weight. The majority's move is to make that weight legible:\n\n> \"Congress enacted this statute against the backdrop of the common law, such that we must look to the common law to decipher what 'cause' (a term of art) requires.\"\n\nThe government wanted \"cause\" = anything the President finds concerning. Cook wanted \"cause\" = the specific statutory formulae Congress used elsewhere (inefficiency, neglect of duty, malfeasance). Both extremes lose. The majority instead reads \"cause\" as **a common-law term of art with a substantial threshold, contoured by the nature of the office**.\n\n**Discipline for JR:** statutory terms with common-law pedigrees are never plain-English. \"Cause,\" \"reasonable,\" \"true nature,\" \"arbitrary and capricious,\" \"just and equitable\" \u2014 all of them carry their own history. The reader's job is to know which weight-of-words terms live in a text, and load them fully before analyzing.\n\nCross-stitch: This is exactly the [[24-2242|Erdemir]] discipline (label-vs-function; \"true nature\" doctrine) applied to statutory terms rather than pleadings. Same P13 move, different scale."
+        },
+        {
+          "heading": "The move to name as a category \u2014 historical-tradition safe harbor",
+          "content_markdown": "Companion case [[25-332|Slaughter]] announces the general rule (Article II \u2192 at-will removal of principal executive officers). Cook activates a specific carveout: *the Federal Reserve is preserved as constitutional because it \"follows in the distinct historical tradition\" of the First and Second Banks of the United States*.\n\n**Structural shape:** general rule + historical-tradition carveout. This is a new (or newly explicit) doctrinal category that will recur. Analogous shape: *Rahimi*'s Second-Amendment \"consistent with the principles that underpin the historical tradition\" test. Same doctrinal shell \u2014 rigid modern rule + flexible founding-era safe harbor.\n\n**Watch:** the majority does NOT theorize the carveout. What earns historical-tradition protection? What is the test? Cook and Slaughter together preserve only the Federal Reserve (and reserve non-Article III courts). Every other independent agency claiming similar protection has to build its own historical-pedigree case. The FDIC and OCC are the first likely litigation targets. Barrett's Cook dissent flags the instability: \"history used to support both a categorical rule and a carveout\" is unstable footing."
+        },
+        {
+          "heading": "Play Set \u2014 25A312",
+          "content_markdown": "- [x] **P13 \u2014 map by function, not label.** Government tried \"the President said cause, therefore cause\"; majority refuses the label move, maps to the common-law function of \"cause.\" Compare [[24-2242]] where the same discipline strips a pleading label off a jurisdictional escape hatch.\n- [x] **L6 \u2014 when mixed, split.** Court splits reviewability (Part II-A), scope-of-\"cause\" (Part II-B), and notice-hearing (Part III-A) into three separate doctrinal moves rather than collapsing them. Each part carries its own reasoning surface.\n- [x] **Sufficient_Assumption_anchor.** Backdrop rebuttable presumption IS a Sufficient Assumption. Assume Congress legislates against the *Reagan/Shurtleff* backdrop \u2192 notice-and-hearing is implicit in \u00a7 242. Plug the missing premise; the ruling follows.\n- [x] **Party-presentation restraint (candidate P-code).** Majority refuses to reach the Article II constitutionality question because the Government did not raise it \u2014 even though Kavanaugh's concurrence begs for it. Emergency-docket + party-presentation discipline is worth naming as its own principle if it fires again.\n- [ ] L4 \u2014 hexis vs. situation not central.\n- [ ] P1 \u2014 not central."
+        },
+        {
+          "heading": "Hypothesis touches",
+          "content_markdown": "- **H1** (court reasoning maps to LR Gate I/O/D): **confirmed at three levels.** Reviewability (Lane I \u2014 identifying that \"cause\" is subject to judicial line-drawing); \"cause\"-as-term-of-art (Lane O \u2014 operating the common-law backdrop test on the statutory text); notice-hearing derivation (Lane D \u2014 deriving the procedural requirement from the *Reagan/Shurtleff* backdrop). Three lane characters in a single opinion, at constitutional altitude.\n- **H2** (Sufficient-Assumption conditional-direction appears in standing/limitations): **confirmed.** Conditional-direction move at Part III-A: *if* Congress legislates against the backdrop, *then* the backdrop terms control. Direction: forward-loading (backdrop \u2192 conclusion). Compare Jacobson's identical forward-loading; Erdemir's mixed forward/backward.\n- **H3** (court \"we need not decide\" mirrors \"too simple to be right\"): **confirmed.** \"We need not fully demarcate the contours of 'cause' today.\" Also \"we do not resolve\" the underlying Article II constitutionality question. Two reservations in one opinion \u2014 the smallest-claim-that-entails move is deliberate and repeated.\n- **H4** (function-first / name-light in legal domains): **confirmed.** The \"cause\" analysis is entirely function-first \u2014 the common-law function of the term overrides both the government's plain-English reading AND Cook's statutory-analogue reading. Name-light because neither party's proposed name for \"cause\" is adopted; the function drives."
+        },
+        {
+          "heading": "Candidate war-chest additions (from this pass)",
+          "content_markdown": "1. **Backdrop rebuttable presumption \u2014 PROMOTE TO NAMED WAR-CHEST DOCTRINE.** Three data points now (Jacobson at jurisdiction; Erdemir at pleading; Cook at constitutional-statutory interface). The shape: *general rule \u2192 backdrop displacement condition \u2192 threshold-of-signal test \u2192 conclusion*. The doctrinal domain sets the threshold (clear-and-convincing for judicial review; substantial-cause for removal; clear-statement for federalism). **Calibrating the threshold to the domain is still the master skill.**\n2. **Historical-tradition safe harbor** \u2014 general rule + historical-tradition carveout doctrinal shape. Federal Reserve preserved; non-Article III courts reserved. Analog: Rahimi's Second-Amendment historical-tradition test. Watch for it in future structural-Constitution cases.\n3. **Equity protects de facto officer pending litigation** \u2014 *In re Sawyer* and *White v. Berry* cabined to their facts (final equitable relief where legal remedies adequate). Interim reinstatement injunctions permissible. This restores preliminary-injunction practice for wrongfully-removed officers that had been in real doubt after *Wilcox* and *Boyle*.\n4. **Notice adequacy \u2014 three-part rule.** Notice must include (i) some explanation of evidence at issue, (ii) some avenue for response, (iii) a deadline. Trump's social-media post fails all three. Analogized to *Mullane v. Central Hanover Bank*. This bridges statutory-notice doctrine into procedural-due-process territory."
+        },
+        {
+          "heading": "Carry this forward",
+          "content_markdown": "> When you see fixed-term + for-cause in a removal statute, load it as a *Reagan/Shurtleff* backdrop presumption \u2014 notice and hearing are implicit until Congress speaks clearly to displace them. When you see \"cause\" or any common-law-pedigreed term, load it as a term of art with centuries of weight. The presumption + backdrop pattern is doing more work in constitutional doctrine than its low profile suggests."
+        },
+        {
+          "heading": "Cross-references",
+          "content_markdown": "- **`Terminal/Central Hub/research/data/legal/cases/trump_v_cook.md`** \u2014 full synthesis\n- **`Terminal/Central Hub/research/data/legal/cases/trump_v_slaughter.md`** \u2014 companion case; general rule Cook carves out of\n- **`Terminal/Central Hub/research/data/legal/field-clerks/25-332.md`** \u2014 Slaughter FC (paired doctrinal unit)\n- **`Terminal/Central Hub/research/data/legal/field-clerks/24-1990.md`** \u2014 Jacobson FC (backdrop-presumption ancestor)\n- **`Terminal/Central Hub/research/data/legal/field-clerks/24-2242.md`** \u2014 Erdemir FC (label-vs-function cousin)\n- **`Terminal/SHARPEN REASON/Connection/Legal_Digest_Bridge.md`** \u2014 cross-digest hypothesis tracking"
+        }
+      ]
+    }
+  ]
+};
