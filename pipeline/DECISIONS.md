@@ -1362,3 +1362,59 @@ Hash-based, single page, no new HTML files, no build step: `#/fc/<id>` and `#/ca
 - `quick-front-end/shade-of-design-landing/sr-playspace/playspace.css` — kind-label, byline, pull-quote (+ specificity fix), checkbox, back-link, index-list styles
 - `quick-front-end/shade-of-design-landing/sr-playspace/data/{cases,field-clerks}.json` + `.js` siblings — regenerated, not hand-edited
 - No corpus files touched — `visibility:` marking was JR's hand, done before this session started
+
+---
+
+## D-038 · 2026-07-12 · DD-037 Phase 3 regal register — token swap, role mapping, entry threshold, CSS-only lint
+
+**Decision:** `playspace.css` gets nine `--sr-*` tokens (Ms.G-authored, WCAG-independently-reverified, locked per `comms/ms-g/outbox-MR C Sings/SR Play-space/2026-07-12-phase3-regal-tokens.md`) and every hardcoded/`--pw-*` color in the file is replaced by a role-mapped `var(--sr-*)` reference. Nothing else changed: same file, same selectors, same spacing, same typefaces. `index.html` and `playspace.js` have a **zero-line diff** — confirmed via `git diff --stat`, not just asserted.
+
+**Context:** DD-037 Phase 3 (`C Roles/Strategies/kickoffs/DD-037-CBuild-phase3.md`) is explicitly designed as a self-test of Fable's round-1 derivation law: if regal is truly an accent-axis derivation over the same austere structure, applying it is a token swap and nothing more. A big diff here would be a *failed* test, not a big ship.
+
+### Role mapping (the actual judgment calls, since the pre-decision named categories, not selectors)
+
+The locked pre-decision gave five buckets (primary accent -> regal/regal-soft; structural rules + checkbox + docket -> gold/gold-soft; remaining warm accent -> ember-2nd; body/sub-hierarchy text -> paper/muted-text; borders -> hairline) but not a selector-by-selector table. Applied as follows:
+
+- **Regal** (`--sr-regal` resting, `--sr-regal-soft` hover/active — matches the token sheet's own comments verbatim): `.pw-back-link`, `.pw-kind`, `.pw-section h2`, `.pw-index-group h2` (same structural role as a section heading), `.pw-index-list a`, `.pw-xref-link`.
+- **Gold** (`--sr-gold` resting, `--sr-gold-soft` the checked/micro-glint state): `.pw-header` border-bottom, `.pw-docket`, the pull-quote bar (`.pw-pullquote` border-left), `.pw-checkbox` border (resting) and `:checked` border + checkmark (lifted to gold-soft).
+- **Judgment call, flagged for Mr.C/Fable to confirm:** `.pw-index-list li`'s border-bottom (the repeated per-row divider in the document index, 8 rows) was mapped to `--sr-hairline`, **not** gold, even though "structural rules" is named as a gold bucket. Reasoning: the header's single border-bottom is one prominent masthead rule (a natural, singular gold accent); repeating gold eight times down a plain index list reads as over-decoration against gold's own "scarce metal... sparingly" framing. If Fable's intent was literally "every rule-shaped divider," this one line is a one-word fix (`var(--sr-hairline)` -> `var(--sr-gold)`).
+- **Muted-text** (sub-hierarchy, de-emphasized): `.pw-loading`/`.pw-error`, `.pw-byline`, the generic (non-pull-quote) `.pw-section blockquote` text, `.pw-xref` (unresolved cross-ref span), `.pw-index-empty`.
+- **Hairline** (quiet structural borders, non-accent): generic blockquote border-left, `.pw-xref-link`'s resting `text-decoration-color`, `.pw-index-list li` border-bottom (see judgment call above).
+- **Ember-2nd:** no natural seat on this route today (no remaining warm-accent element after the above mapping) — defined in `:root` per the locked sheet, correctly unused rather than forced into a role it doesn't fit. Available for Phase 4.
+- **Unchanged:** `--sr-ink` / `--sr-paper` carry the exact same hex values as Phase 1/2's `--pw-ink` / `--pw-paper` — background and primary body text are untouched, satisfying "Ink stays Ink."
+
+### Threshold: a body-level filter animation, not a header hook
+
+Implemented as `@keyframes sr-threshold` (saturate 0.15/brightness 0.92 -> saturate 1/brightness 1, 0.5s ease-out) applied to `body`, with `@media (prefers-reduced-motion: reduce) { body { animation: none; } }`. Deliberately **not** on `.pw-header` (the pre-decision's own example) because `renderDocument()`/`renderIndex()` in `playspace.js` tear down and rebuild `#root`'s entire subtree — including a fresh `<header>` — on every in-page hash navigation. An animation on `.pw-header` would replay on every route change (index -> doc -> another doc), violating "felt once on entry and never again during reading." `body` is never recreated by the router, so an animation there fires exactly once per real page load and is inert across internal navigation. No JS class toggle needed at all — CSS animations play automatically on initial paint for elements present at load.
+
+### Lint: grep-based, documented here rather than a committed script
+
+Deliverable 3 explicitly allows "a small script (or grep-based check documented in the ship report)." A committed lint script would itself be diff surface beyond "token definitions + substitutions + threshold" (gate A), so the check was run once via Bash and its result is recorded rather than adding a file:
+
+```
+python3 -c "
+import re
+text = open('playspace.css', encoding='utf-8').read()
+m = re.search(r':root\s*\{.*?\n\}\n', text, re.DOTALL)
+before, after = text[:m.start()], text[m.end():]
+rest = before + after
+hex_hits = re.findall(r'#[0-9a-fA-F]{3,8}\b', rest)
+rgba_hits = re.findall(r'rgba?\(', rest)
+print('LINT FAIL' if (hex_hits or rgba_hits) else 'LINT PASS: zero raw hex / rgb() / rgba() outside the :root token block')
+"
+```
+**Result: LINT PASS.** Zero raw hex or `rgb()`/`rgba()` literals outside `:root`; all 9 locked tokens present inside it.
+
+### Verified this session
+
+- `git diff --stat` on `sr-playspace/`: **1 file changed** (`playspace.css`, 72 insertions / 41 deletions), **zero** lines touched in `index.html` or `playspace.js`.
+- All 9 documents (index + 8 docs) re-rendered at a drifting-but-always-nonzero-overflow-free viewport: `document.documentElement.scrollWidth === window.innerWidth` in every case, zero horizontal scroll, zero stray asterisks (content untouched by a pure-CSS change, re-checked anyway).
+- Spot-checked `getComputedStyle` against every named role: header/docket = gold; kind-label/section-heading/index-link/xref-link = regal; unchecked checkbox border = gold, checked = gold-soft; pull-quote bar = gold with `background-color: rgba(0,0,0,0)` (confirmed gold is never a fill); unresolved xref span = muted-text.
+- `body`'s `animationName` computed as `sr-threshold`, confirming the entry transition is wired without any JS.
+- `file://` fallback: this phase touched zero JS/HTML, so the Phase 2 mechanism is structurally untouched. Same browser-tool sandbox limitation as Phase 2 (no direct `file://` navigation available in this session) — JR's double-click remains the outstanding proof.
+
+**Trade-off accepted:** the index-list-divider judgment call (hairline vs. gold, above) is a real interpretive gap in the pre-decision's category list vs. an actual selector table — flagged rather than guessed silently past.
+
+**Files touched:**
+- `quick-front-end/shade-of-design-landing/sr-playspace/playspace.css` — full token swap + threshold (the only file with a diff)
+- No changes to `index.html`, `playspace.js`, the exporter, manifests, or any corpus file
