@@ -1,14 +1,22 @@
-/* DD-037 Phase 2 -- SR play-space reading room.
-   SoD dark, deliberately: --sr-* regal tokens do not exist yet (Phase 3).
-   Document view + a plain document-list index. No browse chrome, no
-   cards, no grid, no imagery, no motion, no hover-dependent affordances. */
+/* DD-037 Phase 3 -- SR play-space, regal register.
+   Token swap + threshold ONLY: every value below this :root block is a
+   var(--sr-*) reference. Backgrounds stay Ink, typefaces stay Marcellus/
+   Inter/JetBrains Mono, spacing is byte-identical to Phase 2. No markup or
+   layout changed to make this work -- if it had needed that, this phase
+   would have failed its own test. Document view + a plain document-list
+   index. No browse chrome, no cards, no grid, no imagery, no motion beyond
+   the single entry threshold below. */
 
 :root {
-  --pw-ink: #0B1726;
-  --pw-paper: #FAFAF7;
-  --pw-paper-dim: rgba(250, 250, 247, 0.68);
-  --pw-paper-faint: rgba(250, 250, 247, 0.4);
-  --pw-rule: rgba(250, 250, 247, 0.16);
+  --sr-ink:        #0B1726;   /* unchanged core ground */
+  --sr-paper:      #FAFAF7;   /* unchanged core paper */
+  --sr-regal:      #768CFF;   /* 5.98:1  -- primary accent: links, kind-label, section-heading accents, back-link */
+  --sr-regal-soft: #B0C0FF;   /* 10.16:1 -- lifted/hover/active nav state */
+  --sr-gold:       #D4AF37;   /* 8.57:1  -- the scarce metal: structural rules, checkbox, docket line (LIGHT roles only, never a fill) */
+  --sr-gold-soft:  #FBE7A1;   /* 14.64:1 -- micro focus/glint state (checked checkbox) */
+  --sr-ember-2nd:  #C97B4A;   /* 5.51:1  -- demoted secondary warm accent; no seat needed on this route, defined for the shared sheet */
+  --sr-muted-text: #96A7B9;   /* 7.32:1  -- sub-hierarchy text */
+  --sr-hairline:   #1E2D3F;   /* structural borders (non-text, quiet) */
 }
 
 * {
@@ -19,20 +27,41 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Threshold: entering the play-space is the mode-switch. `body` is never
+   recreated by the hash router (only #root's children are), so this plays
+   exactly once per real page load and never replays on in-page navigation
+   between the index and a document. Quiet wash-in of the whole accent
+   register, not a splash: saturation/brightness ease over 0.5s. */
+@keyframes sr-threshold {
+  from {
+    filter: saturate(0.15) brightness(0.92);
+  }
+  to {
+    filter: saturate(1) brightness(1);
+  }
+}
+
 body {
   margin: 0;
-  background: var(--pw-ink);
-  color: var(--pw-paper);
+  background: var(--sr-ink);
+  color: var(--sr-paper);
   font-family: "Inter", sans-serif;
   line-height: 1.65;
   overflow-x: hidden;
+  animation: sr-threshold 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
 }
 
 .pw-loading,
 .pw-error {
   padding: 2rem 1.25rem;
   font-family: "JetBrains Mono", monospace;
-  color: var(--pw-paper-dim);
+  color: var(--sr-muted-text);
 }
 
 main {
@@ -47,21 +76,21 @@ main {
   display: inline-block;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.8rem;
-  color: var(--pw-paper-dim);
+  color: var(--sr-regal);
   text-decoration: none;
   margin-bottom: 1.5rem;
 }
 
 .pw-back-link:hover,
 .pw-back-link:focus {
-  color: var(--pw-paper);
+  color: var(--sr-regal-soft);
   text-decoration: underline;
 }
 
 /* --- Header --- */
 
 .pw-header {
-  border-bottom: 1px solid var(--pw-rule);
+  border-bottom: 1px solid var(--sr-gold);
   padding-bottom: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -71,7 +100,7 @@ main {
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--pw-paper-faint);
+  color: var(--sr-gold);
   margin: 0 0 0.3rem;
 }
 
@@ -80,7 +109,7 @@ main {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--pw-paper-dim);
+  color: var(--sr-regal);
   margin: 0 0 0.9rem;
 }
 
@@ -95,7 +124,7 @@ main {
 .pw-byline {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.78rem;
-  color: var(--pw-paper-dim);
+  color: var(--sr-muted-text);
   margin: 0.75rem 0 0;
 }
 
@@ -111,7 +140,7 @@ main {
   font-size: 1.15rem;
   line-height: 1.4;
   margin: 0 0 1rem;
-  color: var(--pw-paper);
+  color: var(--sr-regal);
 }
 
 .pw-section p {
@@ -134,20 +163,19 @@ main {
 .pw-section blockquote {
   margin: 0 0 1.1rem;
   padding: 0.1rem 0 0.1rem 1rem;
-  border-left: 2px solid var(--pw-rule);
-  color: var(--pw-paper-dim);
+  border-left: 2px solid var(--sr-hairline);
+  color: var(--sr-muted-text);
   font-style: italic;
 }
 
-/* Sanctioned jewel: "Carry this forward" pull-quote. The only blockquote
-   treatment that departs from the plain in-line quote above -- larger,
-   centered rule, no italic-dim -- because this is the section Fable named
-   as worth a second visual register. Still no color beyond ink/paper. */
+/* Sanctioned jewel: "Carry this forward" pull-quote -- the pull-quote bar
+   is one of the named gold seats. Prose itself stays paper (gold is the
+   bar, not the words); no italic-dim, unlike the plain quote above. */
 .pw-section blockquote.pw-pullquote {
   margin: 0;
   padding: 0 0 0 1.25rem;
-  border-left: 3px solid var(--pw-paper-dim);
-  color: var(--pw-paper);
+  border-left: 3px solid var(--sr-gold);
+  color: var(--sr-paper);
   font-style: normal;
   font-family: "Marcellus", serif;
   font-size: 1.1rem;
@@ -168,7 +196,9 @@ main {
   margin-bottom: 0;
 }
 
-/* Sanctioned jewel: Play Set checklists as real, read-only checkboxes. */
+/* Sanctioned jewel: Play Set checklists as real, read-only checkboxes --
+   named gold seat (checkbox accents); checked state lifts to gold-soft,
+   the micro-glint role, never a filled box. */
 .pw-checkitem {
   list-style: none;
   margin-left: -1.3rem;
@@ -188,13 +218,13 @@ main {
   width: 1rem;
   height: 1rem;
   margin-top: 0.3rem;
-  border: 1.5px solid var(--pw-paper-dim);
+  border: 1.5px solid var(--sr-gold);
   border-radius: 2px;
   position: relative;
 }
 
 .pw-checkbox:checked {
-  border-color: var(--pw-paper);
+  border-color: var(--sr-gold-soft);
 }
 
 .pw-checkbox:checked::after {
@@ -204,29 +234,30 @@ main {
   top: -0.05rem;
   width: 0.3rem;
   height: 0.55rem;
-  border-right: 1.5px solid var(--pw-paper);
-  border-bottom: 1.5px solid var(--pw-paper);
+  border-right: 1.5px solid var(--sr-gold-soft);
+  border-bottom: 1.5px solid var(--sr-gold-soft);
   transform: rotate(45deg);
 }
 
 .pw-xref {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.92em;
-  color: var(--pw-paper-dim);
+  color: var(--sr-muted-text);
 }
 
 .pw-xref-link {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.92em;
-  color: var(--pw-paper);
+  color: var(--sr-regal);
   text-decoration: underline;
-  text-decoration-color: var(--pw-rule);
+  text-decoration-color: var(--sr-hairline);
   text-underline-offset: 0.15em;
 }
 
 .pw-xref-link:hover,
 .pw-xref-link:focus {
-  text-decoration-color: var(--pw-paper);
+  color: var(--sr-regal-soft);
+  text-decoration-color: var(--sr-regal-soft);
 }
 
 .pw-inline-code {
@@ -240,7 +271,7 @@ main {
   font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--pw-paper-dim);
+  color: var(--sr-regal);
 }
 
 .pw-index-list {
@@ -250,7 +281,7 @@ main {
 }
 
 .pw-index-list li {
-  border-bottom: 1px solid var(--pw-rule);
+  border-bottom: 1px solid var(--sr-hairline);
 }
 
 .pw-index-list li:last-child {
@@ -260,7 +291,7 @@ main {
 .pw-index-list a {
   display: block;
   padding: 0.85rem 0;
-  color: var(--pw-paper);
+  color: var(--sr-regal);
   text-decoration: none;
   font-family: "Marcellus", serif;
   font-size: 1rem;
@@ -269,13 +300,13 @@ main {
 
 .pw-index-list a:hover,
 .pw-index-list a:focus {
-  color: var(--pw-paper-dim);
+  color: var(--sr-regal-soft);
 }
 
 .pw-index-empty {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.85rem;
-  color: var(--pw-paper-faint);
+  color: var(--sr-muted-text);
 }
 
 @media (min-width: 640px) {
