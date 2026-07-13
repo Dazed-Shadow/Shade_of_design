@@ -74,8 +74,10 @@ const PROJECTS = [
     kicker: "Built with Claude · Tool",
     title: "Horizon Search",
     blurb: "Looking past the first page.",
+    // Railway free tier consumed 2026-07; HZ temporarily offline pending Railway→Netlify migration (DD-034).
+    // href preserved for restore-on-return.
     href: "https://horizonsearchfrontend-production.up.railway.app/",
-    status: "live",
+    status: "offline",
     accent: "slate",
   },
   {
@@ -110,19 +112,22 @@ const PROJECTS = [
 ];
 
 function ProjectTile({ p }) {
-  const isSoon = p.status === "soon";
-  const Tag = isSoon ? "div" : "a";
+  const isLive = p.status === "live";
+  const isOffline = p.status === "offline";
+  const Tag = isLive ? "a" : "div";
+  const statusLabel = isLive ? "Live" : isOffline ? "Offline" : "In formation";
+  const arrowLabel = isLive ? "Visit" : isOffline ? "Temporarily offline" : "Coming soon";
   return (
     <Tag
-      className={"tile tile-" + p.accent + (isSoon ? " tile-soon" : "")}
-      {...(!isSoon && { href: p.href, target: "_blank", rel: "noopener noreferrer" })}
+      className={"tile tile-" + p.accent + (isLive ? "" : " tile-soon") + (isOffline ? " tile-offline" : "")}
+      {...(isLive && { href: p.href, target: "_blank", rel: "noopener noreferrer" })}
       aria-label={p.title}
     >
       <div className="tile-head">
         <span className="tile-n">{p.n}</span>
         <span className={"tile-status " + p.status}>
           <span className="dot" />
-          {isSoon ? "In formation" : "Live"}
+          {statusLabel}
         </span>
       </div>
 
@@ -135,7 +140,7 @@ function ProjectTile({ p }) {
         <h3 className="tile-title">{p.title}</h3>
         <p className="tile-blurb">{p.blurb}</p>
         <span className="tile-arrow">
-          {isSoon ? "Coming soon" : "Visit"}
+          {arrowLabel}
           <Arrow />
         </span>
       </div>

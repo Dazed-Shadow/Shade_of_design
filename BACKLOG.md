@@ -1,7 +1,5 @@
 ---
-
-kanban-plugin: board
-
+kanban-plugin: list
 ---
 
 ## Inbox
@@ -33,6 +31,6 @@ kanban-plugin: board
 
 %% kanban:settings
 ```
-{"kanban-plugin":"board"}
+{"kanban-plugin":"table","show-checkboxes":true,"full-list-lane-width":true,"move-tags":true}
 ```
 %%

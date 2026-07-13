@@ -183,6 +183,24 @@ One section per agent. Each contract has: **inputs · outputs · owned scripts �
 - **Politeness:** 1.0 s between requests (D-021 pre-decision #4). Mirrors C-Transit defaults. Adjust via `--rate-seconds` after observing EDU-tier behavior.
 - **Escalates when:** All cases skipped after cascade (no usable text in any format field) — end-of-run stderr shows `Normalized: 0 / Skipped: N`. Surface to JR; CourtListener API may have changed response format.
 
+**Auto-fetch extension (DD-026):** `pipeline/legal/legal_fetch_queries.py` — the FETCH-LEGAL routine. Separate from `legal_fetch.py` (parked DD-021 artifact); do NOT merge or modify `legal_fetch.py`.
+
+- **Inputs:** `pipeline/legal/queries.toml` (three locked Phase 1 queries: CAFC + SCOTUS + CADC); CourtListener SEARCH API (`/api/rest/v4/search/?type=o&court=<slug>&...`); `secrets/keys.txt` (CL token + Gmail app password).
+- **New outputs:**
+  - `ResearchForced/LegalOpinions/PDFS/<docket>.<TYPE>.<M-D-YYYY>_<id>.pdf` — downloaded opinion PDFs (vault-root-relative)
+  - `ResearchForced/LegalOpinions/PDFS/_fetch_log.csv` — pipe-delimited dedup log (`query_id|docket_number|document_id|fetched_on|pdf_filename|source_url`)
+  - `research/data/legal/_fetch_summaries/<YYYY-MM-DD>-<HHMM>.md` — per-fetch fast-extract summary (CH-root-relative)
+  - Gmail alert to JR: subject `[LR FETCH] N new cases -- YYYY-MM-DD`; largest PDF featured first + attached; zero-new-case run still sends "No new cases" body
+- **Fast-extract rule:** deterministic regex only (parties, court, docket, document_id, dates, panel, disposition, opening holding, first 6-10 citations). Any field that can't be regex-matched = `[extraction failed]`. NO synthesis, NO LLM, NO judgment-shaped work — JR direction 2026-06-23.
+- **Dedup key:** composite `(docket_number, document_id)` in `_fetch_log.csv`. Re-running is always safe.
+- **filed_after computation:** max `fetched_on` for the current `query_id` minus 1 day; fallback: today minus 30 days (M/D/YYYY format, no leading zeros).
+- **PDF library hierarchy:** `pdfplumber` (preferred) → `pypdf` (installed fallback) → `[extraction failed]` per field if both fail.
+- **CLI flags (legal_fetch_queries.py):** `--queries-file PATH` · `--log-file PATH` · `--pdf-dir PATH` · `--summary-dir PATH` · `--rate-seconds F` (default 1.0) · `--dry-run` · `--no-email`
+- **Fail-soft hierarchy:** per-opinion (log+continue) → per-query (log+skip+continue) → per-extract-field (`[extraction failed]`+continue) → SMTP (log+continue) → whole-run failure only if `queries.toml` missing/unparseable.
+- **Skill trigger:** `FETCH LEGAL` → Skill 3 in `C Roles/Skills/skills.md` → `python pipeline/legal/legal_fetch_queries.py` (run from `Terminal/Central Hub/`). No scheduled task in v1 — JR-paced.
+- **Queries registry:** `pipeline/legal/queries.toml` — Phase 1 locked. To add a query: append a new `[[query]]` block. `[defaults]` block applies to all.
+- **Escalates when:** All queries skip (API error or zero results on every query). Surface to JR; CourtListener SEARCH API may have changed.
+
 ---
 
 ## Universal rules

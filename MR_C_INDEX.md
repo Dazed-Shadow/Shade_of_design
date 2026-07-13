@@ -4,8 +4,7 @@ name: Central Hub (Shade_of_design)
 stage: Active build
 purpose: Content + outreach arm of HZ — five-agent pipeline (C-Transit, C-Phile, C-SPOTTER, C-MainLiner, C-Comms) that drafts blog/social content and surfaces NAICS-matched prospects, all routed through Jon's human-review gate.
 owner: JR
-collaborators: [Claude (Opus + Sonnet), Notion]
-notion: —
+collaborators: [Claude (Opus + Sonnet)]
 last_synced: 2026-06-02
 related: [HZ, PROJECT_UNITY, ALL_HEALTH]
 sub_components: [PROJECT_UNITY]

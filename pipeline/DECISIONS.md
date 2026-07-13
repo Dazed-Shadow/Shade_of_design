@@ -1274,3 +1274,91 @@ Five spec errors on Opus@CH's side, all in the "external-tool-or-format-behavior
 - **D-030** — SoD Museum runtime pattern (Netlify hosts the same static assets D-030 describes)
 - **D-029** — SoD Museum manifest schemas (audio.json.tracks[].url now has a real host to point at)
 - **D-024** — Unite Passion as Central Hub landing component (same landing app, same deploy target)
+
+---
+
+## D-036 · 2026-07-11 · DD-037 Phase 1 seam — manifest-only rendering, visibility default-Private, id/title derivation
+
+**Decision:** `pipeline/legal/export_manifests.py` is the sole reader of `research/data/legal/{cases,field-clerks}/*.md`. It parses YAML frontmatter, splits the body into sections on H2 (`## `) headings, and writes `cases.json` + `field-clerks.json` to `quick-front-end/shade-of-design-landing/sr-playspace/data/`. The `sr-playspace/index.html` route reads those two JSON files only — it never opens a vault markdown path. One code path; no per-surface parsing anywhere else.
+
+**Context:** DD-037 Phase 1 (the walking skeleton) locks this as the spine every later SR play-space phase renders through. Full spec: [[References/Designs/DD-037 SR legal play-space and manifest seam]] and `_village-embassy/Fable/FABLE-RETURN-JR_DD010-round2.md` (Phase 1 section, Standing Rules).
+
+### Visibility boundary — missing field is Private, not an error
+
+Per Standing Rule #6: each corpus file's frontmatter carries `visibility: Private | Public`. The exporter emits a file to the manifest **only** if `visibility: Public`. A missing or absent field is **Private** — silently excluded, fail-safe. This is the expected outcome for nearly the whole corpus, not a validation failure.
+
+This phase, `visibility: Public` was added to exactly two files (JR-authorized skeleton artifacts, public-domain-derived): `research/data/legal/cases/trump_v_cook.md` and `research/data/legal/field-clerks/25A312.md`. No other corpus file was touched — leaving them unmarked is what proves the boundary, by excluding them.
+
+### Blocking validation applies only to files already marked Public
+
+The schema's required fields are `id`, `docket_number`, `title`, `visibility`. A file that is Private (or unmarked) is excluded before validation ever runs on it — that's not a failure. A file that **is** marked `visibility: Public` and is then missing `docket_number` or has no H1 (`# `) heading to derive a title from aborts the **entire export**, naming the file path and the missing field, and no manifest is written. Verified: stripping `docket_number:` from a copy of `trump_v_cook.md` exits non-zero with `<path>: missing required field 'docket_number'`; the real corpus file and the last-good manifests were untouched.
+
+### `id` and `title` are derived, not new frontmatter fields
+
+The corpus has no `id:` or `title:` frontmatter key today — `docket_number` and the body's H1 heading already carry that information. Per Standing Rule #2 ("upstream stays downstream-ignorant... the synthesis pipeline never changes shape to feed a UI"), the exporter derives `id <- docket_number` and `title <- H1 heading text` rather than asking C-Legal's synthesis output to grow UI-shaped fields. If the source data for a derivation is missing on a Public file, that's still the same blocking validation failure named above — derivation doesn't create a silent fallback, it just avoids inventing a redundant frontmatter key for something already on the page.
+
+**Trade-off accepted:** `court` and `decision_date` are `null` for field-clerk entries (that frontmatter shape doesn't carry them) — expected, not an error; case.md entries have both. `tags` falls back to `area_of_law` when a file has no `tags` field (case.md uses `area_of_law`; field-clerk files use `tags` directly) — a derivation, not a corpus edit.
+
+**Cross-refs (Phase 1 scope):** `cross_refs[]` is the raw `[[wikilink]]` target list from the body, unresolved and unnormalized (some targets are docket numbers, some are filename slugs like `trump_v_slaughter`). Resolving these to site routes is explicitly Phase 2's job (`FABLE-RETURN-JR_DD010-round2.md`); Phase 1's renderer displays a wikilink as plain styled text (`.pw-xref`), never a broken link.
+
+**Verified end-to-end (DD-037 Phase 1 DoD):** Cook (25A312) renders on the real path — vault `.md` → `export_manifests.py` → `field-clerks.json` → `sr-playspace/index.html` — legible at 375px mobile width, no horizontal scroll, no broken sections. Manifest boundary check: exactly 2 total entries (1 case + 1 field-clerk) across the whole corpus, matching the two Public-marked files.
+
+**Files touched:**
+- `pipeline/legal/export_manifests.py` (new)
+- `quick-front-end/shade-of-design-landing/sr-playspace/index.html`, `playspace.css`, `playspace.js` (new)
+- `quick-front-end/shade-of-design-landing/sr-playspace/data/cases.json`, `field-clerks.json` (generated, not hand-edited)
+- `research/data/legal/cases/trump_v_cook.md` — added `visibility: Public`
+- `research/data/legal/field-clerks/25A312.md` — added `visibility: Public`
+
+**Not built (Phase 1 guardrails, deliberately):** no browse/shelf/gallery chrome, no `--sr-*` regal tokens (SoD dark only — Ink `#0B1726` / Paper `#FAFAF7` / Marcellus headings / Inter body / JetBrains Mono), no cross-ref resolution, no stat/metadata chips on the document view, no connection to DD-026's fetch output. Deferred to Phase 2+ per `FABLE-RETURN-JR_DD010-round2.md`.
+
+---
+
+## D-037 · 2026-07-12 · DD-037 Phase 2 reading room — hash routing, id-only cross-ref resolution, preamble-capture parser fix, nested-emphasis renderer fix
+
+**Decision:** `sr-playspace/index.html` becomes a single-page hash router (`#/fc/<id>`, `#/case/<id>`, default = plain Cases/Field Clerks index) rendering the full `visibility: Public` corpus through two templates sharing one family (Field Clerk / Case Synthesis, distinguished by a kind-label under the docket line). Cross-ref resolution, the three sanctioned expressive jewels, and two real parser bugs found against real content are all in this ship.
+
+**Context:** DD-037 Phase 2 (`C Roles/Strategies/kickoffs/DD-037-CBuild-phase2.md`). JR hand-marked the Phase-2 corpus `visibility: Public` before dispatch (Standing Rule #6 — not C-Build's to touch): 3 cases (`trump_v_cook`, `trump_v_slaughter`, `26-1575` the ORDER exemplar) + 5 field-clerks (`21-1729`, `24-1990`, `24-2242`, `25-332`, `25A312`). C-Build did not add or change any `visibility:` field — whatever was Public at build time is what's reflected below.
+
+### Cross-ref resolution matches on manifest `id` only — no schema change
+
+Per pre-decision 2, the renderer resolves a `[[wikilink]]` by checking whether its target matches an `id` already present in the loaded `cases.json` / `field-clerks.json` — the exporter's `cross_refs[]` stays raw wikilink targets, untouched. When an id exists in both manifests, the Field Clerk wins (the SR-reading surface; the FC's own paired-case link carries the rest) — implemented by building the id->kind lookup from cases first, then letting field-clerks overwrite.
+
+**This is a literal match, not a slug match.** The real corpus uses two different wikilink conventions: field-clerk files cross-reference by docket number (`[[24-1990]]`, `[[25-332|Slaughter]]`) — these resolve, because manifest `id` **is** `docket_number`. Case.md files cross-reference each other by **filename slug** (`[[trump_v_slaughter|Trump v. Slaughter]]`) — these do **not** resolve, because no manifest entry has `id: "trump_v_slaughter"` (Slaughter's id is `25-332`). This was verified as the intended design, not a gap: pre-decision 2 explicitly states "no schema change," and the packet's own DoD gate C example (Cook FC -> Slaughter FC) is a docket-style link, not a slug-style one — the packet author anticipated exactly this mechanism.
+
+**Verified live in real content, no fixtures:** `fc/25A312` (Cook) -> `[[25-332|Slaughter]]` resolves to `#/fc/25-332` and navigates in-page correctly (clicked, confirmed via `location.hash` + rendered title). `fc/24-2242` (Erdemir) -> `[[25-1807]]` (not in JR's Public set) degrades to the Phase-1 styled span, not a broken link. Case-side slug links degrade the same way for the same reason (target doesn't match any manifest id) — not a bug, the direct consequence of "no schema change."
+
+### Parser fix 1 — preamble between H1 and first H2 was silently dropped
+
+`export_manifests.py`'s `_split_sections` discarded any content between the body's H1 title and its first H2 heading. Phase 1's fixture files happened to have none; `26-1575.md` (the ORDER exemplar, read for Phase 2) has a calibration blockquote there ("This is the ORDER in the corpus...") that was being silently lost. Fixed by capturing that span as a `heading: ""` lead section when non-empty, instead of dropping it. No schema change — `heading` was always a string. Renderer skips the `<h2>` element when `heading` is falsy, so the unheaded section reads as plain body text, not an error state.
+
+### Parser fix 2 — nested/asymmetric emphasis, found against real content, not anticipated in the kickoff
+
+The corpus uses markdown-emphasis patterns a naive sequential-regex approach cannot render correctly, both found live while testing the actual Public set (not caught by inspection — the DOM had to be checked for stray asterisks to surface them):
+
+1. **Asymmetric triple-asterisk callouts**, e.g. `***Humphrey's Executor*, 295 U.S. 602 (1935) -- OVERRULED TODAY:**` — opens bold+italic together but closes the italic after just the case name (single `*`), then closes the bold later (`**`). This is NOT a symmetric `***text***`; a first attempt treating it as one produced garbled output (stray literal asterisks, an `<em>` spanning several unrelated sentences). Fixed with a dedicated pattern matched before the plain bold/italic passes: `\*\*\*([^*]+?)\*([^*]*?)\*\*` -> `<strong><em>$1</em>$2</strong>`, with a true-symmetric `***text***` kept as a fallback pass.
+2. **Bold spans containing a nested italic case name**, e.g. `**whether *Humphrey's Executor v. United States*, 295 U.S. 602 (1935)**` — a plain `\*\*([^*]+)\*\*` bold regex can't match across the inner single-star pair (`[^*]+` forbids any asterisk), so the whole span fell through both passes as literal asterisks. Fixed by widening the bold pattern to `\*\*((?:[^*]|\*[^*]+\*)+)\*\*` (non-star runs OR a nested `*italic*` span) and rendering the inner italic before wrapping in `<strong>`.
+
+**Verified:** scripted a check across all 8 rendered documents' `document.body.innerText` for any remaining `*` character after the fix — zero stray asterisks corpus-wide, versus multiple hits before the fix (found by the same script, which is what surfaced the bug in the first place — this was not caught by code review, only by checking real rendered output).
+
+### Sanctioned jewels (the only three expressive elements, per Fable round-1)
+
+1. **"Carry this forward" pull-quote** — the renderer detects a section whose heading equals "Carry this forward" (case-insensitive) and adds a `.pw-pullquote` class to its `<blockquote>` element after rendering (no new parser state). **Shipped a CSS specificity bug and fixed it in the same pass:** `.pw-pullquote` alone (specificity 0-1-0) was losing to the generic `.pw-section blockquote` rule (0-1-1, class + element beats class alone) — the pull-quote silently rendered with the plain blockquote's 2px/dim/italic styling instead of its own 3px/full-paper/non-italic treatment. Caught by checking `getComputedStyle` against the intended values, not by visual inspection. Fixed by qualifying the selector to `.pw-section blockquote.pw-pullquote` (and the matching desktop media-query override), which out-specifies the generic rule.
+2. **Play Set checklists as real, read-only checkboxes** — Phase 1's inline unicode glyphs (`☑`/`☐`) replaced with actual `<input type="checkbox" disabled>` elements, CSS-drawn check mark (rotated border, no unicode glyph, ASCII-safe source).
+3. **Bold stays plain bold** — `<strong>`, no badge/chip wrapping. No change needed; the existing renderer already did this.
+
+### Routing + templates
+
+Hash-based, single page, no new HTML files, no build step: `#/fc/<id>` and `#/case/<id>`; default route renders a plain text-link index grouped Cases / Field Clerks (no cards, no grid, no imagery — an index, not browse chrome, per pre-decision 1). One shared template function (`renderDocument`) handles both kinds; a kind-label ("FIELD CLERK" / "CASE SYNTHESIS") under the docket line is the only visual differentiator, plus an optional court/decision_date byline that only cases populate (field-clerk frontmatter doesn't carry those fields — expected, per D-036).
+
+**file:// fallback preserved and extended:** Phase 1's `.js`-sibling pattern (`window.SOD_MANIFEST_FIELD_CLERKS`) now also covers `cases.json` -> `data/cases.js` / `window.SOD_MANIFEST_CASES`, following the identical mechanism. This session's browser-preview tool could not navigate a `file://` URL directly (sandboxed environment limitation), so the fallback was verified by (a) confirming both `data/*.js` script tags load and populate their globals correctly on the shipped page, and (b) simulating the exact fetch-rejection code path against those live globals — both succeeded. JR's own double-click of `index.html` remains the final proof, same as the Phase-1 hotfix.
+
+**Trade-off accepted:** the document-list index has no "kind of doc" visual grouping beyond its two `<h2>` sections (Cases / Field Clerks) — deliberately plain per pre-decision 1 and Mr.C's note that Phase 4's browse chrome replaces this route entirely; over-designing it now would give Phase 3's "token-only diff" self-test something extra to account for.
+
+**Files touched:**
+- `pipeline/legal/export_manifests.py` — preamble-capture fix in `_split_sections`; no schema change
+- `quick-front-end/shade-of-design-landing/sr-playspace/index.html` — title/description updated for the reading room; added `data/cases.js` fallback script tag
+- `quick-front-end/shade-of-design-landing/sr-playspace/playspace.js` — hash router, both templates, cross-ref resolution, nested-emphasis fixes, checkbox/pull-quote jewels
+- `quick-front-end/shade-of-design-landing/sr-playspace/playspace.css` — kind-label, byline, pull-quote (+ specificity fix), checkbox, back-link, index-list styles
+- `quick-front-end/shade-of-design-landing/sr-playspace/data/{cases,field-clerks}.json` + `.js` siblings — regenerated, not hand-edited
+- No corpus files touched — `visibility:` marking was JR's hand, done before this session started
