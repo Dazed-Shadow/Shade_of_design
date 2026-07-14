@@ -1,0 +1,145 @@
+{
+  "$schema_version": "1.0.0",
+  "warchest": [
+    {
+      "name": "backdrop-rebuttable-presumption",
+      "from_fcs": [
+        "25A312"
+      ],
+      "count": 1
+    },
+    {
+      "name": "best-reading-post-loper-bright",
+      "from_fcs": [
+        "24-2242"
+      ],
+      "count": 1
+    },
+    {
+      "name": "clock-starts-at-shape",
+      "from_fcs": [
+        "24-2242"
+      ],
+      "count": 1
+    },
+    {
+      "name": "decision-of-1789-as-liquidation",
+      "from_fcs": [
+        "25-332"
+      ],
+      "count": 1
+    },
+    {
+      "name": "denominator-choice-rhetorical-move",
+      "from_fcs": [
+        "21-1729"
+      ],
+      "count": 1
+    },
+    {
+      "name": "equity-protects-de-facto-officer",
+      "from_fcs": [
+        "25A312"
+      ],
+      "count": 1
+    },
+    {
+      "name": "general-rule-plus-historical-tradition-carveout",
+      "from_fcs": [
+        "25-332"
+      ],
+      "count": 1
+    },
+    {
+      "name": "historical-tradition-safe-harbor",
+      "from_fcs": [
+        "25A312"
+      ],
+      "count": 1
+    },
+    {
+      "name": "illegal-exaction-gateway",
+      "from_fcs": [
+        "24-1990"
+      ],
+      "count": 1
+    },
+    {
+      "name": "knick-four-factor-malleable",
+      "from_fcs": [
+        "25-332"
+      ],
+      "count": 1
+    },
+    {
+      "name": "no-unyielding-jurisdictional-hierarchy",
+      "from_fcs": [
+        "24-1990"
+      ],
+      "count": 1
+    },
+    {
+      "name": "notice-adequacy-three-part",
+      "from_fcs": [
+        "25A312"
+      ],
+      "count": 1
+    },
+    {
+      "name": "overlap-does-not-imply-identity",
+      "from_fcs": [
+        "21-1729"
+      ],
+      "count": 1
+    },
+    {
+      "name": "presumption-plus-clear-convincing-rebuttal",
+      "from_fcs": [
+        "24-1990"
+      ],
+      "count": 1
+    },
+    {
+      "name": "protective-filing-rule",
+      "from_fcs": [
+        "24-2242"
+      ],
+      "count": 1
+    },
+    {
+      "name": "quasi-terminology-critique",
+      "from_fcs": [
+        "25-332"
+      ],
+      "count": 1
+    },
+    {
+      "name": "reliance-reframing-move",
+      "from_fcs": [
+        "25-332"
+      ],
+      "count": 1
+    },
+    {
+      "name": "rewrite-as-red-flag",
+      "from_fcs": [
+        "21-1729"
+      ],
+      "count": 1
+    },
+    {
+      "name": "takeda-canon-russello-transplanted",
+      "from_fcs": [
+        "21-1729"
+      ],
+      "count": 1
+    },
+    {
+      "name": "true-nature-doctrine",
+      "from_fcs": [
+        "24-2242"
+      ],
+      "count": 1
+    }
+  ]
+}

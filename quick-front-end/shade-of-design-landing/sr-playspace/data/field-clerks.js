@@ -4,9 +4,11 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
     {
       "id": "21-1729",
       "docket_number": "21-1729",
+      "source_slug": "21-1729",
       "title": "Field Clerk Draft \u2014 21-1729 (AstraZeneca v. Mylan)",
       "court": null,
       "decision_date": null,
+      "updated_at": "2026-07-03",
       "tags": [
         "field-clerk",
         "sr-context",
@@ -64,9 +66,11 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
     {
       "id": "24-1990",
       "docket_number": "24-1990",
+      "source_slug": "24-1990",
       "title": "Field Clerk Draft \u2014 24-1990 (Jacobson v. US)",
       "court": null,
       "decision_date": null,
+      "updated_at": "2026-07-03",
       "tags": [
         "field-clerk",
         "sr-context",
@@ -117,9 +121,11 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
     {
       "id": "24-2242",
       "docket_number": "24-2242",
+      "source_slug": "24-2242",
       "title": "Field Clerk Draft \u2014 24-2242 (Erdemir v. ITC)",
       "court": null,
       "decision_date": null,
+      "updated_at": "2026-07-03",
       "tags": [
         "field-clerk",
         "sr-context",
@@ -171,9 +177,11 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
     {
       "id": "25-332",
       "docket_number": "25-332",
+      "source_slug": "25-332",
       "title": "Field Clerk Draft \u2014 25-332 (Trump v. Slaughter)",
       "court": null,
       "decision_date": null,
+      "updated_at": "2026-07-11",
       "tags": [
         "field-clerk",
         "sr-context",
@@ -230,9 +238,11 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
     {
       "id": "25A312",
       "docket_number": "25A312",
+      "source_slug": "25A312",
       "title": "Field Clerk Draft \u2014 25A312 (Trump v. Cook)",
       "court": null,
       "decision_date": null,
+      "updated_at": "2026-07-11",
       "tags": [
         "field-clerk",
         "sr-context",
