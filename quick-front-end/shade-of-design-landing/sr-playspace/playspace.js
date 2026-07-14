@@ -266,6 +266,30 @@
       header.appendChild(byline);
     }
 
+    // DD-037 Phase 5, pre-decision 4: cases only (FCs are internal work
+    // product, no source line), and only when the frontmatter has it --
+    // a case missing source_url simply renders no line, not an error.
+    // Label derives from the URL's own host: the corpus sources from more
+    // than one archive (courtlistener.com, supremecourt.gov), and a
+    // hardcoded "CourtListener" would mislabel every non-CL source.
+    if (kind === "case" && entry.source_url) {
+      var sourceHost = "";
+      try {
+        sourceHost = new URL(entry.source_url).hostname.replace(/^www\./, "");
+      } catch (err) {
+        sourceHost = "";
+      }
+      var sourceLine = document.createElement("p");
+      sourceLine.className = "pw-source-line";
+      var sourceLink = document.createElement("a");
+      sourceLink.href = entry.source_url;
+      sourceLink.target = "_blank";
+      sourceLink.rel = "noopener";
+      sourceLink.textContent = sourceHost ? "Source: " + sourceHost : "Source";
+      sourceLine.appendChild(sourceLink);
+      header.appendChild(sourceLine);
+    }
+
     root.appendChild(header);
     root.appendChild(renderSections(entry.sections));
   }

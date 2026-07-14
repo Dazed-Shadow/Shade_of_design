@@ -1,7 +1,7 @@
 """
 C-Legal manifest exporter -- DD-037 Phase 1 (the vault->manifest seam),
-extended in Phase 2 (the reading room) and Phase 4 (the play space).
-Still one code path, one schema.
+extended in Phase 2 (the reading room), Phase 4 (the play space), and
+Phase 5 (cadence + vault-native variant). Still one code path, one schema.
 
 Reads research/data/legal/cases/*.md and research/data/legal/field-clerks/*.md,
 parses YAML frontmatter, splits the markdown body into sections by H2 (## )
@@ -29,6 +29,24 @@ Phase 4 additions:
     `war_chest_candidates` array into named specimens (kebab name, the FC ids
     that named it, a count). No corpus file changes -- read-only aggregation
     over the same visibility-filtered set Phase 1 already established.
+
+Phase 5 additions (DD-037 Phase 5, cadence + vault-native variant):
+  - `source_url` (already on the page per Standing Rule #2 -- case frontmatter
+    carries it today) is now on every manifest entry, passed through
+    unchanged. Field-clerk frontmatter has no `source_url` key, so FC entries
+    simply carry `null` -- the case template is the only renderer that reads
+    it (FCs are internal work product, no source line). A case missing the
+    field also renders `null` -- graceful absence, not a validation error.
+  - `_SR-INDEX.md`: one Obsidian-side navigation note written to the corpus
+    root (never the site data dir, never a site manifest), listing EVERY
+    corpus doc -- Public AND Private, the boundary governs the site export
+    only -- grouped Cases / Field Clerks, each a `[[wikilink]]` with docket,
+    title, and its Public/Private marker. Regenerated whole-file on every
+    run; never hand-edited. This is a navigation aid, not a manifest, so it
+    does not share the Public-only schema-validation gate below: a sparse or
+    malformed Private file still gets a best-effort line (title/docket fall
+    back to the filename) rather than aborting the sync over a note nobody
+    is publishing.
 
 CRITICAL RULE (DD-037 Standing Rule #6 -- visibility boundary, privacy):
   Only files with `visibility: Public` in frontmatter are emitted. A missing
@@ -58,7 +76,9 @@ real content that happened to precede the first H2.
 CLI:
   python pipeline/legal/export_manifests.py [--corpus-dir PATH] [--out-dir PATH]
 
-Emits cases.json, field-clerks.json, warchest.json (+ .js siblings of all three).
+Emits cases.json, field-clerks.json, warchest.json (+ .js siblings of all
+three) under out_dir, and _SR-INDEX.md at the corpus root (vault-native,
+never a site artifact).
 """
 
 from __future__ import annotations
@@ -77,6 +97,9 @@ _DEFAULT_CORPUS_DIR = _CH_ROOT / "research" / "data" / "legal"
 _DEFAULT_OUT_DIR = (
     _CH_ROOT / "quick-front-end" / "shade-of-design-landing" / "sr-playspace" / "data"
 )
+# Vault-native index lands at the corpus root, deliberately NOT under
+# _DEFAULT_OUT_DIR -- it is never a site artifact (DD-037 Phase 5).
+_SR_INDEX_FILENAME = "_SR-INDEX.md"
 
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 _H1_RE = re.compile(r"^#[ \t]+(.+?)[ \t]*$", re.MULTILINE)
@@ -195,6 +218,7 @@ def _build_entry(path: Path, fm: dict, body: str) -> dict:
         "updated_at": updated_at,
         "tags": tags,
         "visibility": fm.get("visibility"),
+        "source_url": fm.get("source_url"),
         "cross_refs": _extract_cross_refs(body),
         "sections": _split_sections(body),
     }
@@ -224,6 +248,100 @@ def _export_warchest(field_clerks_dir: Path) -> list[dict]:
     ]
 
 
+def _index_entry(path: Path, folder_prefix: str) -> dict:
+    """Best-effort scan for the vault-native index -- lists EVERY corpus doc
+    regardless of visibility, so it deliberately does NOT reuse _iter_public
+    or _build_entry's Public-only validation gate. A sparse or malformed
+    Private file still gets a navigation line; title/docket fall back to the
+    filename stem rather than aborting the whole sync run over a note nobody
+    is publishing (the blocking schema gate stays scoped to Public site
+    manifests, per the module-level CRITICAL RULE).
+
+    link_target is folder-qualified (e.g. "cases/21-1729"), not a bare
+    stem: a docket-named case and its paired Field Clerk can share an exact
+    filename (21-1729.md exists in both cases/ and field-clerks/ today), and
+    a bare [[21-1729]] wikilink is ambiguous in Obsidian across two files
+    with the same basename. The folder prefix disambiguates.
+    """
+    text = path.read_text(encoding="utf-8")
+    try:
+        fm, body = _parse_frontmatter(text, path)
+    except ManifestValidationError:
+        fm, body = {}, text
+
+    docket = fm.get("docket_number")
+    docket = str(docket) if docket else path.stem
+
+    try:
+        title = _extract_title(body, path)
+    except ManifestValidationError:
+        title = docket
+
+    visibility = "Public" if fm.get("visibility") == "Public" else "Private"
+
+    return {
+        "link_target": f"{folder_prefix}/{path.stem}",
+        "docket": docket,
+        "title": title,
+        "visibility": visibility,
+    }
+
+
+def _index_group(source_dir: Path, folder_prefix: str) -> list[dict]:
+    if not source_dir.is_dir():
+        return []
+    return [_index_entry(path, folder_prefix) for path in sorted(source_dir.glob("*.md"))]
+
+
+def _index_lines(entries: list[dict]) -> list[str]:
+    if not entries:
+        return ["*(none yet)*"]
+    return [
+        f"- [[{e['link_target']}|{e['title']}]] -- {e['docket']} -- **{e['visibility']}**"
+        for e in entries
+    ]
+
+
+def _render_sr_index(cases: list[dict], field_clerks: list[dict]) -> str:
+    lines = [
+        "---",
+        "cssclasses:",
+        "  - sod-room",
+        "  - sod-records",
+        "title: SR Index",
+        "---",
+        "",
+        "> Auto-generated by `pipeline/legal/sync_sr.py` on every sync run --"
+        " do not hand-edit, edits are overwritten on the next sync. Lists"
+        " every corpus doc, Private and Public; the marker on each line"
+        " mirrors that doc's own `visibility` frontmatter field (missing or"
+        " absent means Private, fail-safe, same rule the site export uses).",
+        "",
+        "# SR Index",
+        "",
+        "## Cases",
+        "",
+    ]
+    lines.extend(_index_lines(cases))
+    lines.append("")
+    lines.append("## Field Clerks")
+    lines.append("")
+    lines.extend(_index_lines(field_clerks))
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _write_sr_index(corpus_dir: Path) -> int:
+    """Writes _SR-INDEX.md to the corpus root. Returns entry count. Plain
+    markdown links ONLY -- no dataview/dataviewjs on nav, per standing law.
+    """
+    index_cases = _index_group(corpus_dir / "cases", "cases")
+    index_field_clerks = _index_group(corpus_dir / "field-clerks", "field-clerks")
+    sr_index_md = _render_sr_index(index_cases, index_field_clerks)
+    (corpus_dir / _SR_INDEX_FILENAME).write_text(sr_index_md, encoding="utf-8")
+    return len(index_cases) + len(index_field_clerks)
+
+
 def run_export(corpus_dir: Path, out_dir: Path) -> dict:
     cases = _export_dir(corpus_dir / "cases")
     field_clerks = _export_dir(corpus_dir / "field-clerks")
@@ -251,7 +369,17 @@ def run_export(corpus_dir: Path, out_dir: Path) -> dict:
     (out_dir / "warchest.js").write_text(
         "window.SOD_MANIFEST_WARCHEST = " + warchest_json + ";\n", encoding="utf-8",
     )
-    return {"cases": len(cases), "field_clerks": len(field_clerks), "warchest": len(warchest)}
+
+    # Vault-native index: corpus root, never the site data dir, never a
+    # site manifest (DD-037 Phase 5).
+    index_entries = _write_sr_index(corpus_dir)
+
+    return {
+        "cases": len(cases),
+        "field_clerks": len(field_clerks),
+        "warchest": len(warchest),
+        "index_entries": index_entries,
+    }
 
 
 def main() -> None:
@@ -287,6 +415,7 @@ def main() -> None:
     print(f"[OK] field-clerks.json: {counts['field_clerks']} entries", file=sys.stderr)
     print(f"[OK] warchest.json: {counts['warchest']} specimens", file=sys.stderr)
     print(f"[OK] written to {out_dir}", file=sys.stderr)
+    print(f"[OK] {_SR_INDEX_FILENAME}: {counts['index_entries']} entries (vault-native, {corpus_dir})", file=sys.stderr)
 
 
 if __name__ == "__main__":

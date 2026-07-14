@@ -128,6 +128,27 @@ main {
   margin: 0.75rem 0 0;
 }
 
+/* DD-037 Phase 5, pre-decision 4: case-only source line, muted register --
+   no gold, gold stays a light/structural role, never a plain-text link. */
+.pw-source-line {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--sr-muted-text);
+  margin: 0.4rem 0 0;
+}
+
+.pw-source-line a {
+  color: var(--sr-muted-text);
+  text-decoration: underline;
+  text-decoration-color: var(--sr-hairline);
+}
+
+.pw-source-line a:hover,
+.pw-source-line a:focus {
+  color: var(--sr-regal-soft);
+  text-decoration-color: var(--sr-regal-soft);
+}
+
 /* --- Sections --- */
 
 .pw-section {
