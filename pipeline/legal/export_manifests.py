@@ -1,13 +1,34 @@
 """
 C-Legal manifest exporter -- DD-037 Phase 1 (the vault->manifest seam),
-extended in Phase 2 (the reading room). Still one code path, one schema.
+extended in Phase 2 (the reading room) and Phase 4 (the play space).
+Still one code path, one schema.
 
 Reads research/data/legal/cases/*.md and research/data/legal/field-clerks/*.md,
 parses YAML frontmatter, splits the markdown body into sections by H2 (## )
-headings, and emits validated JSON manifests: cases.json and field-clerks.json.
+headings, and emits validated JSON manifests: cases.json, field-clerks.json,
+and warchest.json.
 
 ONE code path. No per-surface parsing anywhere else, ever -- every site
 surface renders these manifests, never vault paths directly.
+
+Phase 4 additions:
+  - `source_slug` (the source file's stem, e.g. "trump_v_slaughter") is now
+    on every entry. Some corpus files are named by docket number (its slug
+    equals its id, a harmless redundancy); the Trump v. Cook / Trump v.
+    Slaughter case files are named by a descriptive slug instead, and the
+    corpus's own cross-refs use that slug ([[trump_v_cook|...]]), which the
+    id-only lookup in Phase 2's renderer could never resolve. Exporting the
+    slug lets the renderer alias it to the entry's canonical id.
+  - `updated_at`, derived per Standing Rule #2 (missing UI-shaped field ->
+    exporter derives it, corpus doesn't grow a new key): field-clerk
+    frontmatter carries `sr_review_date`; case frontmatter carries
+    `decision_date`. The browse-layer shelf needs one temporal field to sort
+    both kinds together, so this picks whichever the doc's own frontmatter
+    already has.
+  - `warchest.json`: aggregates every Public field-clerk's
+    `war_chest_candidates` array into named specimens (kebab name, the FC ids
+    that named it, a count). No corpus file changes -- read-only aggregation
+    over the same visibility-filtered set Phase 1 already established.
 
 CRITICAL RULE (DD-037 Standing Rule #6 -- visibility boundary, privacy):
   Only files with `visibility: Public` in frontmatter are emitted. A missing
@@ -36,6 +57,8 @@ real content that happened to precede the first H2.
 
 CLI:
   python pipeline/legal/export_manifests.py [--corpus-dir PATH] [--out-dir PATH]
+
+Emits cases.json, field-clerks.json, warchest.json (+ .js siblings of all three).
 """
 
 from __future__ import annotations
@@ -120,6 +143,30 @@ def _extract_cross_refs(body: str) -> list[str]:
     return refs
 
 
+_CATEGORY_SUFFIX_RE = re.compile(r"(?i)-category$")
+
+
+def _kebab_name(raw: str) -> str:
+    name = _CATEGORY_SUFFIX_RE.sub("", raw.strip())
+    return name.lower()
+
+
+def _iter_public(source_dir: Path):
+    """Yield (path, fm, body) for every visibility: Public file in source_dir.
+
+    Single shared scan so _export_dir and _export_warchest apply the exact
+    same fail-safe visibility filter -- no second, drifting implementation.
+    """
+    if not source_dir.is_dir():
+        return
+    for path in sorted(source_dir.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        fm, body = _parse_frontmatter(text, path)
+        if fm.get("visibility") != "Public":
+            continue  # Private or absent -- fail-safe exclusion, not an error.
+        yield path, fm, body
+
+
 def _build_entry(path: Path, fm: dict, body: str) -> dict:
     docket_number = fm.get("docket_number")
     if not docket_number:
@@ -131,12 +178,21 @@ def _build_entry(path: Path, fm: dict, body: str) -> dict:
     if tags is None:
         tags = fm.get("area_of_law") or []
 
+    # sr_review_date is written unquoted (2026-07-11) in FC frontmatter, so
+    # YAML parses it as a date object; decision_date is written slash-style
+    # ("2026/06/29") and stays a plain string. str() normalizes either shape
+    # to the same manifest type without touching the corpus.
+    updated_at_raw = fm.get("sr_review_date") or fm.get("decision_date")
+    updated_at = str(updated_at_raw) if updated_at_raw is not None else None
+
     return {
         "id": str(docket_number),
         "docket_number": str(docket_number),
+        "source_slug": path.stem,
         "title": title,
         "court": fm.get("court"),
         "decision_date": fm.get("decision_date"),
+        "updated_at": updated_at,
         "tags": tags,
         "visibility": fm.get("visibility"),
         "cross_refs": _extract_cross_refs(body),
@@ -145,28 +201,42 @@ def _build_entry(path: Path, fm: dict, body: str) -> dict:
 
 
 def _export_dir(source_dir: Path) -> list[dict]:
-    entries: list[dict] = []
-    if not source_dir.is_dir():
-        return entries
-    for path in sorted(source_dir.glob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        fm, body = _parse_frontmatter(text, path)
-        if fm.get("visibility") != "Public":
-            continue  # Private or absent -- fail-safe exclusion, not an error.
-        entries.append(_build_entry(path, fm, body))
-    return entries
+    return [_build_entry(path, fm, body) for path, fm, body in _iter_public(source_dir)]
+
+
+def _export_warchest(field_clerks_dir: Path) -> list[dict]:
+    buckets: dict[str, list[str]] = {}
+    for path, fm, _body in _iter_public(field_clerks_dir):
+        docket_number = fm.get("docket_number")
+        if not docket_number:
+            raise ManifestValidationError(f"{path}: missing required field 'docket_number'")
+        fc_id = str(docket_number)
+        for raw in fm.get("war_chest_candidates") or []:
+            name = _kebab_name(str(raw))
+            if not name:
+                continue
+            from_fcs = buckets.setdefault(name, [])
+            if fc_id not in from_fcs:
+                from_fcs.append(fc_id)
+    return [
+        {"name": name, "from_fcs": from_fcs, "count": len(from_fcs)}
+        for name, from_fcs in sorted(buckets.items())
+    ]
 
 
 def run_export(corpus_dir: Path, out_dir: Path) -> dict:
     cases = _export_dir(corpus_dir / "cases")
     field_clerks = _export_dir(corpus_dir / "field-clerks")
+    warchest = _export_warchest(corpus_dir / "field-clerks")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     cases_json = json.dumps({"$schema_version": "1.0.0", "cases": cases}, indent=2, ensure_ascii=True)
     fc_json = json.dumps({"$schema_version": "1.0.0", "field_clerks": field_clerks}, indent=2, ensure_ascii=True)
+    warchest_json = json.dumps({"$schema_version": "1.0.0", "warchest": warchest}, indent=2, ensure_ascii=True)
 
     (out_dir / "cases.json").write_text(cases_json + "\n", encoding="utf-8")
     (out_dir / "field-clerks.json").write_text(fc_json + "\n", encoding="utf-8")
+    (out_dir / "warchest.json").write_text(warchest_json + "\n", encoding="utf-8")
 
     # .js siblings of the same payloads, for file:// viewing (JR double-clicks
     # index.html to verify locally; browsers block fetch() on file:// but load
@@ -178,7 +248,10 @@ def run_export(corpus_dir: Path, out_dir: Path) -> dict:
     (out_dir / "field-clerks.js").write_text(
         "window.SOD_MANIFEST_FIELD_CLERKS = " + fc_json + ";\n", encoding="utf-8",
     )
-    return {"cases": len(cases), "field_clerks": len(field_clerks)}
+    (out_dir / "warchest.js").write_text(
+        "window.SOD_MANIFEST_WARCHEST = " + warchest_json + ";\n", encoding="utf-8",
+    )
+    return {"cases": len(cases), "field_clerks": len(field_clerks), "warchest": len(warchest)}
 
 
 def main() -> None:
@@ -212,6 +285,7 @@ def main() -> None:
 
     print(f"[OK] cases.json: {counts['cases']} entries", file=sys.stderr)
     print(f"[OK] field-clerks.json: {counts['field_clerks']} entries", file=sys.stderr)
+    print(f"[OK] warchest.json: {counts['warchest']} specimens", file=sys.stderr)
     print(f"[OK] written to {out_dir}", file=sys.stderr)
 
 

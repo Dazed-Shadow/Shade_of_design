@@ -4,9 +4,11 @@
     {
       "id": "26-1575",
       "docket_number": "26-1575",
+      "source_slug": "26-1575",
       "title": "Megan Jackler, Brandon Jaroch v. Department of Justice, Director of OPM, No. 26-1575 (Fed. Cir. June 17, 2026) \u2014 Per Curiam Order",
       "court": "United States Court of Appeals for the Federal Circuit",
       "decision_date": "2026/06/17",
+      "updated_at": "2026/06/17",
       "tags": [
         "Federal Employment",
         "Merit Systems Protection Board",
@@ -65,9 +67,11 @@
     {
       "id": "25A312",
       "docket_number": "25A312",
+      "source_slug": "trump_v_cook",
       "title": "Trump v. Cook, No. 25A312 (U.S. June 29, 2026)",
       "court": "Supreme Court of the United States",
       "decision_date": "2026/06/29",
+      "updated_at": "2026/06/29",
       "tags": [
         "Executive Removal",
         "Separation of Powers",
@@ -115,9 +119,11 @@
     {
       "id": "25-332",
       "docket_number": "25-332",
+      "source_slug": "trump_v_slaughter",
       "title": "Trump v. Slaughter, No. 25-332 (U.S. June 29, 2026)",
       "court": "Supreme Court of the United States",
       "decision_date": "2026/06/29",
+      "updated_at": "2026/06/29",
       "tags": [
         "Executive Removal",
         "Separation of Powers",

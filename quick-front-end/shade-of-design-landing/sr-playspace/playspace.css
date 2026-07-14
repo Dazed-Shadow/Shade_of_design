@@ -263,6 +263,13 @@ main {
 .pw-inline-code {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.92em;
+  /* Hotfix, DD-037 Phase 4 real-content check: the Cross-references section's
+     long unbroken vault paths (e.g. `research/data/legal/cases/trump_v_cook.md`)
+     overflowed the 375px viewport with no wrap rule. Pre-existing since Phase
+     2/3; corrected here as the narrowest possible fix -- it only affects
+     strings too long to fit their line, so already-fitting inline code is
+     unaffected (byte-identical for every case that wasn't already broken). */
+  overflow-wrap: anywhere;
 }
 
 /* --- Document-list index (default route) --- */
@@ -309,6 +316,236 @@ main {
   color: var(--sr-muted-text);
 }
 
+/* --- Browse layer (DD-037 Phase 4) --------------------------------------
+   Shelf, war-chest drawer, gallery, Horizon panels. Same tokens as the
+   reading room; layout grammar only distinguishes browse from document view
+   (no palette change, per pre-decision 3). The single card-focus transition
+   permitted by the phase's guardrail lives here (.pw-shelf-band,
+   .pw-drawer-card) -- nowhere else in this file gains motion. */
+
+.pw-shelf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pw-shelf-band {
+  display: block;
+  border: 1px solid var(--sr-hairline);
+  border-radius: 2px;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease-out;
+}
+
+.pw-shelf-band:hover,
+.pw-shelf-band:focus {
+  border-color: var(--sr-regal-soft);
+}
+
+.pw-shelf-meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sr-regal);
+  margin: 0 0 0.5rem;
+}
+
+.pw-shelf-title {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  margin: 0 0 0.5rem;
+  color: var(--sr-paper);
+}
+
+.pw-shelf-excerpt {
+  font-family: "Inter", sans-serif;
+  font-size: 0.88rem;
+  color: var(--sr-muted-text);
+  margin: 0;
+}
+
+/* War-chest specimen drawer: index-card grid, mono small-caps name + count,
+   card opens in place to its from_fcs list. Gold is light only -- the count
+   is gold text, never a filled badge. */
+.pw-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.pw-drawer-card {
+  border: 1px solid var(--sr-hairline);
+  border-radius: 2px;
+  padding: 0.85rem 0.9rem;
+  transition: border-color 0.15s ease-out;
+}
+
+.pw-drawer-card:focus-within {
+  border-color: var(--sr-gold);
+}
+
+.pw-drawer-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: var(--sr-regal);
+  text-align: left;
+}
+
+.pw-drawer-name:hover,
+.pw-drawer-name:focus,
+.pw-drawer-name[aria-expanded="true"] {
+  color: var(--sr-regal-soft);
+}
+
+.pw-drawer-count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--sr-gold);
+  flex: none;
+}
+
+.pw-drawer-fcs {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0 0;
+  border-top: 1px solid var(--sr-hairline);
+}
+
+.pw-drawer-fcs li {
+  margin-bottom: 0.4rem;
+}
+
+.pw-drawer-fcs li:last-child {
+  margin-bottom: 0;
+}
+
+.pw-drawer-fcs a {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--sr-muted-text);
+  text-decoration: underline;
+  text-decoration-color: var(--sr-hairline);
+}
+
+.pw-drawer-fcs a:hover,
+.pw-drawer-fcs a:focus {
+  color: var(--sr-paper);
+  text-decoration-color: var(--sr-regal-soft);
+}
+
+/* Gallery: simple spatial grid, hidden-when-empty (set via [hidden] on the
+   section itself when state.gallery is empty). */
+.pw-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1rem;
+}
+
+.pw-gallery-item {
+  margin: 0;
+  border: 1px solid var(--sr-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pw-gallery-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pw-gallery-item figcaption {
+  padding: 0.6rem 0.75rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--sr-muted-text);
+}
+
+/* Horizon Axis: tap-to-toggle panels, no hover-dependent affordance --
+   aria-expanded + [hidden] drive the reveal from a click/tap on a real
+   <button>, keyboard-operable by default. */
+.pw-horizon-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pw-horizon-toggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid var(--sr-hairline);
+  border-radius: 2px;
+  padding: 0.7rem 0.9rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sr-muted-text);
+  cursor: pointer;
+}
+
+.pw-horizon-toggle:hover,
+.pw-horizon-toggle:focus,
+.pw-horizon-toggle[aria-expanded="true"] {
+  color: var(--sr-regal-soft);
+  border-color: var(--sr-regal-soft);
+}
+
+.pw-horizon-links {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--sr-hairline);
+  border-top: 2px solid var(--sr-gold);
+  border-radius: 2px;
+}
+
+.pw-horizon-links li {
+  margin-bottom: 0.5rem;
+}
+
+.pw-horizon-links li:last-child {
+  margin-bottom: 0;
+}
+
+.pw-horizon-links a {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82rem;
+  color: var(--sr-muted-text);
+  text-decoration: none;
+}
+
+.pw-horizon-links a:hover,
+.pw-horizon-links a:focus {
+  color: var(--sr-gold-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-shelf-band,
+  .pw-drawer-card {
+    transition: none;
+  }
+}
+
 @media (min-width: 640px) {
   main {
     padding: 3.5rem 1.5rem 5rem;
@@ -324,5 +561,13 @@ main {
 
   .pw-section blockquote.pw-pullquote {
     font-size: 1.25rem;
+  }
+
+  .pw-shelf-list {
+    flex-direction: row;
+  }
+
+  .pw-shelf-band {
+    flex: 1 1 0;
   }
 }

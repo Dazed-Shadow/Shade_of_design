@@ -109,6 +109,16 @@ const PROJECTS = [
     status: "soon",
     accent: "ink",
   },
+  {
+    n: "06",
+    kicker: "Sharpen Reason · Legal",
+    // JR may rename — placeholder title per the DD-037 Phase 4 kickoff.
+    title: "SR Play-Space",
+    blurb: "A reading room, and the walk to it.",
+    href: "sr-playspace/index.html",
+    status: "live",
+    accent: "ink",
+  },
 ];
 
 function ProjectTile({ p }) {
