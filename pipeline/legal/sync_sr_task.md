@@ -19,9 +19,31 @@ faster.
 
 ## Create (run once, JR's hand)
 
+**Run this from `cmd.exe` (Command Prompt), NOT PowerShell** -- the `\"`
+escaping below is cmd-style and PowerShell mangles it (this is the error
+JR hit on the first install attempt, 2026-07-14):
+
 ```
-schtasks /create /tn "SYNC SR" /tr "\"C:\Users\theri\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe\" \"C:\Users\theri\Chief of Staff Diary\Terminal\Central Hub\pipeline\legal\sync_sr.py\"" /sc daily /st 03:15 /f
+schtasks /create /tn "SYNC SR" /tr "\"C:\Users\theri\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe\" \"C:\Users\theri\Chief of Staff Diary\Terminal\Central Hub\pipeline\legal\sync_sr.py\"" /sc daily /st 08:15 /f
 ```
+
+If PowerShell is what's open, prefix the same line with the stop-parsing
+token so PowerShell passes it through untouched:
+
+```
+schtasks --% /create /tn "SYNC SR" /tr "\"C:\Users\theri\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe\" \"C:\Users\theri\Chief of Staff Diary\Terminal\Central Hub\pipeline\legal\sync_sr.py\"" /sc daily /st 08:15 /f
+```
+
+**Missed-run behavior (the 03:15 -> 08:15 change, JR's call, ratified):**
+Task Scheduler is local-machine only. If the computer is off or asleep at
+the trigger time, that day's run is silently MISSED -- no catch-up by
+default, nothing cloud-side. 08:15 (a typically-awake hour) is therefore
+the better slot. A missed day is harmless anyway: the next run is
+idempotent over whatever the corpus holds (`changed=no` on a quiet day),
+and the on-demand SYNC SR trigger covers any urgency. Optional belt: in
+Task Scheduler's GUI (task Properties -> Settings), tick "Run task as soon
+as possible after a scheduled start is missed" -- the schtasks CLI cannot
+set that flag, GUI only.
 
 - `/tn "SYNC SR"` -- task name, matches the ratified skill-trigger name.
 - `/tr` -- the exact command: absolute path to `python.exe`, absolute path
@@ -29,9 +51,11 @@ schtasks /create /tn "SYNC SR" /tr "\"C:\Users\theri\AppData\Local\Microsoft\Win
   corpus + output directories from `Path(__file__).resolve()`, not from the
   current working directory, so the task's working directory (whatever
   Task Scheduler defaults to) does not matter.
-- `/sc daily /st 03:15` -- once a day, 3:15 AM local time (a quiet hour;
-  nothing else on the corpus is running then). This is the cadence
-  ceiling -- do not schedule more often than daily.
+- `/sc daily /st 08:15` -- once a day, 8:15 AM local time (a
+  typically-awake hour; see the missed-run note above -- an off machine
+  means a silently skipped day, so a quiet-but-awake slot beats a quieter
+  hour the machine sleeps through). This is the cadence ceiling -- do not
+  schedule more often than daily.
 - `/f` -- overwrite without prompting if a task of this name already
   exists (safe to re-run this line; idempotent registration).
 
@@ -44,7 +68,7 @@ schtasks /delete /tn "SYNC SR" /f
 ## Verifying the installed task
 
 After JR runs the create line, a one-shot proof without waiting for
-3:15 AM:
+8:15 AM:
 
 ```
 schtasks /run /tn "SYNC SR"

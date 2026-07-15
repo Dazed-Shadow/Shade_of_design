@@ -20,7 +20,7 @@ window.SOD_MANIFEST_CASES = {
         "Significant Figures"
       ],
       "visibility": "Public",
-      "source_url": "https://www.courtlistener.com/opinion/<placeholder>/astrazeneca-ab-v-mylan-pharms-inc/",
+      "source_url": "https://law.justia.com/cases/federal/appellate-courts/cafc/21-1729/21-1729-2021-12-08.html",
       "cross_refs": [
         "24-2242",
         "P13",
