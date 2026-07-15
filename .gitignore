@@ -8,3 +8,7 @@ Design Content/
 # Design-bundle staging (raw drop from Claude Design + normalizer output)
 shade-of-design-site/
 shade-of-design-site-normalized/
+
+# Python bytecode + local sync log (DD-037 Phase 5 -- the log is a local working artifact, not a publish artifact)
+__pycache__/
+pipeline/legal/sync_sr.log

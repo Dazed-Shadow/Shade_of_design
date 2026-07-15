@@ -18,6 +18,7 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
         "taranto-two-sided-P13"
       ],
       "visibility": "Public",
+      "source_url": null,
       "cross_refs": [
         "P13",
         "24-2242",
@@ -80,6 +81,7 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
         "FIAFEA"
       ],
       "visibility": "Public",
+      "source_url": null,
       "cross_refs": [
         "24-2242"
       ],
@@ -134,6 +136,7 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
         "jurisdictional-boundaries"
       ],
       "visibility": "Public",
+      "source_url": null,
       "cross_refs": [
         "P13",
         "21-1729",
@@ -193,6 +196,7 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
         "Humphreys-overruled"
       ],
       "visibility": "Public",
+      "source_url": null,
       "cross_refs": [
         "25A312"
       ],
@@ -253,6 +257,7 @@ window.SOD_MANIFEST_FIELD_CLERKS = {
         "historical-tradition"
       ],
       "visibility": "Public",
+      "source_url": null,
       "cross_refs": [
         "24-1990",
         "24-2242",
